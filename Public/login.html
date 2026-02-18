@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="./js/auth.js"></script>
+  <title>Security Login</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Poppins', sans-serif;
+      background: linear-gradient(135deg,#f5f6fa 0%,#e8ecf1 100%);
+      display:flex; justify-content:center; align-items:center;
+      min-height:100vh; padding:20px;
+    }
+    .login-container { width:100%; max-width:400px; perspective:1000px; }
+    .login-box {
+      background:#fff; padding:40px 30px; border-radius:15px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.1);
+      animation:fadeIn 0.8s ease-out;
+      transition:transform 0.3s ease, box-shadow 0.3s ease;
+      text-align:center;
+    }
+    .login-box:hover { transform:translateY(-5px); box-shadow:0 15px 30px rgba(0,0,0,0.15); }
+    .logo { width:100%; max-width:250px; height:auto; margin:0 auto 5px; display:block; object-fit:contain; }
+    @media(max-width:480px){ .logo{ max-width:200px; margin-bottom:15px; } }
+    h2 { text-align:center; margin-bottom:25px; color:#2c3e50; font-weight:600; position:relative; padding-bottom:10px; }
+    h2:after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:50px; height:3px; background:#007bff; border-radius:2px; }
+    .input-group{ position:relative; margin-bottom:25px; text-align:left; }
+    input{
+      width:100%; padding:12px 40px 12px 15px; border:1px solid #ddd; border-radius:8px; font-size:14px;
+      background:#f9f9f9; transition:all 0.3s ease;
+    }
+    input:focus{
+      outline:none; border-color:#007bff;
+      box-shadow:0 0 0 3px rgba(0,123,255,0.1); background:#fff; transform:translateY(-2px);
+    }
+    label{
+      position:absolute; top:50%; left:15px; transform:translateY(-50%);
+      color:#999; font-size:14px; pointer-events:none; transition:all 0.3s ease;
+    }
+    input:focus + label,
+    input:not(:placeholder-shown) + label{
+      top:-10px; left:10px; font-size:12px; color:#007bff; background:#fff; padding:0 5px;
+    }
+    .toggle-password{
+      position:absolute; right:12px; top:50%; transform:translateY(-50%);
+      cursor:pointer; font-size:16px; color:#666; user-select:none;
+    }
+    .toggle-password:hover{ color:#007bff; }
+    button{
+      width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px;
+      cursor:pointer; font-size:16px; font-weight:500; transition:all 0.3s ease;
+    }
+    button:hover{ background:#0056b3; transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,123,255,0.3); }
+    .message{ text-align:center; margin-top:15px; min-height:22px; font-weight:500; opacity:1; transition:opacity 0.5s ease; }
+    .fade-out{ opacity:0; }
+    .success{ color:#28a745; }
+    .error{ color:#dc3545; }
+    .loading{
+      display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,.3);
+      border-radius:50%; border-top-color:#fff; animation:spin 1s ease-in-out infinite;
+      margin-right:10px; vertical-align:middle;
+    }
+    .request-account{ text-align:center; margin-top:20px; font-size:14px; color:#555; }
+    .request-account a{ color:#007bff; text-decoration:none; font-weight:500; }
+    .request-account a:hover{ text-decoration:underline; }
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
+    @keyframes spin{ to{ transform:rotate(360deg);} }
+    @keyframes shake{ 0%,100%{transform:translateX(0);} 10%,30%,50%,70%,90%{transform:translateX(-5px);} 20%,40%,60%,80%{transform:translateX(5px);} }
+    .shake{ animation:shake 0.5s ease-in-out; }
+    @media(max-width:480px){ .login-box{ padding:30px 20px; } h2{ font-size:22px; } }
+    
+    /* Fix for missing logo - add a fallback */
+    .logo-placeholder {
+      display: none; /* Hidden by default, shown only if logo fails */
+    }
+    
+    .logo {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      border-radius: 10px;
+      padding: 20px;
+      color: white;
+      font-size: 40px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .logo i {
+      font-size: 50px;
+    }
+  </style>
+</head>
+<body>
+<div class="login-container">
+  <div class="login-box">
+    <!-- Replace the broken logo with Font Awesome icon -->
+    <div class="logo">
+      <i class="fas fa-shield-alt"></i>
+      <div style="font-size: 18px; margin-top: 10px; font-weight: 500;">SeizeTrack</div>
+    </div>
+    <h2>Welcome Back!</h2>
+    <form id="loginForm" novalidate>
+      <div class="input-group">
+        <input id="email" type="email" placeholder=" " autocomplete="email" required />
+        <label for="email">Email Address</label>
+      </div>
+      <div class="input-group">
+        <input id="password" type="password" placeholder=" " autocomplete="current-password" required />
+        <label for="password">Password</label>
+        <span class="toggle-password" id="togglePassword" role="button" aria-label="Toggle password visibility">
+        </span>
+      </div>
+      <button type="submit"><span id="button-text">Login</span></button>
+      <div id="msg" class="message"></div>
+    </form>
+    <p class="request-account">Don't have an account?<br><a href="javascript:void(0)" onclick="requestAccount()">Request one from admin</a></p>
+  </div>
+</div>
+
+<script>
+// Make sure auth is loaded
+window.addEventListener('DOMContentLoaded', function() {
+    // Initialize form after DOM is loaded
+    const form = document.getElementById("loginForm");
+    const msg = document.getElementById("msg");
+    const button = form.querySelector("button");
+    const buttonText = document.getElementById("button-text");
+    const loginBox = document.querySelector(".login-box");
+    const passwordField = document.getElementById("password");
+    const togglePassword = document.getElementById("togglePassword");
+
+    // Check if already logged in
+    if (auth && auth.isLoggedIn && auth.isLoggedIn()) {
+        window.location.href = '/index.html';
+    }
+
+    // 👁️ Toggle password visibility
+    togglePassword.addEventListener("click", () => {
+        passwordField.type = passwordField.type === "password" ? "text" : "password";
+        togglePassword.textContent = passwordField.type === "password" ? "👁️" : "👁️‍🗨️";
+    });
+
+    // 🔐 Login submit
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = passwordField.value.trim();
+
+      msg.textContent = "";
+      msg.className = "message";
+
+      if (!email || !password) {
+          showMessage("Please fill in all fields", "error");
+          shake();
+          return;
+      }
+
+      // Validate email format
+      if (!validateEmail(email)) {
+          showMessage("Please enter a valid email address", "error");
+          shake();
+          return;
+      }
+
+      button.disabled = true;
+      buttonText.innerHTML = '<span class="loading"></span> Logging in...';
+
+      try {
+          const result = await auth.login(email, password);
+
+          if (!result.success) {
+              showMessage(result.message || "Login failed", "error");
+              shake();
+              return;
+          }
+
+          // Note: result.user is directly accessible now, not result.data.user
+          showMessage(result.message || `Welcome, ${result.user.name}!`, "success");
+
+          setTimeout(() => window.location.href = "/index.html", 800);
+
+      } catch (err) {
+          console.error(err);
+          showMessage("Server not responding", "error");
+          shake();
+      } finally {
+          button.disabled = false;
+          buttonText.textContent = "Login";
+      }
+    });
+
+    // Helper functions
+    function showMessage(text, type) {
+        msg.textContent = text;
+        msg.className = `message ${type}`;
+        setTimeout(() => msg.classList.add("fade-out"), 3000);
+    }
+
+    function shake() {
+        loginBox.classList.add("shake");
+        setTimeout(() => loginBox.classList.remove("shake"), 500);
+    }
+
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    function requestAccount() {
+        alert("Please contact the system administrator to request an account.\n\nDefault login:\nEmail: admin@seizetrack.com\nPassword: admin123");
+    }
+
+    // Set default credentials for testing (remove in production)
+    document.getElementById("email").value = "admin@seizetrack.com";
+    document.getElementById("password").value = "admin123";
+});
+</script>
+</body>
+</html>

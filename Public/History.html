@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./js/auth.js"></script>
+    <title>SeizeTrack - Seizure History</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --slate-950: #020617;
+            --red-50: #fef2f2;
+            --red-100: #fee2e2;
+            --red-600: #dc2626;
+            --green-50: #f0fdf4;
+            --green-100: #dcfce7;
+            --green-600: #16a34a;
+            --yellow-50: #fefce8;
+            --yellow-100: #fef9c3;
+            --yellow-600: #ca8a04;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Layout Container */
+        .layout-container {
+            min-height: 100vh;
+            background-color: var(--slate-50);
+            display: flex;
+        }
+        
+        /* Mobile Sidebar Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            background-color: rgba(15, 23, 42, 0.5);
+            display: none;
+        }
+        
+        .sidebar-backdrop.active {
+            display: block;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 16rem;
+            background-color: var(--slate-900);
+            color: white;
+            transform: translateX(-100%);
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar {
+                transform: translateX(0);
+                position: relative;
+                inset: auto;
+            }
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        /* Logo */
+        .sidebar-logo {
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid var(--slate-800);
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            color: var(--blue-400);
+            margin-right: 0.75rem;
+        }
+        
+        .logo-text {
+            font-size: 1.125rem;
+            font-weight: bold;
+            letter-spacing: -0.025em;
+        }
+        
+        /* Navigation */
+        .sidebar-nav {
+            flex: 1;
+            padding: 0.75rem;
+            padding-top: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+            text-decoration: none;
+            color: var(--slate-300);
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            background-color: var(--slate-800);
+            color: white;
+        }
+        
+        .nav-item.active {
+            background-color: var(--blue-600);
+            color: white;
+        }
+        
+        .nav-icon {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-item.active .nav-icon {
+            color: white;
+        }
+        
+        .nav-item:not(.active) .nav-icon {
+            color: var(--slate-400);
+        }
+        
+        /* User Profile */
+        .sidebar-profile {
+            padding: 1rem;
+            border-top: 1px solid var(--slate-800);
+        }
+        
+        .profile-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-avatar {
+            height: 2rem;
+            width: 2rem;
+            border-radius: 9999px;
+            background-color: var(--slate-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .profile-info {
+            margin-left: 0.75rem;
+        }
+        
+        .profile-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+        }
+        
+        .profile-role {
+            font-size: 0.75rem;
+            color: var(--slate-400);
+        }
+        
+        .logout-btn {
+            margin-left: auto;
+            color: var(--slate-400);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        .logout-btn:hover {
+            color: white;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            background-color: white;
+            border-bottom: 1px solid var(--slate-200);
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            justify-content: space-between;
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-header {
+                display: none;
+            }
+        }
+        
+        .mobile-logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .mobile-logo-icon {
+            font-size: 1.5rem;
+            color: var(--slate-900);
+            margin-right: 0.5rem;
+        }
+        
+        .mobile-logo-text {
+            font-weight: bold;
+            color: var(--slate-900);
+        }
+        
+        .mobile-menu-btn {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            color: var(--slate-500);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .mobile-menu-btn:hover {
+            background-color: var(--slate-100);
+        }
+        
+        /* Page Content */
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .page-content {
+                padding: 2rem;
+            }
+        }
+        
+        .content-container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .page-header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .page-header p {
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+        
+        /* Card */
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Input */
+        .input-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--slate-400);
+            pointer-events: none;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 0.625rem;
+            padding-left: 2.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--slate-300);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background-color: white;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--blue-600);
+            box-shadow: 0 0 0 3px var(--blue-100);
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .filter-section {
+                flex-direction: row;
+            }
+        }
+        
+        .filter-main {
+            flex: 1;
+        }
+        
+        .filter-date {
+            width: 100%;
+        }
+        
+        @media (min-width: 640px) {
+            .filter-date {
+                width: 12rem;
+            }
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .stat-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .stat-icon.blue {
+            background-color: var(--blue-500);
+        }
+        
+        .stat-icon.green {
+            background-color: var(--green-600);
+        }
+        
+        .stat-icon.red {
+            background-color: var(--red-600);
+        }
+        
+        .stat-icon.yellow {
+            background-color: var(--yellow-600);
+        }
+        
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .stat-change {
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        
+        .stat-change.positive {
+            color: var(--green-600);
+        }
+        
+        .stat-change.negative {
+            color: var(--red-600);
+        }
+        
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.5rem;
+            border: 1px solid var(--slate-200);
+            background-color: white;
+        }
+        
+        table {
+            width: 100%;
+            min-width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background-color: var(--slate-50);
+        }
+        
+        thead tr {
+            border-bottom: 2px solid var(--slate-200);
+        }
+        
+        th {
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid var(--slate-200);
+            transition: background-color 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background-color: var(--slate-50);
+        }
+        
+        td {
+            padding: 1rem 1.5rem;
+            white-space: nowrap;
+            font-size: 0.875rem;
+        }
+        
+        .date-cell {
+            color: var(--slate-500);
+            min-width: 120px;
+        }
+        
+        .date-main {
+            font-weight: 500;
+            color: var(--slate-900);
+        }
+        
+        .date-time {
+            font-size: 0.75rem;
+            margin-top: 0.125rem;
+        }
+        
+        .person-name {
+            font-weight: 500;
+            color: var(--slate-900);
+            min-width: 150px;
+        }
+        
+        .matric-number {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.125rem;
+        }
+        
+        .device-info {
+            color: var(--slate-700);
+            min-width: 120px;
+        }
+        
+        .location {
+            color: var(--slate-500);
+            min-width: 100px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .status-active {
+            background-color: var(--blue-50);
+            color: var(--blue-600);
+            border: 1px solid var(--blue-200);
+        }
+        
+        .status-returned {
+            background-color: var(--green-50);
+            color: var(--green-600);
+            border: 1px solid var(--green-200);
+        }
+        
+        .status-lost {
+            background-color: var(--red-50);
+            color: var(--red-600);
+            border: 1px solid var(--red-200);
+        }
+        
+        .notes {
+            color: var(--slate-500);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            padding: 4rem 1rem;
+            text-align: center;
+            color: var(--slate-500);
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--slate-300);
+        }
+        
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--slate-700);
+        }
+        
+        .empty-state p {
+            color: var(--slate-500);
+            max-width: 400px;
+            margin: 0 auto 1.5rem;
+        }
+        
+        .refresh-btn {
+            padding: 0.5rem 1.5rem;
+            background-color: var(--blue-500);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .refresh-btn:hover {
+            background-color: var(--blue-600);
+        }
+        
+        /* Loading State */
+        .loading {
+            padding: 4rem 1rem;
+            text-align: center;
+            color: var(--slate-500);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--slate-200);
+            border-radius: 50%;
+            border-top-color: var(--blue-500);
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 2rem;
+            gap: 0.5rem;
+        }
+        
+        .pagination-btn {
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border: 1px solid var(--slate-300);
+            border-radius: 0.5rem;
+            color: var(--slate-700);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background-color: var(--slate-50);
+            border-color: var(--slate-400);
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination-btn.active {
+            background-color: var(--blue-600);
+            color: white;
+            border-color: var(--blue-600);
+        }
+        
+        .pagination-info {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+            margin: 0 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout-container">
+        <!-- Mobile Sidebar Backdrop -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <i class="fas fa-shield-alt logo-icon"></i>
+                <span class="logo-text">SeizeTrack</span>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <a href="./index.html" class="nav-item">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    Dashboard
+                </a>
+                <a href="./AddSeizure.html" class="nav-item">
+                    <i class="fas fa-plus-circle nav-icon"></i>
+                    Add Seizure
+                </a>
+                <a href="./History.html" class="nav-item active">
+                    <i class="fas fa-history nav-icon"></i>
+                    History
+                </a>
+                <a href="./Person.html" class="nav-item">
+                    <i class="fas fa-users nav-icon"></i>
+                    Persons
+                </a>
+            </nav>
+            
+            <!-- User Profile -->
+            <div class="sidebar-profile">
+                <div class="profile-container">
+                    <div class="profile-avatar">AD</div>
+                    <div class="profile-info">
+                        <div class="profile-name">Admin User</div>
+                        <div class="profile-role">Security Dept</div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Mobile Header -->
+            <header class="mobile-header">
+                <div class="mobile-logo">
+                    <i class="fas fa-shield-alt mobile-logo-icon"></i>
+                    <span class="mobile-logo-text">SeizeTrack</span>
+                </div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </header>
+            
+            <!-- Page Content -->
+            <main class="page-content">
+                <div class="content-container">
+                    <!-- Header -->
+                    <div class="page-header">
+                        <div>
+                            <h1>Seizure History</h1>
+                            <p>Complete log of all confiscated devices.</p>
+                        </div>
+                        <div>
+                            <button id="refreshBtn" class="refresh-btn">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="stats-grid" id="statsContainer">
+                        <!-- Stats will be loaded dynamically -->
+                    </div>
+                    
+                    <!-- Main Card -->
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- Filter Section -->
+                            <div class="filter-section">
+                                <div class="filter-main">
+                                    <div class="input-container">
+                                        <i class="fas fa-search input-icon"></i>
+                                        <input type="text" class="input-field" id="searchInput" placeholder="Search by name, matric, device, or location...">
+                                    </div>
+                                </div>
+                                <div class="filter-date">
+                                    <div class="input-container">
+                                        <i class="fas fa-calendar input-icon"></i>
+                                        <input type="date" class="input-field" id="dateFilter">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Table -->
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Date & Time</th>
+                                            <th>Person</th>
+                                            <th>Device Info</th>
+                                            <th>Location</th>
+                                            <th>Status</th>
+                                            <th>Notes</th>
+                                            <th>Seized By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="seizureTable">
+                                        <!-- Table will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                                
+                                <!-- Loading State -->
+                                <div id="loadingState" class="loading" style="display: none;">
+                                    <div class="loading-spinner"></div>
+                                    <p>Loading seizure history...</p>
+                                </div>
+                                
+                                <!-- Empty State -->
+                                <div id="emptyState" class="empty-state" style="display: none;">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-history"></i>
+                                    </div>
+                                    <h3>No Seizure Records Found</h3>
+                                    <p>No seizures have been recorded yet. Start by adding a seizure record.</p>
+                                    <a href="./AddSeizure.html" class="refresh-btn">
+                                        <i class="fas fa-plus-circle"></i> Add First Seizure
+                                    </a>
+                                </div>
+                                
+                                <!-- Error State -->
+                                <div id="errorState" class="empty-state" style="display: none;">
+                                    <div class="empty-state-icon" style="color: var(--red-600);">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                    <h3>Error Loading Data</h3>
+                                    <p id="errorMessage">Failed to load seizure history. Please try again.</p>
+                                    <button id="retryBtn" class="refresh-btn">
+                                        <i class="fas fa-redo"></i> Retry
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Pagination -->
+                            <div id="paginationContainer" class="pagination" style="display: none;">
+                                <!-- Pagination will be added dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+<script>
+    let allSeizures = [];
+    let filteredSeizures = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let debounceTimer;
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            // Check authentication using your auth.js
+            const user = await auth.checkAuth();
+            if (!user) return;
+            
+            // Update user profile in sidebar
+            updateUserProfile(user);
+            
+            // Initialize sidebar
+            setupSidebar();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Set today's date as default for date filter
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFilter').value = today;
+            
+            // Load data
+            await loadDashboardStats();
+            await loadSeizureHistory();
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            showNotification('Failed to initialize history page', 'error');
+        }
+    });
+
+    function setupSidebar() {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                sidebar.classList.add('active');
+                sidebarBackdrop.classList.add('active');
+            });
+        }
+        
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarBackdrop.classList.remove('active');
+            });
+        }
+        
+        // Setup logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    await auth.logout();
+                }
+            });
+        }
+    }
+
+    function updateUserProfile(user) {
+        const profileName = document.querySelector('.profile-name');
+        const profileRole = document.querySelector('.profile-role');
+        const profileAvatar = document.querySelector('.profile-avatar');
+        
+        if (profileName && user.name) {
+            profileName.textContent = user.name;
+        }
+        
+        if (profileRole && user.department) {
+            profileRole.textContent = user.department;
+        }
+        
+        if (profileAvatar && user.name) {
+            profileAvatar.textContent = user.name.charAt(0).toUpperCase();
+        }
+    }
+
+    function setupEventListeners() {
+        // Refresh button
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async function() {
+                try {
+                    await loadDashboardStats();
+                    await loadSeizureHistory();
+                    showNotification('Data refreshed successfully', 'success');
+                } catch (error) {
+                    showNotification('Failed to refresh data', 'error');
+                }
+            });
+        }
+        
+        // Retry button
+        const retryBtn = document.getElementById('retryBtn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', async function() {
+                await loadDashboardStats();
+                await loadSeizureHistory();
+            });
+        }
+        
+        // Search input with debounce
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterSeizures();
+                }, 300);
+            });
+        }
+        
+        // Date filter
+        const dateFilter = document.getElementById('dateFilter');
+        if (dateFilter) {
+            dateFilter.addEventListener('change', function() {
+                filterSeizures();
+            });
+        }
+    }
+
+    async function loadDashboardStats() {
+        try {
+            // Use auth.authFetch for API calls
+            const response = await auth.authFetch('/stats/dashboard');
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    renderStats(data.data.stats || {});
+                } else {
+                    throw new Error(data.message || 'Failed to load stats');
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}: Failed to load stats`);
+            }
+        } catch (error) {
+            console.error('Error loading dashboard stats:', error);
+            // Use default stats on error
+            renderStats({
+                totalSeizures: 0,
+                todaySeizures: 0,
+                totalPersons: 0,
+                repeatOffenders: 0
+            });
+        }
+    }
+
+    async function loadSeizureHistory() {
+        showLoading();
+        hideError();
+        hideEmpty();
+        
+        try {
+            // Use auth.authFetch for API calls
+            const response = await auth.authFetch('/seizures');
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    allSeizures = data.data || [];
+                    filteredSeizures = [...allSeizures];
+                    
+                    if (allSeizures.length === 0) {
+                        showEmpty();
+                    } else {
+                        renderTable();
+                        setupPagination();
+                    }
+                } else {
+                    throw new Error(data.message || 'Failed to load seizure history');
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}: Failed to load seizure history`);
+            }
+        } catch (error) {
+            console.error('Error loading seizure history:', error);
+            showError(error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function filterSeizures() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const dateFilter = document.getElementById('dateFilter').value;
+        
+        filteredSeizures = allSeizures.filter(seizure => {
+            // Search filter
+            if (searchTerm) {
+                const matchesSearch = 
+                    (seizure.personName && seizure.personName.toLowerCase().includes(searchTerm)) ||
+                    (seizure.personMatric && seizure.personMatric.toLowerCase().includes(searchTerm)) ||
+                    (seizure.phoneModel && seizure.phoneModel.toLowerCase().includes(searchTerm)) ||
+                    (seizure.location && seizure.location.toLowerCase().includes(searchTerm)) ||
+                    (seizure.seizureReason && seizure.seizureReason.toLowerCase().includes(searchTerm)) ||
+                    (seizure.notes && seizure.notes.toLowerCase().includes(searchTerm)) ||
+                    (seizure.seizedBy && seizure.seizedBy.toLowerCase().includes(searchTerm));
+                
+                if (!matchesSearch) return false;
+            }
+            
+            // Date filter
+            if (dateFilter) {
+                const seizureDate = new Date(seizure.createdAt || seizure['Date & Time']);
+                const filterDate = new Date(dateFilter);
+                
+                // Check if dates are the same day
+                if (seizureDate.toDateString() !== filterDate.toDateString()) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+        
+        currentPage = 1;
+        renderTable();
+        setupPagination();
+        
+        // Show empty state if no results
+        if (filteredSeizures.length === 0) {
+            showEmpty();
+        } else {
+            hideEmpty();
+        }
+    }
+
+    function renderStats(stats) {
+        const statsContainer = document.getElementById('statsContainer');
+        if (!statsContainer) return;
+        
+        statsContainer.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total Seizures</span>
+                    <div class="stat-icon blue">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.totalSeizures || 0}</div>
+                <div class="stat-change">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>${stats.todaySeizures || 0} today</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Today's Seizures</span>
+                    <div class="stat-icon green">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.todaySeizures || 0}</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Current day</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Persons</span>
+                    <div class="stat-icon red">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.totalPersons || 0}</div>
+                <div class="stat-change">
+                    <i class="fas fa-database"></i>
+                    <span>Total registered</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Repeat Offenders</span>
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.repeatOffenders || 0}</div>
+                <div class="stat-change negative">
+                    <i class="fas fa-user-slash"></i>
+                    <span>≥2 seizures</span>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderTable() {
+        const seizureTable = document.getElementById('seizureTable');
+        if (!seizureTable) return;
+        
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const currentItems = filteredSeizures.slice(startIndex, endIndex);
+        
+        // Clear table
+        seizureTable.innerHTML = '';
+        
+        // Add rows
+        currentItems.forEach(seizure => {
+            const seizureDate = new Date(seizure.createdAt || seizure['Date & Time'] || new Date());
+            const formattedDate = seizureDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            const formattedTime = seizureDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            // Get status badge class
+            let statusClass = 'status-active';
+            let statusText = 'Active';
+            
+            const status = seizure.status || seizure.Status;
+            if (status) {
+                const statusLower = status.toLowerCase();
+                if (statusLower.includes('return')) {
+                    statusClass = 'status-returned';
+                    statusText = 'Returned';
+                } else if (statusLower.includes('lost')) {
+                    statusClass = 'status-lost';
+                    statusText = 'Lost';
+                }
+            }
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="date-cell">
+                    <div class="date-main">${formattedDate}</div>
+                    <div class="date-time">${formattedTime}</div>
+                </td>
+                <td>
+                    <div class="person-name">${seizure.personName || seizure['Full Name'] || 'N/A'}</div>
+                    <div class="matric-number">${seizure.personMatric || seizure['Matric Number'] || 'N/A'}</div>
+                </td>
+                <td class="device-info">${seizure.phoneModel || seizure['Device Model'] || 'N/A'}</td>
+                <td class="location">${seizure.location || seizure.Location || 'N/A'}</td>
+                <td>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </td>
+                <td class="notes" title="${seizure.notes || seizure.Note || ''}">
+                    ${seizure.notes || seizure.Note || '-'}
+                </td>
+                <td>${seizure.seizedBy || seizure['Seized By'] || 'N/A'}</td>
+            `;
+            
+            seizureTable.appendChild(row);
+        });
+    }
+
+    function setupPagination() {
+        const totalPages = Math.ceil(filteredSeizures.length / itemsPerPage);
+        const paginationContainer = document.getElementById('paginationContainer');
+        if (!paginationContainer) return;
+        
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        }
+        
+        paginationContainer.style.display = 'flex';
+        
+        // Clear existing pagination
+        paginationContainer.innerHTML = '';
+        
+        // Previous button
+        const prevButton = document.createElement('button');
+        prevButton.className = 'pagination-btn';
+        prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+                setupPagination();
+            }
+        });
+        paginationContainer.appendChild(prevButton);
+        
+        // Page numbers
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+            pageButton.textContent = i;
+            pageButton.addEventListener('click', () => {
+                currentPage = i;
+                renderTable();
+                setupPagination();
+            });
+            paginationContainer.appendChild(pageButton);
+        }
+        
+        // Next button
+        const nextButton = document.createElement('button');
+        nextButton.className = 'pagination-btn';
+        nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+                setupPagination();
+            }
+        });
+        paginationContainer.appendChild(nextButton);
+        
+        // Page info
+        const pageInfo = document.createElement('div');
+        pageInfo.className = 'pagination-info';
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages} • ${filteredSeizures.length} records`;
+        paginationContainer.appendChild(pageInfo);
+    }
+
+    // UI State Management
+    function showLoading() {
+        const loadingState = document.getElementById('loadingState');
+        const seizureTable = document.getElementById('seizureTable');
+        
+        if (loadingState) loadingState.style.display = 'block';
+        if (seizureTable) seizureTable.style.display = 'none';
+    }
+
+    function hideLoading() {
+        const loadingState = document.getElementById('loadingState');
+        const seizureTable = document.getElementById('seizureTable');
+        
+        if (loadingState) loadingState.style.display = 'none';
+        if (seizureTable) seizureTable.style.display = 'table-row-group';
+    }
+
+    function showEmpty() {
+        const emptyState = document.getElementById('emptyState');
+        const seizureTable = document.getElementById('seizureTable');
+        const paginationContainer = document.getElementById('paginationContainer');
+        
+        if (emptyState) emptyState.style.display = 'block';
+        if (seizureTable) seizureTable.style.display = 'none';
+        if (paginationContainer) paginationContainer.style.display = 'none';
+    }
+
+    function hideEmpty() {
+        const emptyState = document.getElementById('emptyState');
+        
+        if (emptyState) emptyState.style.display = 'none';
+    }
+
+    function showError(message) {
+        const errorMessage = document.getElementById('errorMessage');
+        const errorState = document.getElementById('errorState');
+        const seizureTable = document.getElementById('seizureTable');
+        const paginationContainer = document.getElementById('paginationContainer');
+        
+        if (errorMessage) errorMessage.textContent = message;
+        if (errorState) errorState.style.display = 'block';
+        if (seizureTable) seizureTable.style.display = 'none';
+        if (paginationContainer) paginationContainer.style.display = 'none';
+    }
+
+    function hideError() {
+        const errorState = document.getElementById('errorState');
+        
+        if (errorState) errorState.style.display = 'none';
+    }
+
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const bgColor = type === 'success' ? 'var(--green-100)' : 
+                    type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
+        const textColor = type === 'success' ? 'var(--green-800)' : 
+                        type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
+        const borderColor = type === 'success' ? 'var(--green-300)' : 
+                        type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
+        const icon = type === 'success' ? 'fa-check-circle' : 
+                    type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            background-color: ${bgColor};
+            color: ${textColor};
+            border: 1px solid ${borderColor};
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            font-family: inherit;
+            font-size: 14px;
+            min-width: 300px;
+            max-width: 400px;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Add keyframes for animation if not already present
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Remove notification after 5 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 5000);
+    }
+
+    // Export functions for debugging
+    window.historyPage = {
+        loadDashboardStats,
+        loadSeizureHistory,
+        filterSeizures,
+        renderTable,
+        setupPagination
+    };
+    </script>
+</body>
+</html>

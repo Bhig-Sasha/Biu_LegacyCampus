@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./js/auth.js"></script>
+    <title>SeizeTrack - Persons Registry</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --indigo-50: #eef2ff;
+            --indigo-600: #4f46e5;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --slate-950: #020617;
+            --red-50: #fef2f2;
+            --red-100: #fee2e2;
+            --red-600: #dc2626;
+            --red-700: #b91c1c;
+            --green-50: #f0fdf4;
+            --green-100: #dcfce7;
+            --green-600: #16a34a;
+            --yellow-50: #fefce8;
+            --yellow-100: #fef3c7;
+            --yellow-800: #92400e;
+            --gray-100: #f3f4f6;
+            --gray-800: #1f2937;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Layout Container */
+        .layout-container {
+            min-height: 100vh;
+            background-color: var(--slate-50);
+            display: flex;
+        }
+        
+        /* Mobile Sidebar Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            background-color: rgba(15, 23, 42, 0.5);
+            display: none;
+        }
+        
+        .sidebar-backdrop.active {
+            display: block;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 16rem;
+            background-color: var(--slate-900);
+            color: white;
+            transform: translateX(-100%);
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar {
+                transform: translateX(0);
+                position: relative;
+                inset: auto;
+            }
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        /* Logo */
+        .sidebar-logo {
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid var(--slate-800);
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            color: var(--blue-400);
+            margin-right: 0.75rem;
+        }
+        
+        .logo-text {
+            font-size: 1.125rem;
+            font-weight: bold;
+            letter-spacing: -0.025em;
+        }
+        
+        /* Navigation */
+        .sidebar-nav {
+            flex: 1;
+            padding: 0.75rem;
+            padding-top: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+            text-decoration: none;
+            color: var(--slate-300);
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            background-color: var(--slate-800);
+            color: white;
+        }
+        
+        .nav-item.active {
+            background-color: var(--blue-600);
+            color: white;
+        }
+        
+        .nav-icon {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-item.active .nav-icon {
+            color: white;
+        }
+        
+        .nav-item:not(.active) .nav-icon {
+            color: var(--slate-400);
+        }
+        
+        /* User Profile */
+        .sidebar-profile {
+            padding: 1rem;
+            border-top: 1px solid var(--slate-800);
+        }
+        
+        .profile-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-avatar {
+            height: 2rem;
+            width: 2rem;
+            border-radius: 9999px;
+            background-color: var(--slate-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .profile-info {
+            margin-left: 0.75rem;
+        }
+        
+        .profile-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+        }
+        
+        .profile-role {
+            font-size: 0.75rem;
+            color: var(--slate-400);
+        }
+        
+        .logout-btn {
+            margin-left: auto;
+            color: var(--slate-400);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        .logout-btn:hover {
+            color: white;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            background-color: white;
+            border-bottom: 1px solid var(--slate-200);
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            justify-content: space-between;
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-header {
+                display: none;
+            }
+        }
+        
+        .mobile-logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .mobile-logo-icon {
+            font-size: 1.5rem;
+            color: var(--slate-900);
+            margin-right: 0.5rem;
+        }
+        
+        .mobile-logo-text {
+            font-weight: bold;
+            color: var(--slate-900);
+        }
+        
+        .mobile-menu-btn {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            color: var(--slate-500);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .mobile-menu-btn:hover {
+            background-color: var(--slate-100);
+        }
+        
+        /* Page Content */
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .page-content {
+                padding: 2rem;
+            }
+        }
+        
+        .content-container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+        
+        /* Common Components */
+        .space-y-6 > * + * {
+            margin-top: 1.5rem;
+        }
+        
+        /* Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .page-header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .page-header p {
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+        
+        /* Card */
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Input */
+        .input-container {
+            position: relative;
+            width: 100%;
+            max-width: 28rem;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--slate-400);
+            pointer-events: none;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 0.625rem;
+            padding-left: 2.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--slate-300);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background-color: white;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--slate-900);
+            box-shadow: 0 0 0 1px var(--slate-900);
+        }
+        
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.5rem;
+            border: 1px solid var(--slate-200);
+            background-color: white;
+        }
+        
+        table {
+            width: 100%;
+            min-width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background-color: var(--slate-50);
+        }
+        
+        thead tr {
+            border-bottom: 2px solid var(--slate-200);
+        }
+        
+        th {
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid var(--slate-200);
+            transition: background-color 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background-color: var(--slate-50);
+        }
+        
+        td {
+            padding: 1rem 1.5rem;
+            white-space: nowrap;
+            font-size: 0.875rem;
+        }
+        
+        /* Student Info */
+        .student-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .student-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background-color: var(--slate-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--slate-500);
+            margin-right: 0.75rem;
+        }
+        
+        .student-name {
+            font-weight: 500;
+            color: var(--slate-900);
+        }
+        
+        .student-matric {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.125rem;
+        }
+        
+        /* Department */
+        .department {
+            color: var(--slate-500);
+        }
+        
+        /* Level */
+        .level {
+            font-weight: 500;
+            color: var(--slate-700);
+        }
+        
+        /* Total Seizures */
+        .seizure-count {
+            font-weight: bold;
+            color: var(--slate-900);
+        }
+        
+        /* Last Incident */
+        .last-incident {
+            color: var(--slate-500);
+        }
+        
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .badge.danger {
+            background-color: var(--red-100);
+            color: var(--red-700);
+            border: 1px solid var(--red-200);
+        }
+        
+        .badge.warning {
+            background-color: var(--yellow-100);
+            color: var(--yellow-800);
+            border: 1px solid var(--yellow-200);
+        }
+        
+        .badge.neutral {
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+            border: 1px solid var(--slate-200);
+        }
+        
+        .badge.info {
+            background-color: var(--blue-50);
+            color: var(--blue-700);
+            border: 1px solid var(--blue-200);
+        }
+        
+        .badge-icon {
+            margin-right: 0.25rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--blue-600);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--blue-700);
+        }
+        
+        .btn-outline {
+            background-color: white;
+            color: var(--slate-700);
+            border: 1px solid var(--slate-300);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--slate-50);
+            border-color: var(--slate-400);
+        }
+        
+        /* Loading State */
+        .loading {
+            padding: 4rem 1rem;
+            text-align: center;
+            color: var(--slate-500);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--slate-200);
+            border-radius: 50%;
+            border-top-color: var(--blue-500);
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Empty State */
+        .empty-state {
+            padding: 4rem 1rem;
+            text-align: center;
+            color: var(--slate-500);
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--slate-300);
+        }
+        
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--slate-700);
+        }
+        
+        .empty-state p {
+            color: var(--slate-500);
+            max-width: 400px;
+            margin: 0 auto 1.5rem;
+        }
+        
+        /* Error State */
+        .error-state {
+            padding: 4rem 1rem;
+            text-align: center;
+            color: var(--slate-500);
+        }
+        
+        .error-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--red-600);
+        }
+        
+        /* Stats */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stats-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .stat-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .stat-icon.blue {
+            background-color: var(--blue-500);
+        }
+        
+        .stat-icon.red {
+            background-color: var(--red-600);
+        }
+        
+        .stat-icon.green {
+            background-color: var(--green-600);
+        }
+        
+        .stat-icon.yellow {
+            background-color: var(--yellow-800);
+        }
+        
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        /* Person Details Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--slate-900);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--slate-400);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        .modal-close:hover {
+            background-color: var(--slate-100);
+            color: var(--slate-600);
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .person-details-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .person-details-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .detail-item h4 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-item p {
+            color: var(--slate-900);
+        }
+    </style>
+</head>
+<body>
+    <div class="layout-container">
+        <!-- Mobile Sidebar Backdrop -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <i class="fas fa-shield-alt logo-icon"></i>
+                <span class="logo-text">SeizeTrack</span>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <a href="./index.html" class="nav-item">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    Dashboard
+                </a>
+                <a href="./AddSeizure.html" class="nav-item">
+                    <i class="fas fa-plus-circle nav-icon"></i>
+                    Add Seizure
+                </a>
+                <a href="./History.html" class="nav-item">
+                    <i class="fas fa-history nav-icon"></i>
+                    History
+                </a>
+                <a href="./Person.html" class="nav-item active">
+                    <i class="fas fa-users nav-icon"></i>
+                    Persons
+                </a>
+            </nav>
+            
+            <!-- User Profile -->
+            <div class="sidebar-profile">
+                <div class="profile-container">
+                    <div class="profile-avatar">AD</div>
+                    <div class="profile-info">
+                        <div class="profile-name">Admin User</div>
+                        <div class="profile-role">Security Dept</div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Mobile Header -->
+            <header class="mobile-header">
+                <div class="mobile-logo">
+                    <i class="fas fa-shield-alt mobile-logo-icon"></i>
+                    <span class="mobile-logo-text">SeizeTrack</span>
+                </div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </header>
+            
+            <!-- Page Content -->
+            <main class="page-content">
+                <div class="content-container">
+                    <div class="space-y-6">
+                        <!-- Header -->
+                        <div class="page-header">
+                            <div>
+                                <h1>Persons Registry</h1>
+                                <p>List of all individuals with recorded seizures.</p>
+                            </div>
+                            <div>
+                                <button id="refreshBtn" class="btn btn-primary">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Statistics -->
+                        <div class="stats-container" id="statsContainer">
+                            <!-- Stats will be loaded dynamically -->
+                        </div>
+                        
+                        <!-- Main Card -->
+                        <div class="card">
+                            <div class="card-body">
+                                <!-- Search -->
+                                <div class="mb-6">
+                                    <div class="input-container">
+                                        <i class="fas fa-search input-icon"></i>
+                                        <input type="text" class="input-field" id="searchInput" placeholder="Search persons by name, matric number, or department...">
+                                    </div>
+                                </div>
+                                
+                                <!-- Table -->
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Student</th>
+                                                <th>Department</th>
+                                                <th>Level</th>
+                                                <th>Total Seizures</th>
+                                                <th>Last Incident</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="personsTable">
+                                            <!-- Table rows will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                    
+                                    <!-- Loading State -->
+                                    <div id="loadingState" class="loading" style="display: none;">
+                                        <div class="loading-spinner"></div>
+                                        <p>Loading persons data...</p>
+                                    </div>
+                                    
+                                    <!-- Empty State -->
+                                    <div id="emptyState" class="empty-state" style="display: none;">
+                                        <div class="empty-state-icon">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <h3>No Persons Found</h3>
+                                        <p>No persons have been registered yet.</p>
+                                        <p class="text-sm">Start by adding a seizure to automatically register a person.</p>
+                                    </div>
+                                    
+                                    <!-- Error State -->
+                                    <div id="errorState" class="empty-state" style="display: none;">
+                                        <div class="empty-state-icon" style="color: var(--red-600);">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                        </div>
+                                        <h3>Error Loading Data</h3>
+                                        <p id="errorMessage">Failed to load persons data. Please try again.</p>
+                                        <button id="retryBtn" class="btn btn-primary">
+                                            <i class="fas fa-redo"></i> Retry
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <!-- Person Details Modal -->
+        <div class="modal" id="personModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Person Details</h3>
+                    <button class="modal-close" id="modalClose">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="person-details-grid" id="personDetails">
+                        <!-- Details will be populated by JavaScript -->
+                    </div>
+                    
+                    <!-- Seizures History -->
+                    <div class="mt-8">
+                        <h4 class="text-lg font-semibold mb-4">Seizure History</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Device Model</th>
+                                        <th>Location</th>
+                                        <th>Reason</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="personSeizuresTable">
+                                    <!-- Seizures will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<script>
+    let allPersons = [];
+    let filteredPersons = [];
+    let debounceTimer;
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            // Check authentication using your auth.js
+            const user = await auth.checkAuth();
+            if (!user) return;
+            
+            // Update user profile in sidebar
+            updateUserProfile(user);
+            
+            // Initialize sidebar
+            setupSidebar();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load data
+            await loadPersons();
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            showNotification('Failed to initialize persons page', 'error');
+        }
+    });
+
+    function setupSidebar() {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                sidebar.classList.add('active');
+                sidebarBackdrop.classList.add('active');
+            });
+        }
+        
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarBackdrop.classList.remove('active');
+            });
+        }
+        
+        // Setup logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    await auth.logout();
+                }
+            });
+        }
+    }
+
+    function updateUserProfile(user) {
+        const profileName = document.querySelector('.profile-name');
+        const profileRole = document.querySelector('.profile-role');
+        const profileAvatar = document.querySelector('.profile-avatar');
+        
+        if (profileName && user.name) {
+            profileName.textContent = user.name;
+        }
+        
+        if (profileRole && user.department) {
+            profileRole.textContent = user.department;
+        }
+        
+        if (profileAvatar && user.name) {
+            profileAvatar.textContent = user.name.charAt(0).toUpperCase();
+        }
+    }
+
+    function setupEventListeners() {
+        // Refresh button
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async function() {
+                try {
+                    await loadPersons();
+                    showNotification('Persons data refreshed successfully', 'success');
+                } catch (error) {
+                    showNotification('Failed to refresh data', 'error');
+                }
+            });
+        }
+        
+        // Retry button
+        const retryBtn = document.getElementById('retryBtn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', async function() {
+                await loadPersons();
+            });
+        }
+        
+        // Search input with debounce
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterPersons();
+                }, 300);
+            });
+        }
+        
+        // Modal close button
+        const modalClose = document.getElementById('modalClose');
+        if (modalClose) {
+            modalClose.addEventListener('click', function() {
+                const personModal = document.getElementById('personModal');
+                if (personModal) personModal.classList.remove('active');
+            });
+        }
+        
+        // Close modal when clicking outside
+        const personModal = document.getElementById('personModal');
+        if (personModal) {
+            personModal.addEventListener('click', function(e) {
+                if (e.target === personModal) {
+                    personModal.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    async function loadPersons() {
+        showLoading();
+        hideError();
+        hideEmpty();
+        
+        try {
+            // Use auth.authFetch for API calls
+            const response = await auth.authFetch('/persons');
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    allPersons = data.data || [];
+                    filteredPersons = [...allPersons];
+                    
+                    // Calculate statistics
+                    const stats = calculateStatistics(allPersons);
+                    renderStats(stats);
+                    
+                    if (allPersons.length === 0) {
+                        showEmpty();
+                    } else {
+                        renderTable();
+                    }
+                } else {
+                    throw new Error(data.message || 'Failed to load persons');
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}: Failed to load persons`);
+            }
+        } catch (error) {
+            console.error('Error loading persons:', error);
+            showError(error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function calculateStatistics(persons) {
+        const totalPersons = persons.length;
+        const totalSeizures = persons.reduce((sum, person) => 
+            sum + (parseInt(person.totalSeizures) || 0), 0);
+        const repeatOffenders = persons.filter(person => 
+            (parseInt(person.totalSeizures) || 0) >= 2).length;
+        const avgSeizures = totalPersons > 0 ? (totalSeizures / totalPersons).toFixed(1) : 0;
+        
+        return {
+            totalPersons,
+            totalSeizures,
+            repeatOffenders,
+            avgSeizures
+        };
+    }
+
+    function filterPersons() {
+        const searchInput = document.getElementById('searchInput');
+        if (!searchInput) return;
+        
+        const searchTerm = searchInput.value.toLowerCase();
+        
+        filteredPersons = allPersons.filter(person => {
+            if (!searchTerm) return true;
+            
+            return (
+                (person.name && person.name.toLowerCase().includes(searchTerm)) ||
+                (person.matricNumber && person.matricNumber.toLowerCase().includes(searchTerm)) ||
+                (person.department && person.department.toLowerCase().includes(searchTerm))
+            );
+        });
+        
+        renderTable();
+        
+        // Show empty state if no results
+        if (filteredPersons.length === 0) {
+            showEmpty();
+        } else {
+            hideEmpty();
+        }
+    }
+
+    function renderStats(stats) {
+        const statsContainer = document.getElementById('statsContainer');
+        if (!statsContainer) return;
+        
+        statsContainer.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total Persons</span>
+                    <div class="stat-icon blue">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.totalPersons}</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total Seizures</span>
+                    <div class="stat-icon red">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.totalSeizures}</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Repeat Offenders</span>
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.repeatOffenders}</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Avg. per Person</span>
+                    <div class="stat-icon green">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.avgSeizures}</div>
+            </div>
+        `;
+    }
+
+    function renderTable() {
+        const personsTable = document.getElementById('personsTable');
+        if (!personsTable) return;
+        
+        // Sort by most seizures
+        const sortedPersons = [...filteredPersons].sort((a, b) => 
+            (parseInt(b.totalSeizures) || 0) - (parseInt(a.totalSeizures) || 0)
+        );
+        
+        // Clear table
+        personsTable.innerHTML = '';
+        
+        // Add rows
+        sortedPersons.forEach(person => {
+            const totalSeizures = parseInt(person.totalSeizures) || 0;
+            const lastSeized = person.lastSeized || person.last_seized;
+            const formattedLastSeized = lastSeized ? 
+                new Date(lastSeized).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                }) : 
+                'No seizures';
+            
+            let statusBadge = '';
+            if (totalSeizures >= 3) {
+                statusBadge = `
+                    <span class="badge danger">
+                        <i class="fas fa-exclamation-triangle badge-icon"></i>
+                        Frequent Offender
+                    </span>
+                `;
+            } else if (totalSeizures === 2) {
+                statusBadge = `
+                    <span class="badge warning">
+                        <i class="fas fa-exclamation-circle badge-icon"></i>
+                        Repeat Offender
+                    </span>
+                `;
+            } else if (totalSeizures === 1) {
+                statusBadge = `
+                    <span class="badge info">
+                        <i class="fas fa-user badge-icon"></i>
+                        First Offense
+                    </span>
+                `;
+            } else {
+                statusBadge = `
+                    <span class="badge neutral">
+                        <i class="fas fa-check badge-icon"></i>
+                        No Record
+                    </span>
+                `;
+            }
+            
+            const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', () => showPersonDetails(person));
+            
+            row.innerHTML = `
+                <td>
+                    <div class="student-info">
+                        <div class="student-avatar">${person.name ? person.name.charAt(0).toUpperCase() : '?'}</div>
+                        <div>
+                            <div class="student-name">${person.name || 'Unknown'}</div>
+                            <div class="student-matric">${person.matricNumber || person.matric_number || 'No matric'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="department">${person.department || 'Not specified'}</td>
+                <td class="level">${person.level || 'Not specified'}</td>
+                <td>
+                    <div class="seizure-count">${totalSeizures}</div>
+                </td>
+                <td class="last-incident">${formattedLastSeized}</td>
+                <td>${statusBadge}</td>
+            `;
+            
+            personsTable.appendChild(row);
+        });
+    }
+
+    async function showPersonDetails(person) {
+        try {
+            // Load person details using auth.authFetch
+            const response = await auth.authFetch(`/persons/${person.id}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    renderPersonDetails(data.data);
+                    
+                    // Show modal
+                    const personModal = document.getElementById('personModal');
+                    if (personModal) personModal.classList.add('active');
+                } else {
+                    throw new Error(data.message || 'Failed to load person details');
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}: Failed to load person details`);
+            }
+        } catch (error) {
+            console.error('Error loading person details:', error);
+            showNotification('Failed to load person details: ' + error.message, 'error');
+        }
+    }
+
+    function renderPersonDetails(personData) {
+        const personDetails = document.getElementById('personDetails');
+        const personSeizuresTable = document.getElementById('personSeizuresTable');
+        
+        if (!personDetails || !personSeizuresTable) return;
+        
+        // Render person details
+        const lastSeized = personData.lastSeized || personData.last_seized;
+        const createdAt = personData.createdAt || personData.created_at;
+        
+        personDetails.innerHTML = `
+            <div class="detail-item">
+                <h4>Full Name</h4>
+                <p>${personData.name || 'Not specified'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Matric Number</h4>
+                <p>${personData.matricNumber || personData.matric_number || 'Not specified'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Department</h4>
+                <p>${personData.department || 'Not specified'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Level</h4>
+                <p>${personData.level || 'Not specified'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Total Seizures</h4>
+                <p>${personData.totalSeizures || personData.total_seizures || 0}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Last Seized</h4>
+                <p>${lastSeized ? 
+                    new Date(lastSeized).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 
+                    'Never'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Registered Since</h4>
+                <p>${createdAt ? 
+                    new Date(createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : 
+                    'Unknown'}</p>
+            </div>
+        `;
+        
+        // Render seizures history
+        if (personData.seizures && Array.isArray(personData.seizures) && personData.seizures.length > 0) {
+            const seizures = personData.seizures;
+            personSeizuresTable.innerHTML = '';
+            
+            seizures.forEach(seizure => {
+                const seizureDate = new Date(seizure.createdAt || seizure.created_at || seizure['Date & Time']);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${seizureDate.toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}</td>
+                    <td>${seizure.phoneModel || seizure.phone_model || seizure['Device Model'] || 'N/A'}</td>
+                    <td>${seizure.location || seizure.Location || 'N/A'}</td>
+                    <td>${seizure.seizureReason || seizure.seizure_reason || seizure.Reason || 'N/A'}</td>
+                    <td>
+                        <span class="${getStatusBadgeClass(seizure.status || seizure.Status)}">
+                            ${getStatusText(seizure.status || seizure.Status)}
+                        </span>
+                    </td>
+                `;
+                personSeizuresTable.appendChild(row);
+            });
+        } else {
+            personSeizuresTable.innerHTML = `
+                <tr>
+                    <td colspan="5" style="padding: 2rem; text-align: center; color: var(--slate-500);">
+                        No seizure records found for this person.
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    function getStatusBadgeClass(status) {
+        if (!status) return 'badge neutral';
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('active')) return 'badge info';
+        if (statusLower.includes('return')) return 'badge';
+        if (statusLower.includes('lost')) return 'badge danger';
+        return 'badge neutral';
+    }
+
+    function getStatusText(status) {
+        if (!status) return 'Unknown';
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('active')) return 'Active';
+        if (statusLower.includes('return')) return 'Returned';
+        if (statusLower.includes('lost')) return 'Lost';
+        return status;
+    }
+
+    // UI State Management
+    function showLoading() {
+        const loadingState = document.getElementById('loadingState');
+        const personsTable = document.getElementById('personsTable');
+        const statsContainer = document.getElementById('statsContainer');
+        
+        if (loadingState) loadingState.style.display = 'block';
+        if (personsTable) personsTable.style.display = 'none';
+        if (statsContainer) statsContainer.style.display = 'none';
+    }
+
+    function hideLoading() {
+        const loadingState = document.getElementById('loadingState');
+        const personsTable = document.getElementById('personsTable');
+        const statsContainer = document.getElementById('statsContainer');
+        
+        if (loadingState) loadingState.style.display = 'none';
+        if (personsTable) personsTable.style.display = 'table-row-group';
+        if (statsContainer) statsContainer.style.display = 'grid';
+    }
+
+    function showEmpty() {
+        const emptyState = document.getElementById('emptyState');
+        const personsTable = document.getElementById('personsTable');
+        
+        if (emptyState) emptyState.style.display = 'block';
+        if (personsTable) personsTable.style.display = 'none';
+    }
+
+    function hideEmpty() {
+        const emptyState = document.getElementById('emptyState');
+        
+        if (emptyState) emptyState.style.display = 'none';
+    }
+
+    function showError(message) {
+        const errorMessage = document.getElementById('errorMessage');
+        const errorState = document.getElementById('errorState');
+        const personsTable = document.getElementById('personsTable');
+        const statsContainer = document.getElementById('statsContainer');
+        
+        if (errorMessage) errorMessage.textContent = message;
+        if (errorState) errorState.style.display = 'block';
+        if (personsTable) personsTable.style.display = 'none';
+        if (statsContainer) statsContainer.style.display = 'none';
+    }
+
+    function hideError() {
+        const errorState = document.getElementById('errorState');
+        
+        if (errorState) errorState.style.display = 'none';
+    }
+
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const bgColor = type === 'success' ? 'var(--green-100)' : 
+                    type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
+        const textColor = type === 'success' ? 'var(--green-800)' : 
+                        type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
+        const borderColor = type === 'success' ? 'var(--green-300)' : 
+                        type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
+        const icon = type === 'success' ? 'fa-check-circle' : 
+                    type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            background-color: ${bgColor};
+            color: ${textColor};
+            border: 1px solid ${borderColor};
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            font-family: inherit;
+            font-size: 14px;
+            min-width: 300px;
+            max-width: 400px;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Add keyframes for animation if not already present
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Remove notification after 5 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 5000);
+    }
+
+    // Export functions for debugging
+    window.personsPage = {
+        loadPersons,
+        filterPersons,
+        showPersonDetails,
+        renderTable
+    };
+    </script>
+</body>
+</html>

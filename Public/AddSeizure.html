@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./js/auth.js"></script>
+    <title>SeizeTrack - Add Seizure</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --slate-950: #020617;
+            --red-50: #fef2f2;
+            --red-100: #fee2e2;
+            --red-600: #dc2626;
+            --green-50: #f0fdf4;
+            --green-100: #dcfce7;
+            --green-600: #16a34a;
+            --yellow-800: #92400e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Layout Container */
+        .layout-container {
+            min-height: 100vh;
+            background-color: var(--slate-50);
+            display: flex;
+        }
+        
+        /* Mobile Sidebar Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            background-color: rgba(15, 23, 42, 0.5);
+            display: none;
+        }
+        
+        .sidebar-backdrop.active {
+            display: block;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 16rem;
+            background-color: var(--slate-900);
+            color: white;
+            transform: translateX(-100%);
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar {
+                transform: translateX(0);
+                position: relative;
+                inset: auto;
+            }
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        /* Logo */
+        .sidebar-logo {
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid var(--slate-800);
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            color: var(--blue-400);
+            margin-right: 0.75rem;
+        }
+        
+        .logo-text {
+            font-size: 1.125rem;
+            font-weight: bold;
+            letter-spacing: -0.025em;
+        }
+        
+        /* Navigation */
+        .sidebar-nav {
+            flex: 1;
+            padding: 0.75rem;
+            padding-top: 1.5rem;
+            overflow-y:auto;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+            text-decoration: none;
+            color: var(--slate-300);
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            background-color: var(--slate-800);
+            color: white;
+        }
+        
+        .nav-item.active {
+            background-color: var(--blue-600);
+            color: white;
+        }
+        
+        .nav-icon {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-item.active .nav-icon {
+            color: white;
+        }
+        
+        .nav-item:not(.active) .nav-icon {
+            color: var(--slate-400);
+        }
+        
+        /* User Profile */
+        .sidebar-profile {
+            padding: 1rem;
+            border-top: 1px solid var(--slate-800);
+        }
+        
+        .profile-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-avatar {
+            height: 2rem;
+            width: 2rem;
+            border-radius: 9999px;
+            background-color: var(--slate-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .profile-info {
+            margin-left: 0.75rem;
+        }
+        
+        .profile-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+        }
+        
+        .profile-role {
+            font-size: 0.75rem;
+            color: var(--slate-400);
+        }
+        
+        .logout-btn {
+            margin-left: auto;
+            color: var(--slate-400);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        .logout-btn:hover {
+            color: white;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            background-color: white;
+            border-bottom: 1px solid var(--slate-200);
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            justify-content: space-between;
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-header {
+                display: none;
+            }
+        }
+        
+        .mobile-logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .mobile-logo-icon {
+            font-size: 1.5rem;
+            color: var(--slate-900);
+            margin-right: 0.5rem;
+        }
+        
+        .mobile-logo-text {
+            font-weight: bold;
+            color: var(--slate-900);
+        }
+        
+        .mobile-menu-btn {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            color: var(--slate-500);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .mobile-menu-btn:hover {
+            background-color: var(--slate-100);
+        }
+        
+        /* Page Content */
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .page-content {
+                padding: 2rem;
+            }
+        }
+        
+        .content-container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+        
+        /* Common Components */
+        .space-y-8 > * + * {
+            margin-top: 2rem;
+        }
+        
+        /* Header */
+        .page-header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .page-header p {
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+        
+        /* Card Component */
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--slate-100);
+        }
+        
+        .card-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--slate-900);
+        }
+        
+        .card-header p {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+            margin-top: 0.125rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Connection Status */
+        .connection-status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .connection-status.connected {
+            background-color: var(--green-100);
+            color: var(--green-800);
+            border: 1px solid var(--green-300);
+        }
+        
+        .connection-status.connecting {
+            background-color: var(--blue-50);
+            color: var(--blue-800);
+            border: 1px solid var(--blue-200);
+        }
+        
+        .connection-status.error {
+            background-color: var(--red-100);
+            color: var(--red-800);
+            border: 1px solid var(--red-300);
+        }
+        
+        /* Button */
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+            outline: none;
+            font-size: 0.875rem;
+            padding: 0.625rem 1.25rem;
+        }
+        
+        .button:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .button.primary {
+            background-color: var(--blue-600);
+            color: white;
+            border-color: var(--blue-600);
+        }
+        
+        .button.primary:hover {
+            background-color: var(--blue-700);
+        }
+        
+        .button.secondary {
+            background-color: var(--slate-100);
+            color: var(--slate-900);
+            border-color: var(--slate-300);
+        }
+        
+        .button.secondary:hover {
+            background-color: var(--slate-200);
+        }
+        
+        .button.outline {
+            background-color: transparent;
+            border-color: var(--slate-300);
+            color: var(--slate-700);
+        }
+        
+        .button.outline:hover {
+            background-color: var(--slate-50);
+        }
+        
+        .button.ghost {
+            background-color: transparent;
+            color: var(--slate-600);
+            border: none;
+        }
+        
+        .button.ghost:hover {
+            background-color: var(--slate-100);
+            color: var(--slate-900);
+        }
+        
+        .button.sm {
+            height: 2rem;
+            padding: 0 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-700);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Input with icon */
+        .input-container {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--slate-400);
+            pointer-events: none;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 0.625rem;
+            padding-left: 2.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--slate-300);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background-color: white;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--blue-600);
+            box-shadow: 0 0 0 3px var(--blue-100);
+        }
+        
+        /* Person Cards */
+        .person-card {
+            padding: 1rem;
+            border: 1px solid var(--slate-200);
+            border-radius: 0.5rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 0.75rem;
+        }
+        
+        .person-card:hover {
+            border-color: var(--blue-300);
+            background-color: var(--blue-50);
+        }
+        
+        .person-card.selected {
+            border-color: var(--blue-500);
+            background-color: var(--blue-50);
+        }
+        
+        .person-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .person-avatar {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: var(--slate-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: var(--slate-600);
+            flex-shrink: 0;
+        }
+        
+        .person-name {
+            font-weight: 600;
+            color: var(--slate-900);
+            font-size: 0.875rem;
+        }
+        
+        .person-details {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.125rem;
+        }
+        
+        /* Search Results */
+        .search-results {
+            margin-top: 1.5rem;
+        }
+        
+        .results-heading {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            margin-bottom: 0.75rem;
+        }
+        
+        /* Selected Person Display */
+        .selected-person-display {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .selected-person-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .selected-person-header h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--slate-700);
+        }
+        
+        /* Add New Person Button */
+        .add-new-person-btn {
+            width: 100%;
+            padding: 1rem;
+            border: 2px dashed var(--slate-300);
+            border-radius: 0.5rem;
+            background: var(--slate-50);
+            color: var(--slate-600);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .add-new-person-btn:hover {
+            border-color: var(--blue-400);
+            background: var(--blue-50);
+            color: var(--blue-600);
+        }
+        
+        /* New Person Form */
+        .new-person-form {
+            background: var(--slate-50);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border: 1px solid var(--slate-200);
+            display: none;
+        }
+        
+        .new-person-form.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Form Hint */
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.25rem;
+            min-height: 1rem;
+        }
+        
+        .form-hint.error {
+            color: var(--red-600);
+        }
+        
+        .form-hint.success {
+            color: var(--green-600);
+        }
+        
+        /* Select Input */
+        select.input-field {
+            padding-left: 2.5rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        
+        /* Section Header */
+        .section-header {
+            margin-bottom: 1rem;
+        }
+        
+        .section-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--slate-900);
+        }
+        
+        /* Form Grid */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        /* Textarea */
+        .textarea-container {
+            position: relative;
+        }
+        
+        .textarea-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 0.75rem;
+            color: var(--slate-400);
+            pointer-events: none;
+        }
+        
+        .textarea-field {
+            width: 100%;
+            padding: 0.625rem;
+            padding-left: 2.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--slate-300);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background-color: white;
+            min-height: 6.25rem;
+            resize: vertical;
+        }
+        
+        .textarea-field:focus {
+            outline: none;
+            border-color: var(--blue-600);
+            box-shadow: 0 0 0 3px var(--blue-100);
+        }
+        
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--slate-100);
+            margin-top: 1.5rem;
+        }
+        
+        /* Success Screen */
+        .success-screen {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+        
+        .success-icon {
+            margin: 0 auto 1.5rem;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 9999px;
+            background-color: var(--green-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--green-600);
+        }
+        
+        .success-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--slate-900);
+            margin-bottom: 0.5rem;
+        }
+        
+        .success-message {
+            color: var(--slate-500);
+            max-width: 28rem;
+            margin: 0 auto 2rem;
+        }
+        
+        .success-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout-container">
+        <!-- Mobile Sidebar Backdrop -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <i class="fas fa-shield-alt logo-icon"></i>
+                <span class="logo-text">SeizeTrack</span>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <a href="./index.html" class="nav-item">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    Dashboard
+                </a>
+                <a href="./AddSeizure.html" class="nav-item active">
+                    <i class="fas fa-plus-circle nav-icon"></i>
+                    Add Seizure
+                </a>
+                <a href="./History.html" class="nav-item">
+                    <i class="fas fa-history nav-icon"></i>
+                    History
+                </a>
+                <a href="./Person.html" class="nav-item">
+                    <i class="fas fa-users nav-icon"></i>
+                    Persons
+                </a>
+            </nav>
+            
+            <!-- User Profile -->
+            <div class="sidebar-profile">
+                <div class="profile-container">
+                    <div class="profile-avatar">AD</div>
+                    <div class="profile-info">
+                        <div class="profile-name">Admin User</div>
+                        <div class="profile-role">Security Dept</div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Mobile Header -->
+            <header class="mobile-header">
+                <div class="mobile-logo">
+                    <i class="fas fa-shield-alt mobile-logo-icon"></i>
+                    <span class="mobile-logo-text">SeizeTrack</span>
+                </div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </header>
+            
+            <!-- Page Content -->
+            <main class="page-content">
+                <div class="content-container">        
+                    <!-- Add Seizure Page -->
+                    <div class="space-y-8">
+                        <!-- Header -->
+                        <div class="page-header">
+                            <h1>Record New Seizure</h1>
+                            <p>Search for an existing person or add a new one.</p>
+                        </div>
+                        
+                        <!-- Connection Status -->
+                        <div class="connection-status connecting" id="connectionStatus">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Connecting to server...</span>
+                        </div>
+                        
+                        <!-- Person Search and Selection -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <h3>Step 1: Identify Person</h3>
+                                    <p>Search for existing person or add a new one</p>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Search Input -->
+                                <div class="form-group">
+                                    <label class="form-label" for="personSearch">Search Person</label>
+                                    <div class="input-container">
+                                        <i class="fas fa-search input-icon"></i>
+                                        <input type="text" id="personSearch" class="input-field" 
+                                               placeholder="Search by name or matric number..." autofocus>
+                                    </div>
+                                    <div class="form-hint">Start typing to search. If person doesn't exist, you can add them below.</div>
+                                </div>
+                                
+                                <!-- Search Results -->
+                                <div class="search-results" id="searchResults" style="display: none;">
+                                    <div class="results-heading">Search Results</div>
+                                    <!-- Search results will appear here -->
+                                </div>
+                                
+                                <!-- Add New Person Button -->
+                                <button class="add-new-person-btn" id="showNewPersonForm">
+                                    <i class="fas fa-user-plus"></i>
+                                    Add New Person
+                                </button>
+                                
+                                <!-- New Person Form (Initially Hidden) -->
+                                <div class="new-person-form" id="newPersonForm">
+                                    <div class="section-header">
+                                        <h3>Add New Person</h3>
+                                        <button type="button" class="button ghost sm" id="cancelNewPerson">Cancel</button>
+                                    </div>
+                                    
+                                    <form id="newPersonFormFields">
+                                        <div class="form-group">
+                                            <label class="form-label" for="newPersonName">Full Name *</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-user input-icon"></i>
+                                                <input type="text" id="newPersonName" class="input-field" placeholder="Enter full name" required>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label class="form-label" for="newMatricNumber">Matric Number *</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-id-card input-icon"></i>
+                                                    <input type="text" id="newMatricNumber" class="input-field" 
+                                                           placeholder="Matric Number" required>
+                                                </div>
+                                                <div class="form-hint" id="matricHint"></div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="department">Department/Faculty</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-building input-icon"></i>
+                                                    <select id="department" class="input-field">
+                                                        <option value="">Select Department</option>
+                                                        <option value="Computer Science">Computer Science</option>
+                                                        <option value="Electrical Engineering">Electrical Engineering</option>
+                                                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                                                        <option value="Business Administration">Business Administration</option>
+                                                        <option value="Mathematics">Mathematics</option>
+                                                        <option value="Physics">Physics</option>
+                                                        <option value="Chemistry">Chemistry</option>
+                                                        <option value="Biology">Biology</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="level">Level/Year</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-graduation-cap input-icon"></i>
+                                                <select id="level" class="input-field">
+                                                    <option value="">Select Level</option>
+                                                    <option value="100">100 Level</option>
+                                                    <option value="200">200 Level</option>
+                                                    <option value="300">300 Level</option>
+                                                    <option value="400">400 Level</option>
+                                                    <option value="500">500 Level</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-actions">
+                                            <button type="submit" class="button primary" id="addPersonBtn">
+                                                <span>Add Person</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Selected Person Display -->
+                                <div class="selected-person-display" id="selectedPersonDisplay" style="display: none;">
+                                    <div class="selected-person-header">
+                                        <h4>Selected Person</h4>
+                                        <button type="button" class="button ghost sm" id="changePerson">Change</button>
+                                    </div>
+                                    <div class="person-card selected">
+                                        <div class="person-info">
+                                            <div class="person-avatar">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <div>
+                                                <div class="person-name" id="selectedName"></div>
+                                                <div class="person-details">
+                                                    <span id="selectedMatric"></span> • 
+                                                    <span id="selectedDept"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Seizure Details Form (Will appear after person selection) -->
+                                <div id="seizureDetailsForm" style="display: none; margin-top: 2rem;">
+                                    <div class="section-header">
+                                        <h3>Step 2: Seizure Details</h3>
+                                    </div>
+                                    
+                                    <form id="seizureForm">
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label class="form-label" for="phoneModel">Device Model *</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-mobile-alt input-icon"></i>
+                                                    <input type="text" id="phoneModel" class="input-field" 
+                                                           placeholder="e.g., iPhone 13 Pro" required>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="deviceColor">Color</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-palette input-icon"></i>
+                                                    <input type="text" id="deviceColor" class="input-field" 
+                                                           placeholder="e.g., Space Gray, Midnight">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label class="form-label" for="location">Location Seized *</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-map-marker-alt input-icon"></i>
+                                                    <select id="location" class="input-field" required>
+                                                        <option value="">Select Location</option>
+                                                        <option value="Library">Library</option>
+                                                        <option value="Lecture Hall A">Lecture Hall A</option>
+                                                        <option value="Lecture Hall B">Lecture Hall B</option>
+                                                        <option value="Examination Hall">Examination Hall</option>
+                                                        <option value="Cafeteria">Cafeteria</option>
+                                                        <option value="Dormitory">Dormitory</option>
+                                                        <option value="Sports Complex">Sports Complex</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="seizedBy">Seized By</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-user-shield input-icon"></i>
+                                                    <input type="text" id="seizedBy" class="input-field" 
+                                                           placeholder="Security officer name" value="Admin User">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="seizureReason">Reason for Seizure</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-exclamation-circle input-icon"></i>
+                                                <select id="seizureReason" class="input-field">
+                                                    <option value="">Select Reason</option>
+                                                    <option value="Phone use during exam">Phone use during exam</option>
+                                                    <option value="Prohibited in classroom">Prohibited in classroom</option>
+                                                    <option value="Security violation">Security violation</option>
+                                                    <option value="Disturbing others">Disturbing others</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="notes">Additional Notes</label>
+                                            <div class="textarea-container">
+                                                <i class="fas fa-file-text textarea-icon"></i>
+                                                <textarea id="notes" class="textarea-field" rows="4" 
+                                                          placeholder="Condition of device, serial number (if available), etc."></textarea>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-actions">
+                                            <button type="button" class="button secondary" id="backToPersonSelection">Back</button>
+                                            <button type="submit" class="button primary" id="recordSeizureBtn">
+                                                <span>Record Seizure</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Success Screen -->
+                        <div id="successScreen" class="card" style="display: none;">
+                            <div class="success-screen">
+                                <div class="success-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <h2 class="success-title">Seizure Recorded Successfully</h2>
+                                <p class="success-message">
+                                    The seizure event has been logged in the system. The person's total
+                                    seizure count has been updated.
+                                </p>
+                                <div class="success-actions">
+                                    <a href="index.html" class="button outline">
+                                        Return to Dashboard
+                                    </a>
+                                    <button class="button primary" id="recordAnother">
+                                        Record Another
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+    let selectedPerson = null;
+    let searchTimeout = null;
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            // Check authentication using your auth.js
+            const user = await auth.checkAuth();
+            if (!user) return;
+            
+            // Update user profile in sidebar
+            updateUserProfile(user);
+            
+            // Initialize sidebar
+            setupSidebar();
+            
+            // Initialize add seizure form
+            setupAddSeizureListeners();
+            
+            // Update connection status
+            updateConnectionStatus('Ready to record seizure', 'connected');
+            
+            // Focus on search input
+            document.getElementById('personSearch')?.focus();
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            updateConnectionStatus('Failed to initialize', 'error');
+            showNotification('Failed to initialize page', 'error');
+        }
+    });
+
+    function setupSidebar() {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                sidebar.classList.add('active');
+                sidebarBackdrop.classList.add('active');
+            });
+        }
+        
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarBackdrop.classList.remove('active');
+            });
+        }
+        
+        // Setup logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    await auth.logout();
+                }
+            });
+        }
+    }
+
+    function updateUserProfile(user) {
+        const profileName = document.querySelector('.profile-name');
+        const profileRole = document.querySelector('.profile-role');
+        const profileAvatar = document.querySelector('.profile-avatar');
+        
+        if (profileName && user.name) {
+            profileName.textContent = user.name;
+        }
+        
+        if (profileRole && user.department) {
+            profileRole.textContent = user.department;
+        }
+        
+        if (profileAvatar && user.name) {
+            profileAvatar.textContent = user.name.charAt(0).toUpperCase();
+        }
+    }
+
+    function updateConnectionStatus(message, status = 'connecting') {
+        const statusElement = document.getElementById('connectionStatus');
+        if (!statusElement) return;
+        
+        statusElement.className = `connection-status ${status}`;
+        
+        if (status === 'connected') {
+            statusElement.innerHTML = `<i class="fas fa-check-circle"></i><span>${message}</span>`;
+        } else if (status === 'error') {
+            statusElement.innerHTML = `<i class="fas fa-exclamation-circle"></i><span>${message}</span>`;
+        } else {
+            statusElement.innerHTML = `<i class="fas fa-spinner fa-spin"></i><span>${message}</span>`;
+        }
+    }
+
+    function setupAddSeizureListeners() {
+        // Person search with debounce
+        const personSearchInput = document.getElementById('personSearch');
+        if (personSearchInput) {
+            personSearchInput.addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    handlePersonSearch(e.target.value);
+                }, 300);
+            });
+        }
+        
+        // Show new person form
+        const showNewPersonFormBtn = document.getElementById('showNewPersonForm');
+        if (showNewPersonFormBtn) {
+            showNewPersonFormBtn.addEventListener('click', function() {
+                document.getElementById('newPersonForm').classList.add('active');
+                document.getElementById('personSearch').value = '';
+                document.getElementById('searchResults').style.display = 'none';
+                document.getElementById('newPersonName').focus();
+            });
+        }
+        
+        // Cancel new person form
+        const cancelNewPersonBtn = document.getElementById('cancelNewPerson');
+        if (cancelNewPersonBtn) {
+            cancelNewPersonBtn.addEventListener('click', function() {
+                document.getElementById('newPersonForm').classList.remove('active');
+                document.getElementById('newPersonFormFields').reset();
+                document.getElementById('matricHint').textContent = '';
+                document.getElementById('personSearch').focus();
+            });
+        }
+        
+        // Change person button
+        const changePersonBtn = document.getElementById('changePerson');
+        if (changePersonBtn) {
+            changePersonBtn.addEventListener('click', function() {
+                document.getElementById('selectedPersonDisplay').style.display = 'none';
+                document.getElementById('seizureDetailsForm').style.display = 'none';
+                document.getElementById('personSearch').value = '';
+                document.getElementById('searchResults').style.display = 'none';
+                document.getElementById('personSearch').focus();
+                selectedPerson = null;
+            });
+        }
+        
+        // New person form submission
+        const newPersonForm = document.getElementById('newPersonFormFields');
+        if (newPersonForm) {
+            newPersonForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleNewPersonSubmit();
+            });
+        }
+        
+        // Matric number validation
+        const newMatricInput = document.getElementById('newMatricNumber');
+        if (newMatricInput) {
+            newMatricInput.addEventListener('input', function() {
+                validateMatricNumber(this.value);
+            });
+        }
+        
+        // Seizure form submission
+        const seizureForm = document.getElementById('seizureForm');
+        if (seizureForm) {
+            seizureForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleSeizureSubmit();
+            });
+        }
+        
+        // Back to person selection
+        const backToPersonSelectionBtn = document.getElementById('backToPersonSelection');
+        if (backToPersonSelectionBtn) {
+            backToPersonSelectionBtn.addEventListener('click', function() {
+                document.getElementById('seizureDetailsForm').style.display = 'none';
+                document.getElementById('personSearch').focus();
+            });
+        }
+        
+        // Record another button
+        const recordAnotherBtn = document.getElementById('recordAnother');
+        if (recordAnotherBtn) {
+            recordAnotherBtn.addEventListener('click', function() {
+                resetAddSeizureForm();
+            });
+        }
+    }
+
+    async function handlePersonSearch(query) {
+        const searchResults = document.getElementById('searchResults');
+        
+        if (!query.trim()) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        
+        try {
+            // Show loading state
+            searchResults.innerHTML = `
+                <div class="results-heading">Search Results</div>
+                <div class="person-card">
+                    <div class="person-info">
+                        <div class="person-avatar">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <div>
+                            <div class="person-name">Searching...</div>
+                            <div class="person-details">Please wait while we search for persons</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            searchResults.style.display = 'block';
+            
+            // Search persons via API using auth.authFetch
+            const response = await auth.authFetch(`/search?q=${encodeURIComponent(query)}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    // Display search results
+                    searchResults.innerHTML = `
+                        <div class="results-heading">Search Results (${data.data.length} found)</div>
+                        ${data.data.map(person => `
+                            <div class="person-card" data-id="${person.id}" data-matric="${person.matric_number || person.matricNumber}">
+                                <div class="person-info">
+                                    <div class="person-avatar">
+                                        ${person.name ? person.name.charAt(0).toUpperCase() : '?'}
+                                    </div>
+                                    <div>
+                                        <div class="person-name">${person.name || 'Unknown'}</div>
+                                        <div class="person-details">
+                                            ${person.matric_number || person.matricNumber || 'No matric'} • ${person.department || 'No department'}
+                                            ${person.total_seizures || person.totalSeizures ? ` • ${person.total_seizures || person.totalSeizures} previous seizure(s)` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    `;
+                    
+                    // Add click listeners to person cards
+                    document.querySelectorAll('.person-card[data-id]').forEach(card => {
+                        card.addEventListener('click', function() {
+                            const personId = this.getAttribute('data-id');
+                            const matricNumber = this.getAttribute('data-matric');
+                            selectPerson(personId, matricNumber);
+                        });
+                    });
+                } else {
+                    searchResults.innerHTML = `
+                        <div class="results-heading">Search Results</div>
+                        <div class="person-card">
+                            <div class="person-info">
+                                <div class="person-avatar">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div>
+                                    <div class="person-name">No persons found</div>
+                                    <div class="person-details">Try a different search term or add a new person</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error('Search failed');
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            searchResults.innerHTML = `
+                <div class="results-heading">Search Results</div>
+                <div class="person-card">
+                    <div class="person-info">
+                        <div class="person-avatar">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <div class="person-name">Search unavailable</div>
+                            <div class="person-details">Server connection error. Try adding a new person.</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        document.getElementById('newPersonForm').classList.remove('active');
+    }
+
+    async function selectPerson(personId, matricNumber) {
+        try {
+            // Get person details from API using auth.authFetch
+            const response = await auth.authFetch(`/persons/${personId}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    const person = data.data;
+                    selectedPerson = person;
+                    
+                    // Update selected person display
+                    document.getElementById('selectedName').textContent = person.name;
+                    document.getElementById('selectedMatric').textContent = person.matric_number || person.matricNumber || '';
+                    document.getElementById('selectedDept').textContent = person.department || 'Not specified';
+                    
+                    // Show selected person and seizure form
+                    document.getElementById('selectedPersonDisplay').style.display = 'block';
+                    document.getElementById('seizureDetailsForm').style.display = 'block';
+                    
+                    // Hide search results
+                    document.getElementById('searchResults').style.display = 'none';
+                    document.getElementById('personSearch').value = '';
+                    
+                    // Auto-fill department if available
+                    if (person.department && document.getElementById('department')) {
+                        document.getElementById('department').value = person.department;
+                    }
+                    
+                    // Auto-fill level if available
+                    if (person.level && document.getElementById('level')) {
+                        document.getElementById('level').value = person.level;
+                    }
+                    
+                    // Scroll to seizure form
+                    document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    showNotification(`Selected: ${person.name} (${person.matric_number || person.matricNumber})`, 'success');
+                } else {
+                    throw new Error(data.message || 'Failed to load person details');
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}: Failed to load person details`);
+            }
+        } catch (error) {
+            console.error('Error selecting person:', error);
+            showNotification('Error loading person details: ' + error.message, 'error');
+        }
+    }
+
+    function validateMatricNumber(matric) {
+        const hint = document.getElementById('matricHint');
+        
+        if (!matric.trim()) {
+            hint.textContent = '';
+            hint.className = 'form-hint';
+            return false;
+        }
+        
+        // Remove any extra validation - just check if it's not empty
+        hint.textContent = '✓ Valid matric number';
+        hint.className = 'form-hint success';
+        return true;
+    }
+
+    async function handleNewPersonSubmit() {
+        const name = document.getElementById('newPersonName').value.trim();
+        const matric = document.getElementById('newMatricNumber').value.trim();
+        const dept = document.getElementById('department').value;
+        const level = document.getElementById('level').value;
+        
+        // Validate
+        if (!name || !matric) {
+            showNotification('Please fill in all required fields.', 'error');
+            return;
+        }
+        
+        // Validate matric number
+        if (!validateMatricNumber(matric)) {
+            showNotification('Please enter a valid matric number.', 'error');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            const addPersonBtn = document.getElementById('addPersonBtn');
+            const originalText = addPersonBtn.innerHTML;
+            addPersonBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> Adding...</span>';
+            addPersonBtn.disabled = true;
+            
+            // Create new person via API using auth.authFetch
+            const response = await auth.authFetch('/persons', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: name,
+                    matricNumber: matric,
+                    department: dept || null,
+                    level: level || null
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Hide new person form
+                    document.getElementById('newPersonForm').classList.remove('active');
+                    document.getElementById('newPersonFormFields').reset();
+                    document.getElementById('matricHint').textContent = '';
+                    
+                    // Auto-select the newly created person
+                    selectedPerson = data.data;
+                    
+                    // Update selected person display
+                    document.getElementById('selectedName').textContent = selectedPerson.name;
+                    document.getElementById('selectedMatric').textContent = selectedPerson.matric_number || selectedPerson.matricNumber;
+                    document.getElementById('selectedDept').textContent = selectedPerson.department || "Not specified";
+                    
+                    // Show selected person and seizure form
+                    document.getElementById('selectedPersonDisplay').style.display = 'block';
+                    document.getElementById('seizureDetailsForm').style.display = 'block';
+                    
+                    // Clear search input
+                    document.getElementById('personSearch').value = '';
+                    document.getElementById('searchResults').style.display = 'none';
+                    
+                    showNotification(`New person "${name}" (${matric}) has been added successfully!`, 'success');
+                    
+                    // Scroll to seizure form
+                    document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    throw new Error(data.message || 'Failed to add person');
+                }
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to add person');
+            }
+        } catch (error) {
+            console.error('Error adding person:', error);
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            // Reset button
+            const addPersonBtn = document.getElementById('addPersonBtn');
+            addPersonBtn.innerHTML = originalText;
+            addPersonBtn.disabled = false;
+        }
+    }
+
+    async function handleSeizureSubmit() {
+        if (!selectedPerson) {
+            showNotification('Please select a person first.', 'error');
+            return;
+        }
+        
+        // Get seizure details
+        const phoneModel = document.getElementById('phoneModel').value.trim();
+        const deviceColor = document.getElementById('deviceColor').value.trim();
+        const location = document.getElementById('location').value;
+        const seizedBy = document.getElementById('seizedBy').value.trim() || 'Admin User';
+        const seizureReason = document.getElementById('seizureReason').value;
+        const notes = document.getElementById('notes').value.trim();
+        
+        // Get person details for auto-fill
+        const dept = document.getElementById('department').value;
+        const level = document.getElementById('level').value;
+        
+        // Validate form
+        if (!phoneModel || !location) {
+            showNotification('Please fill in all required fields (Device Model and Location).', 'error');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            const recordBtn = document.getElementById('recordSeizureBtn');
+            const originalText = recordBtn.innerHTML;
+            recordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> Recording...</span>';
+            recordBtn.disabled = true;
+            
+            // Create seizure via API using auth.authFetch
+            const response = await auth.authFetch('/seizures', {
+                method: 'POST',
+                body: JSON.stringify({
+                    matricNumber: selectedPerson.matric_number || selectedPerson.matricNumber,
+                    fullName: selectedPerson.name,
+                    phoneModel: phoneModel,
+                    deviceColor: deviceColor || null,
+                    location: location,
+                    seizedBy: seizedBy,
+                    seizureReason: seizureReason || null,
+                    notes: notes || null,
+                    department: dept || selectedPerson.department || null,
+                    level: level || selectedPerson.level || null
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show success screen
+                    document.querySelector('.card').style.display = 'none';
+                    document.getElementById('successScreen').style.display = 'block';
+                    
+                    showNotification(`Seizure recorded successfully for ${selectedPerson.name}`, 'success');
+                    
+                    // Log success
+                    console.log('Seizure recorded successfully:', data.data);
+                } else {
+                    throw new Error(data.message || 'Failed to record seizure');
+                }
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to record seizure');
+            }
+        } catch (error) {
+            console.error('Error recording seizure:', error);
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            // Reset button
+            const recordBtn = document.getElementById('recordSeizureBtn');
+            recordBtn.innerHTML = originalText;
+            recordBtn.disabled = false;
+        }
+    }
+
+    function resetAddSeizureForm() {
+        // Reset form fields
+        document.getElementById('personSearch').value = '';
+        document.getElementById('newPersonFormFields').reset();
+        document.getElementById('matricHint').textContent = '';
+        document.getElementById('seizureForm').reset();
+        
+        // Reset selects to default
+        document.getElementById('department').value = '';
+        document.getElementById('level').value = '';
+        document.getElementById('location').value = '';
+        document.getElementById('seizureReason').value = '';
+        
+        // Set default seized by
+        const user = auth.getCurrentUser();
+        document.getElementById('seizedBy').value = user ? user.name : 'Admin User';
+        
+        // Hide success screen and show main form
+        document.getElementById('successScreen').style.display = 'none';
+        document.querySelector('.card').style.display = 'block';
+        
+        // Hide other elements
+        document.getElementById('newPersonForm').classList.remove('active');
+        document.getElementById('selectedPersonDisplay').style.display = 'none';
+        document.getElementById('seizureDetailsForm').style.display = 'none';
+        document.getElementById('searchResults').style.display = 'none';
+        
+        // Focus on search input
+        document.getElementById('personSearch').focus();
+        
+        selectedPerson = null;
+    }
+
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const bgColor = type === 'success' ? 'var(--green-100)' : 
+                    type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
+        const textColor = type === 'success' ? 'var(--green-800)' : 
+                        type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
+        const borderColor = type === 'success' ? 'var(--green-300)' : 
+                        type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
+        const icon = type === 'success' ? 'fa-check-circle' : 
+                    type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            background-color: ${bgColor};
+            color: ${textColor};
+            border: 1px solid ${borderColor};
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            font-family: inherit;
+            font-size: 14px;
+            min-width: 300px;
+            max-width: 400px;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Add keyframes for animation if not already present
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Remove notification after 5 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 5000);
+    }
+
+    // Export functions for debugging
+    window.addSeizure = {
+        handlePersonSearch,
+        selectPerson,
+        handleNewPersonSubmit,
+        handleSeizureSubmit,
+        resetAddSeizureForm
+    };
+    </script>
+</body>
+</html>

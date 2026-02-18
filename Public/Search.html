@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="./js/auth.js"></script>
+  <title>Security Login</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Poppins', sans-serif;
+      background: linear-gradient(135deg,#f5f6fa 0%,#e8ecf1 100%);
+      display:flex; justify-content:center; align-items:center;
+      min-height:100vh; padding:20px;
+    }
+    .login-container { width:100%; max-width:400px; perspective:1000px; }
+    .login-box {
+      background:#fff; padding:40px 30px; border-radius:15px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.1);
+      animation:fadeIn 0.8s ease-out;
+      transition:transform 0.3s ease, box-shadow 0.3s ease;
+      text-align:center;
+    }
+    .login-box:hover { transform:translateY(-5px); box-shadow:0 15px 30px rgba(0,0,0,0.15); }
+    .logo { width:100%; max-width:250px; height:auto; margin:0 auto 5px; display:block; object-fit:contain; }
+    @media(max-width:480px){ .logo{ max-width:200px; margin-bottom:15px; } }
+    h2 { text-align:center; margin-bottom:25px; color:#2c3e50; font-weight:600; position:relative; padding-bottom:10px; }
+    h2:after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:50px; height:3px; background:#007bff; border-radius:2px; }
+    .input-group{ position:relative; margin-bottom:25px; text-align:left; }
+    input{
+      width:100%; padding:12px 40px 12px 15px; border:1px solid #ddd; border-radius:8px; font-size:14px;
+      background:#f9f9f9; transition:all 0.3s ease;
+    }
+    input:focus{
+      outline:none; border-color:#007bff;
+      box-shadow:0 0 0 3px rgba(0,123,255,0.1); background:#fff; transform:translateY(-2px);
+    }
+    label{
+      position:absolute; top:50%; left:15px; transform:translateY(-50%);
+      color:#999; font-size:14px; pointer-events:none; transition:all 0.3s ease;
+    }
+    input:focus + label,
+    input:not(:placeholder-shown) + label{
+      top:-10px; left:10px; font-size:12px; color:#007bff; background:#fff; padding:0 5px;
+    }
+    .toggle-password{
+      position:absolute; right:12px; top:50%; transform:translateY(-50%);
+      cursor:pointer; font-size:16px; color:#666; user-select:none;
+    }
+    .toggle-password:hover{ color:#007bff; }
+    button{
+      width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px;
+      cursor:pointer; font-size:16px; font-weight:500; transition:all 0.3s ease;
+    }
+    button:hover{ background:#0056b3; transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,123,255,0.3); }
+    .message{ text-align:center; margin-top:15px; min-height:22px; font-weight:500; opacity:1; transition:opacity 0.5s ease; }
+    .fade-out{ opacity:0; }
+    .success{ color:#28a745; }
+    .error{ color:#dc3545; }
+    .loading{
+      display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,.3);
+      border-radius:50%; border-top-color:#fff; animation:spin 1s ease-in-out infinite;
+      margin-right:10px; vertical-align:middle;
+    }
+    .request-account{ text-align:center; margin-top:20px; font-size:14px; color:#555; }
+    .request-account a{ color:#007bff; text-decoration:none; font-weight:500; }
+    .request-account a:hover{ text-decoration:underline; }
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
+    @keyframes spin{ to{ transform:rotate(360deg);} }
+    @keyframes shake{ 0%,100%{transform:translateX(0);} 10%,30%,50%,70%,90%{transform:translateX(-5px);} 20%,40%,60%,80%{transform:translateX(5px);} }
+    .shake{ animation:shake 0.5s ease-in-out; }
+    @media(max-width:480px){ .login-box{ padding:30px 20px; } h2{ font-size:22px; } }
+    
+    /* Fix for missing logo - add a fallback */
+    .logo-placeholder {
+      display: none; /* Hidden by default, shown only if logo fails */
+    }
+    
+    .logo {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      border-radius: 10px;
+      padding: 20px;
+      color: white;
+      font-size: 40px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .logo i {
+      font-size: 50px;
+    }
+  </style>
+</head>
+<body>
+<div class="login-container">
+  <div class="login-box">
+    <!-- Replace the broken logo with Font Awesome icon -->
+    <div class="logo">
+      <i class="fas fa-shield-alt"></i>
+      <div style="font-size: 18px; margin-top: 10px; font-weight: 500;">SeizeTrack</div>
+    </div>
+    <h2>Welcome Back!</h2>
+    <form id="loginForm" novalidate>
+      <div class="input-group">
+        <input id="email" type="email" placeholder=" " autocomplete="email" required />
+        <label for="email">Email Address</label>
+      </div>
+      <div class="input-group">
+        <input id="password" type="password" placeholder=" " autocomplete="current-password" required />
+        <label for="password">Password</label>
+        <span class="toggle-password" id="togglePassword" role="button" aria-label="Toggle password visibility">
+          👁️
+        </span>
+      </div>
+      <button type="submit"><span id="button-text">Login</span></button>
+      <div id="msg" class="message"></div>
+    </form>
+    <p class="request-account">Don't have an account?<br><a href="javascript:void(0)" onclick="requestAccount()">Request one from admin</a></p>
+  </div>
+</div>
+
+<!-- Add Font Awesome for the icon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script>
+// Make sure auth is loaded
+window.addEventListener('DOMContentLoaded', function() {
+    // Initialize form after DOM is loaded
+    const form = document.getElementById("loginForm");
+    const msg = document.getElementById("msg");
+    const button = form.querySelector("button");
+    const buttonText = document.getElementById("button-text");
+    const loginBox = document.querySelector(".login-box");
+    const passwordField = document.getElementById("password");
+    const togglePassword = document.getElementById("togglePassword");
+
+    // Check if already logged in
+    if (auth && auth.isLoggedIn && auth.isLoggedIn()) {
+        window.location.href = '/index.html';
+    }
+
+    // 👁️ Toggle password visibility
+    togglePassword.addEventListener("click", () => {
+        passwordField.type = passwordField.type === "password" ? "text" : "password";
+        togglePassword.textContent = passwordField.type === "password" ? "👁️" : "👁️‍🗨️";
+    });
+
+    // 🔐 Login submit
+  form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = passwordField.value.trim();
+
+      msg.textContent = "";
+      msg.className = "message";
+
+      if (!email || !password) {
+          showMessage("Please fill in all fields", "error");
+          shake();
+          return;
+      }
+
+      // Validate email format
+      if (!validateEmail(email)) {
+          showMessage("Please enter a valid email address", "error");
+          shake();
+          return;
+      }
+
+      button.disabled = true;
+      buttonText.innerHTML = '<span class="loading"></span> Logging in...';
+
+      try {
+          const result = await auth.login(email, password);
+
+          if (!result.success) {
+              showMessage(result.message || "Login failed", "error");
+              shake();
+              return;
+          }
+
+          // Note: result.user is directly accessible now, not result.data.user
+          showMessage(result.message || `Welcome, ${result.user.name}!`, "success");
+
+          setTimeout(() => window.location.href = "/index.html", 800);
+
+      } catch (err) {
+          console.error(err);
+          showMessage("Server not responding", "error");
+          shake();
+      } finally {
+          button.disabled = false;
+          buttonText.textContent = "Login";
+      }
+  });
+
+    // Helper functions
+    function showMessage(text, type) {
+        msg.textContent = text;
+        msg.className = `message ${type}`;
+        setTimeout(() => msg.classList.add("fade-out"), 3000);
+    }
+
+    function shake() {
+        loginBox.classList.add("shake");
+        setTimeout(() => loginBox.classList.remove("shake"), 500);
+    }
+
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    function requestAccount() {
+        alert("Please contact the system administrator to request an account.\n\nDefault login:\nEmail: admin@seizetrack.com\nPassword: admin123");
+    }
+
+    // Set default credentials for testing (remove in production)
+    document.getElementById("email").value = "admin@seizetrack.com";
+    document.getElementById("password").value = "admin123";
+});
+</script>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./js/auth.js"></script>
+    <title>SeizeTrack - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --slate-950: #020617;
+            --red-50: #fef2f2;
+            --red-100: #fee2e2;
+            --red-600: #dc2626;
+            --green-600: #16a34a;
+            --yellow-100: #fef3c7;
+            --yellow-800: #92400e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Layout Container */
+        .layout-container {
+            min-height: 100vh;
+            background-color: var(--slate-50);
+            display: flex;
+        }
+        
+        /* Mobile Sidebar Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            background-color: rgba(15, 23, 42, 0.5);
+            display: none;
+        }
+        
+        .sidebar-backdrop.active {
+            display: block;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 16rem;
+            background-color: var(--slate-900);
+            color: white;
+            transform: translateX(-100%);
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar {
+                transform: translateX(0);
+                position: relative;
+                inset: auto;
+            }
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        /* Logo */
+        .sidebar-logo {
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid var(--slate-800);
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            color: var(--blue-400);
+            margin-right: 0.75rem;
+        }
+        
+        .logo-text {
+            font-size: 1.125rem;
+            font-weight: bold;
+            letter-spacing: -0.025em;
+        }
+        
+        /* Navigation */
+        .sidebar-nav {
+            flex: 1;
+            padding: 0.75rem;
+            padding-top: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+            text-decoration: none;
+            color: var(--slate-300);
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            background-color: var(--slate-800);
+            color: white;
+        }
+        
+        .nav-item.active {
+            background-color: var(--blue-600);
+            color: white;
+        }
+        
+        .nav-icon {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-item.active .nav-icon {
+            color: white;
+        }
+        
+        .nav-item:not(.active) .nav-icon {
+            color: var(--slate-400);
+        }
+        
+        /* User Profile */
+        .sidebar-profile {
+            padding: 1rem;
+            border-top: 1px solid var(--slate-800);
+        }
+        
+        .profile-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-avatar {
+            height: 2rem;
+            width: 2rem;
+            border-radius: 9999px;
+            background-color: var(--slate-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .profile-info {
+            margin-left: 0.75rem;
+        }
+        
+        .profile-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+        }
+        
+        .profile-role {
+            font-size: 0.75rem;
+            color: var(--slate-400);
+        }
+        
+        .logout-btn {
+            margin-left: auto;
+            color: var(--slate-400);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        .logout-btn:hover {
+            color: white;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            background-color: white;
+            border-bottom: 1px solid var(--slate-200);
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            justify-content: space-between;
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-header {
+                display: none;
+            }
+        }
+        
+        .mobile-logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .mobile-logo-icon {
+            font-size: 1.5rem;
+            color: var(--slate-900);
+            margin-right: 0.5rem;
+        }
+        
+        .mobile-logo-text {
+            font-weight: bold;
+            color: var(--slate-900);
+        }
+        
+        .mobile-menu-btn {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            color: var(--slate-500);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .mobile-menu-btn:hover {
+            background-color: var(--slate-100);
+        }
+        
+        /* Page Content */
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .page-content {
+                padding: 2rem;
+            }
+        }
+        
+        .content-container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+        
+        /* Dashboard Specific Styles */
+        .space-y-8 > * + * {
+            margin-top: 2rem;
+        }
+        
+        /* Header */
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .header p {
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+        
+        @media (min-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .stats-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            padding: 1.25rem;
+            overflow: hidden;
+        }
+        
+        .stats-card-inner {
+            display: flex;
+            align-items: center;
+        }
+        
+        .stats-icon {
+            flex-shrink: 0;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .stats-icon.blue {
+            background-color: var(--blue-50);
+            color: var(--blue-600);
+        }
+        
+        .stats-icon.red {
+            background-color: var(--red-50);
+            color: var(--red-600);
+        }
+        
+        .stats-icon i {
+            font-size: 1.5rem;
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        
+        .stats-content {
+            margin-left: 1.25rem;
+            width: 100%;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .stats-content dt {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .stats-content dd {
+            display: flex;
+            align-items: baseline;
+        }
+        
+        .stats-value {
+            font-size: 1.875rem;
+            font-weight: 600;
+            color: var(--slate-900);
+        }
+        
+        .stats-description {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+        
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+        
+        /* Card Component */
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--slate-100);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--slate-900);
+        }
+        
+        .card-header p {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+            margin-top: 0.125rem;
+        }
+        
+        .card-action {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--blue-600);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-action:hover {
+            color: var(--blue-700);
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            min-width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead tr {
+            border-bottom: 1px solid var(--slate-200);
+        }
+        
+        th {
+            padding: 0.75rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid var(--slate-200);
+        }
+        
+        tbody tr:hover {
+            background-color: var(--slate-50);
+        }
+        
+        td {
+            padding: 1rem 0.75rem;
+            white-space: nowrap;
+            font-size: 0.875rem;
+        }
+        
+        td .person-name {
+            font-weight: 500;
+            color: var(--slate-900);
+        }
+        
+        td .matric-number {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.125rem;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .action-card {
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            display: block;
+            transition: all 0.2s ease;
+        }
+        
+        .action-card.blue {
+            background-color: var(--blue-600);
+            color: white;
+        }
+        
+        .action-card.blue:hover {
+            background-color: var(--blue-700);
+        }
+        
+        .action-card.white {
+            background-color: white;
+            border: 1px solid var(--slate-200);
+            color: var(--slate-900);
+        }
+        
+        .action-card.white:hover {
+            border-color: var(--blue-300);
+        }
+        
+        .action-card-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .action-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .action-card p {
+            font-size: 0.875rem;
+        }
+        
+        .action-card.blue p {
+            color: var(--blue-100);
+        }
+        
+        .action-card.white p {
+            color: var(--slate-500);
+        }
+        
+        .action-icon {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .action-card.blue .action-icon {
+            background-color: var(--blue-500);
+        }
+        
+        .action-card.blue:hover .action-icon {
+            background-color: var(--blue-600);
+        }
+        
+        .action-card.white .action-icon {
+            background-color: var(--slate-100);
+        }
+        
+        .action-card.white:hover .action-icon {
+            background-color: var(--slate-200);
+        }
+        
+        .action-icon i {
+            font-size: 1.5rem;
+        }
+        
+        /* Repeat Offenders List */
+        .offenders-list {
+            list-style-type: none;
+        }
+        
+        .offenders-list li {
+            padding: 0.75rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .offenders-list li + li {
+            border-top: 1px solid var(--slate-100);
+        }
+        
+        .person-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .person-count {
+            height: 2rem;
+            width: 2rem;
+            border-radius: 9999px;
+            background-color: var(--red-100);
+            color: var(--red-600);
+            font-weight: bold;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .person-details {
+            margin-left: 0.75rem;
+        }
+        
+        .person-details .name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-900);
+        }
+        
+        .person-details .matric {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+        }
+        
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .badge.danger {
+            background-color: var(--red-100);
+            color: var(--red-800);
+        }
+        
+        /* Button */
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+            outline: none;
+        }
+        
+        .button.outline {
+            background-color: transparent;
+            border-color: var(--slate-300);
+            color: var(--slate-700);
+        }
+        
+        .button.outline:hover {
+            background-color: var(--slate-50);
+        }
+        
+        .button.sm {
+            height: 2rem;
+            padding: 0 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .button.full-width {
+            width: 100%;
+        }
+        
+        /* Loading and Error states */
+        .loading-state {
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--red-600);
+        }
+        
+        .success-notice {
+            background-color: var(--blue-50);
+            color: var(--blue-800);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--blue-200);
+        }
+        
+        .success-notice i {
+            font-size: 18px;
+            color: var(--blue-600);
+        }
+        
+        /* Animation for loading */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout-container">
+        <!-- Mobile Sidebar Backdrop -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <i class="fas fa-shield-alt logo-icon"></i>
+                <span class="logo-text">SeizeTrack</span>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <a href="./index.html" class="nav-item active">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    Dashboard
+                </a>
+                <a href="./AddSeizure.html" class="nav-item">
+                    <i class="fas fa-plus-circle nav-icon"></i>
+                    Add Seizure
+                </a>
+                <a href="./History.html" class="nav-item">
+                    <i class="fas fa-history nav-icon"></i>
+                    History
+                </a>
+                <a href="./Person.html" class="nav-item">
+                    <i class="fas fa-users nav-icon"></i>
+                    Persons
+                </a>
+            </nav>
+            
+            <!-- User Profile -->
+            <div class="sidebar-profile">
+                <div class="profile-container">
+                    <div class="profile-avatar">AD</div>
+                    <div class="profile-info">
+                        <div class="profile-name">Admin User</div>
+                        <div class="profile-role">Security Dept</div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Mobile Header -->
+            <header class="mobile-header">
+                <div class="mobile-logo">
+                    <i class="fas fa-shield-alt mobile-logo-icon"></i>
+                    <span class="mobile-logo-text">SeizeTrack</span>
+                </div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </header>
+            
+            <!-- Page Content -->
+            <main class="page-content">
+                <div class="content-container">
+                    <!-- Dashboard Page -->
+                    <div class="space-y-8">
+                        <!-- Header -->
+                        <div class="header">
+                            <h1>Dashboard</h1>
+                            <p>Overview of seized devices and enforcement statistics.</p>
+                        </div>
+                        
+                        <!-- Connection Status -->
+                        <div class="success-notice" id="connectionStatus">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Connecting to server...</span>
+                        </div>
+                        
+                        <!-- Stats Grid -->
+                        <div class="stats-grid" id="stats-grid">
+                            <!-- Stats will be loaded from API -->
+                        </div>
+                        
+                        <!-- Main Content -->
+                        <div class="main-layout">
+                            <!-- Left Column -->
+                            <div class="space-y-6">
+                                <!-- Recent Seizures Card -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div>
+                                            <h3>Recent Seizures</h3>
+                                            <p>Latest seizure records</p>
+                                        </div>
+                                        <a href="./History.html" class="card-action">
+                                            View all <i class="fas fa-arrow-right ml-1" style="font-size: 1rem;"></i>
+                                        </a>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-container">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Time</th>
+                                                        <th>Person</th>
+                                                        <th>Device</th>
+                                                        <th>Location</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="recent-seizures">
+                                                    <!-- Seizures will be loaded from API -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Quick Actions -->
+                                <div class="quick-actions">
+                                    <a href="./AddSeizure.html" class="action-card blue">
+                                        <div class="action-card-inner">
+                                            <div>
+                                                <h3>Record Seizure</h3>
+                                                <p>Log a new phone seizure event</p>
+                                            </div>
+                                            <div class="action-icon">
+                                                <i class="fas fa-plus"></i>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    
+                                    <a href="./Person.html" class="action-card white">
+                                        <div class="action-card-inner">
+                                            <div>
+                                                <h3>Search Persons</h3>
+                                                <p>Find history by matric number</p>
+                                            </div>
+                                            <div class="action-icon">
+                                                <i class="fas fa-search"></i>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div>
+                                <!-- Repeat Offenders Card -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div>
+                                            <h3>Repeat Offenders</h3>
+                                            <p>Persons with multiple seizures</p>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="space-y-4">
+                                            <ul class="offenders-list" id="offenders-list">
+                                                <!-- Offenders will be loaded from API -->
+                                            </ul>
+                                            
+                                            <div style="padding-top: 1rem; border-top: 1px solid var(--slate-100);">
+                                                <a href="./Person.html" style="display: block; width: 100%;">
+                                                    <button class="button outline sm full-width">
+                                                        View All Persons
+                                                    </button>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check authentication
+            try {
+                const user = await auth.checkAuth();
+                if (!user) return;
+                
+                // Update user profile in sidebar
+                updateUserProfile(user);
+                
+                // Initialize sidebar
+                setupSidebar();
+                
+                // Load dashboard data
+                await loadDashboardData();
+                
+                // Start auto-refresh
+                startAutoRefresh();
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showNotification('Failed to initialize dashboard', 'error');
+            }
+        });
+
+        function setupSidebar() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    sidebar.classList.add('active');
+                    sidebarBackdrop.classList.add('active');
+                });
+            }
+            
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    sidebarBackdrop.classList.remove('active');
+                });
+            }
+            
+            // Setup logout button
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        await auth.logout();
+                    }
+                });
+            }
+        }
+
+        function updateUserProfile(user) {
+            const profileName = document.querySelector('.profile-name');
+            const profileRole = document.querySelector('.profile-role');
+            const profileAvatar = document.querySelector('.profile-avatar');
+            
+            if (profileName && user.name) {
+                profileName.textContent = user.name;
+            }
+            
+            if (profileRole && user.department) {
+                profileRole.textContent = user.department;
+            }
+            
+            if (profileAvatar && user.name) {
+                profileAvatar.textContent = user.name.charAt(0).toUpperCase();
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Update connection status
+                updateConnectionStatus('Loading dashboard data...', 'loading');
+                
+                // Show loading states
+                renderLoadingStats();
+                renderLoadingSeizures();
+                renderLoadingOffenders();
+                
+                // Fetch dashboard stats using auth.authFetch
+                const response = await auth.authFetch('/stats/dashboard');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateConnectionStatus('Connected to server', 'success');
+                    
+                    // Update stats cards with real data
+                    renderStatsCards(data.data?.stats || {});
+                    
+                    // Update recent seizures table with real data
+                    renderRecentSeizures(data.data?.recentSeizures || []);
+                    
+                    // Update repeat offenders list with real data
+                    renderRepeatOffenders(data.data?.repeatOffendersList || []);
+                } else {
+                    throw new Error(data.message || 'Failed to load dashboard data');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                updateConnectionStatus(`Error: ${error.message}`, 'error');
+                
+                // Don't load fallback data - show error instead
+                showEmptyStates();
+            }
+        }
+
+        function updateConnectionStatus(message, type = 'loading') {
+            const statusElement = document.getElementById('connectionStatus');
+            if (!statusElement) return;
+            
+            // Clear existing classes
+            statusElement.className = 'success-notice';
+            
+            // Update content based on type
+            let icon = 'fa-spinner fa-spin';
+            if (type === 'success') {
+                icon = 'fa-check-circle';
+                statusElement.style.backgroundColor = 'var(--green-50)';
+                statusElement.style.borderColor = 'var(--green-200)';
+            } else if (type === 'error') {
+                icon = 'fa-exclamation-circle';
+                statusElement.style.backgroundColor = 'var(--red-50)';
+                statusElement.style.borderColor = 'var(--red-200)';
+            } else if (type === 'loading') {
+                icon = 'fa-spinner fa-spin';
+                statusElement.style.backgroundColor = 'var(--blue-50)';
+                statusElement.style.borderColor = 'var(--blue-200)';
+            }
+            
+            statusElement.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+        }
+
+        function renderLoadingStats() {
+            const statsGrid = document.getElementById('stats-grid');
+            if (!statsGrid) return;
+            
+            statsGrid.innerHTML = `
+                <div class="stats-card loading">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Total Seizures</dt>
+                                <dd>
+                                    <div class="stats-value">Loading...</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">All time records</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card loading">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Today's Seizures</dt>
+                                <dd>
+                                    <div class="stats-value">Loading...</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Recorded today</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card loading">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Total Persons</dt>
+                                <dd>
+                                    <div class="stats-value">Loading...</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Unique offenders</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card loading">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon red">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Repeat Offenders</dt>
+                                <dd>
+                                    <div class="stats-value">Loading...</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">2+ seizures recorded</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStatsCards(stats) {
+            const statsGrid = document.getElementById('stats-grid');
+            if (!statsGrid) return;
+            
+            const statCards = [
+                {
+                    title: "Total Seizures",
+                    value: stats.totalSeizures || 0,
+                    icon: "mobile-alt",
+                    color: "blue",
+                    description: "All time records"
+                },
+                {
+                    title: "Today's Seizures",
+                    value: stats.todaySeizures || 0,
+                    icon: "calendar-day",
+                    color: "blue",
+                    description: "Recorded today"
+                },
+                {
+                    title: "Total Persons",
+                    value: stats.totalPersons || 0,
+                    icon: "users",
+                    color: "blue",
+                    description: "Unique offenders"
+                },
+                {
+                    title: "Repeat Offenders",
+                    value: stats.repeatOffenders || 0,
+                    icon: "exclamation-triangle",
+                    color: "red",
+                    description: "2+ seizures recorded"
+                }
+            ];
+            
+            statsGrid.innerHTML = statCards.map(stat => `
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon ${stat.color}">
+                            <i class="fas fa-${stat.icon}"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>${stat.title}</dt>
+                                <dd>
+                                    <div class="stats-value">${stat.value}</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">${stat.description}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLoadingSeizures() {
+            const tbody = document.getElementById('recent-seizures');
+            if (!tbody) return;
+            
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="loading-state">
+                        <div style="padding: 2rem 1rem; text-align: center;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--slate-700);">
+                                Loading recent seizures...
+                            </h3>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function renderRecentSeizures(seizures) {
+            const tbody = document.getElementById('recent-seizures');
+            if (!tbody) return;
+            
+            if (!seizures || seizures.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="loading-state">
+                            <div style="padding: 2rem 1rem; text-align: center;">
+                                <i class="fas fa-clock" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--slate-700);">
+                                    No Recent Seizures
+                                </h3>
+                                <p style="color: var(--slate-500); font-size: 0.875rem;">
+                                    Record your first seizure using the "Add Seizure" page.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = seizures.map(seizure => {
+                // Format the date
+                const date = new Date(seizure.createdAt || seizure.date || new Date());
+                const timeString = date.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                // Get person info
+                const personName = seizure.person?.name || 
+                                seizure.studentName || 
+                                seizure['Full Name'] || 
+                                'Unknown';
+                const matricNumber = seizure.person?.matricNumber || 
+                                seizure.studentMatric || 
+                                seizure['Matric Number'] || 
+                                '';
+                
+                // Get device info
+                const deviceModel = seizure.phoneModel || 
+                                seizure.deviceModel || 
+                                seizure['Device Model'] || 
+                                'Unknown';
+                
+                // Get location
+                const location = seizure.location || 
+                            seizure['Location'] || 
+                            'Unknown';
+                
+                return `
+                    <tr>
+                        <td>${timeString}</td>
+                        <td>
+                            <div class="person-name">${personName}</div>
+                            <div class="matric-number">${matricNumber}</div>
+                        </td>
+                        <td>${deviceModel}</td>
+                        <td>${location}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderLoadingOffenders() {
+            const offendersList = document.getElementById('offenders-list');
+            if (!offendersList) return;
+            
+            offendersList.innerHTML = `
+                <div class="loading-state" style="padding: 2rem 1rem;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--slate-700);">
+                        Loading repeat offenders...
+                    </h3>
+                </div>
+            `;
+        }
+
+        function renderRepeatOffenders(offenders) {
+            const offendersList = document.getElementById('offenders-list');
+            if (!offendersList) return;
+            
+            if (!offenders || offenders.length === 0) {
+                offendersList.innerHTML = `
+                    <div class="loading-state" style="padding: 2rem 1rem;">
+                        <i class="fas fa-user-shield" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--slate-700);">
+                            No Repeat Offenders
+                        </h3>
+                        <p style="color: var(--slate-500); font-size: 0.875rem;">
+                            Persons with multiple seizures will appear here.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            offendersList.innerHTML = offenders.map(person => {
+                const seizureCount = person.totalSeizures || 
+                                person.seizureCount || 
+                                person.count || 
+                                0;
+                
+                const badgeClass = seizureCount >= 3 ? 'badge danger' : 'badge';
+                const badgeText = seizureCount >= 3 ? 'Frequent' : 'Repeat';
+                
+                const name = person.name || person['Full Name'] || 'Unknown';
+                const matric = person.matricNumber || person['Matric Number'] || '';
+                const department = person.department || person['Department'] || 'Unknown Dept';
+                
+                return `
+                    <li>
+                        <div class="person-info">
+                            <div class="person-count">${seizureCount}</div>
+                            <div class="person-details">
+                                <div class="name">${name}</div>
+                                <div class="matric">${matric} • ${department}</div>
+                            </div>
+                        </div>
+                        <span class="${badgeClass}">${badgeText}</span>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        function showEmptyStates() {
+            const statsGrid = document.getElementById('stats-grid');
+            const tbody = document.getElementById('recent-seizures');
+            const offendersList = document.getElementById('offenders-list');
+            
+            if (statsGrid) {
+                statsGrid.innerHTML = `
+                    <div class="stats-card">
+                        <div class="stats-card-inner">
+                            <div class="stats-icon blue">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div class="stats-content">
+                                <dl>
+                                    <dt>Total Seizures</dt>
+                                    <dd>
+                                        <div class="stats-value">0</div>
+                                    </dd>
+                                </dl>
+                                <div class="stats-description">No data available</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-card-inner">
+                            <div class="stats-icon blue">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="stats-content">
+                                <dl>
+                                    <dt>Today's Seizures</dt>
+                                    <dd>
+                                        <div class="stats-value">0</div>
+                                    </dd>
+                                </dl>
+                                <div class="stats-description">No data available</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-card-inner">
+                            <div class="stats-icon blue">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stats-content">
+                                <dl>
+                                    <dt>Total Persons</dt>
+                                    <dd>
+                                        <div class="stats-value">0</div>
+                                    </dd>
+                                </dl>
+                                <div class="stats-description">No data available</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-card-inner">
+                            <div class="stats-icon red">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stats-content">
+                                <dl>
+                                    <dt>Repeat Offenders</dt>
+                                    <dd>
+                                        <div class="stats-value">0</div>
+                                    </dd>
+                                </dl>
+                                <div class="stats-description">No data available</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="loading-state">
+                            <div style="padding: 2rem 1rem; text-align: center;">
+                                <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--slate-700);">
+                                    Failed to Load Seizures
+                                </h3>
+                                <p style="color: var(--slate-500); font-size: 0.875rem;">
+                                    Unable to connect to the server. Please check your connection.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            if (offendersList) {
+                offendersList.innerHTML = `
+                    <div class="loading-state" style="padding: 2rem 1rem;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--slate-700);">
+                            Failed to Load Offenders
+                        </h3>
+                        <p style="color: var(--slate-500); font-size: 0.875rem;">
+                            Unable to connect to the server.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const bgColor = type === 'success' ? 'var(--green-100)' : 
+                        type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
+            const textColor = type === 'success' ? 'var(--green-800)' : 
+                            type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
+            const borderColor = type === 'success' ? 'var(--green-300)' : 
+                            type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
+            const icon = type === 'success' ? 'fa-check-circle' : 
+                        type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                background-color: ${bgColor};
+                color: ${textColor};
+                border: 1px solid ${borderColor};
+                z-index: 1000;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                animation: slideIn 0.3s ease;
+                font-family: inherit;
+                font-size: 14px;
+                min-width: 300px;
+                max-width: 400px;
+            `;
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas ${icon}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Add keyframes for animation if not already present
+            if (!document.querySelector('#notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    @keyframes slideOut {
+                        from {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Remove notification after 5 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        function startAutoRefresh() {
+            // Refresh data every 60 seconds
+            setInterval(async () => {
+                try {
+                    await loadDashboardData();
+                } catch (error) {
+                    console.error('Auto-refresh error:', error);
+                }
+            }, 60000); // 60 seconds
+        }
+
+        // Export functions for debugging
+        window.dashboard = {
+            loadDashboardData,
+            showNotification
+        };
+    </script>
+</body>
+</html>

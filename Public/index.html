@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./js/auth.js"></script>
+    <title>SeizeTrack - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ALL YOUR DASHBOARD CSS HERE (keep the same as in your second half) */
+        :root {
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --slate-950: #020617;
+            --red-50: #fef2f2;
+            --red-100: #fee2e2;
+            --red-600: #dc2626;
+            --green-600: #16a34a;
+            --yellow-100: #fef3c7;
+            --yellow-800: #92400e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Add this new style for auth check */
+        .auth-check-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--slate-50);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .auth-check-spinner {
+            font-size: 3rem;
+            color: var(--blue-600);
+            margin-bottom: 1rem;
+        }
+        
+        .auth-check-message {
+            font-size: 1.125rem;
+            color: var(--slate-600);
+            margin-bottom: 1rem;
+        }
+        
+        .auth-check-error {
+            background: var(--red-50);
+            border: 1px solid var(--red-200);
+            color: var(--red-600);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .auth-check-error a {
+            color: var(--blue-600);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .auth-check-error a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Layout Container */
+        .layout-container {
+            min-height: 100vh;
+            background-color: var(--slate-50);
+            display: flex;
+        }
+        
+        /* Mobile Sidebar Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            background-color: rgba(15, 23, 42, 0.5);
+            display: none;
+        }
+        
+        .sidebar-backdrop.active {
+            display: block;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 16rem;
+            background-color: var(--slate-900);
+            color: white;
+            transform: translateX(-100%);
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar {
+                transform: translateX(0);
+                position: relative;
+                inset: auto;
+            }
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        /* ... REST OF YOUR DASHBOARD CSS EXACTLY AS YOU HAVE IT ... */
+        /* Continue with all your CSS from the dashboard section */
+    </style>
+</head>
+<body>
+    <!-- Authentication Check Overlay -->
+    <div class="auth-check-overlay" id="authCheckOverlay">
+        <div class="auth-check-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div class="auth-check-message" id="authCheckMessage">Checking authentication...</div>
+    </div>
+    
+    <!-- Main Dashboard Content (initially hidden) -->
+    <div id="dashboardContent" style="display: none;">
+        <!-- YOUR ENTIRE DASHBOARD HTML HERE -->
+        <div class="layout-container">
+            <!-- Mobile Sidebar Backdrop -->
+            <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+            
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <!-- Logo -->
+                <div class="sidebar-logo">
+                    <i class="fas fa-shield-alt logo-icon"></i>
+                    <span class="logo-text">SeizeTrack</span>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="sidebar-nav">
+                    <a href="./index.html" class="nav-item active">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        Dashboard
+                    </a>
+                    <a href="./AddSeizure.html" class="nav-item">
+                        <i class="fas fa-plus-circle nav-icon"></i>
+                        Add Seizure
+                    </a>
+                    <a href="./History.html" class="nav-item">
+                        <i class="fas fa-history nav-icon"></i>
+                        History
+                    </a>
+                    <a href="./Person.html" class="nav-item">
+                        <i class="fas fa-users nav-icon"></i>
+                        Persons
+                    </a>
+                </nav>
+                
+                <!-- User Profile -->
+                <div class="sidebar-profile">
+                    <div class="profile-container">
+                        <div class="profile-avatar" id="profileAvatar">AD</div>
+                        <div class="profile-info">
+                            <div class="profile-name" id="profileName">Admin User</div>
+                            <div class="profile-role" id="profileRole">Security Dept</div>
+                        </div>
+                        <button class="logout-btn" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Mobile Header -->
+                <header class="mobile-header">
+                    <div class="mobile-logo">
+                        <i class="fas fa-shield-alt mobile-logo-icon"></i>
+                        <span class="mobile-logo-text">SeizeTrack</span>
+                    </div>
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </header>
+                
+                <!-- Page Content -->
+                <main class="page-content">
+                    <div class="content-container">
+                        <!-- Dashboard Page -->
+                        <div class="space-y-8">
+                            <!-- Header -->
+                            <div class="header">
+                                <h1>Dashboard</h1>
+                                <p>Overview of seized devices and enforcement statistics.</p>
+                            </div>
+                            
+                            <!-- Connection Status -->
+                            <div class="success-notice" id="connectionStatus">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>Connecting to server...</span>
+                            </div>
+                            
+                            <!-- Stats Grid -->
+                            <div class="stats-grid" id="stats-grid">
+                                <!-- Stats will be loaded from API -->
+                            </div>
+                            
+                            <!-- Main Content -->
+                            <div class="main-layout">
+                                <!-- Left Column -->
+                                <div class="space-y-6">
+                                    <!-- Recent Seizures Card -->
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <div>
+                                                <h3>Recent Seizures</h3>
+                                                <p>Latest seizure records</p>
+                                            </div>
+                                            <a href="./History.html" class="card-action">
+                                                View all <i class="fas fa-arrow-right ml-1" style="font-size: 1rem;"></i>
+                                            </a>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-container">
+                                                <table>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Time</th>
+                                                            <th>Person</th>
+                                                            <th>Device</th>
+                                                            <th>Location</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="recent-seizures">
+                                                        <!-- Seizures will be loaded from API -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Quick Actions -->
+                                    <div class="quick-actions">
+                                        <a href="./AddSeizure.html" class="action-card blue">
+                                            <div class="action-card-inner">
+                                                <div>
+                                                    <h3>Record Seizure</h3>
+                                                    <p>Log a new phone seizure event</p>
+                                                </div>
+                                                <div class="action-icon">
+                                                    <i class="fas fa-plus"></i>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        
+                                        <a href="./Person.html" class="action-card white">
+                                            <div class="action-card-inner">
+                                                <div>
+                                                    <h3>Search Persons</h3>
+                                                    <p>Find history by matric number</p>
+                                                </div>
+                                                <div class="action-icon">
+                                                    <i class="fas fa-search"></i>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Right Column -->
+                                <div>
+                                    <!-- Repeat Offenders Card -->
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <div>
+                                                <h3>Repeat Offenders</h3>
+                                                <p>Persons with multiple seizures</p>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="space-y-4">
+                                                <ul class="offenders-list" id="offenders-list">
+                                                    <!-- Offenders will be loaded from API -->
+                                                </ul>
+                                                
+                                                <div style="padding-top: 1rem; border-top: 1px solid var(--slate-100);">
+                                                    <a href="./Person.html" style="display: block; width: 100%;">
+                                                        <button class="button outline sm full-width">
+                                                            View All Persons
+                                                        </button>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for DOM and auth.js to load
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Dashboard initialization started...');
+            
+            // Show auth check overlay
+            const authCheckOverlay = document.getElementById('authCheckOverlay');
+            const authCheckMessage = document.getElementById('authCheckMessage');
+            const dashboardContent = document.getElementById('dashboardContent');
+            
+            try {
+                // Check if auth.js is loaded
+                if (!window.auth) {
+                    throw new Error('Authentication system not loaded. Please refresh the page.');
+                }
+                
+                // Check if user is logged in
+                if (!auth.isLoggedIn()) {
+                    authCheckMessage.textContent = 'Not logged in. Redirecting to login...';
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                    return;
+                }
+                
+                // Verify token with server
+                authCheckMessage.textContent = 'Verifying session...';
+                const user = await auth.checkAuth();
+                
+                if (!user) {
+                    authCheckMessage.textContent = 'Session expired. Redirecting to login...';
+                    setTimeout(() => {
+                        auth.clearAuth();
+                        window.location.href = '/';
+                    }, 1000);
+                    return;
+                }
+                
+                // Authentication successful - show dashboard
+                authCheckMessage.textContent = 'Authentication successful! Loading dashboard...';
+                
+                // Update user profile
+                updateUserProfile(user);
+                
+                // Initialize dashboard
+                setTimeout(() => {
+                    authCheckOverlay.style.display = 'none';
+                    dashboardContent.style.display = 'block';
+                    
+                    // Setup sidebar
+                    setupSidebar();
+                    
+                    // Load dashboard data
+                    loadDashboardData();
+                }, 500);
+                
+            } catch (error) {
+                console.error('Authentication error:', error);
+                authCheckMessage.innerHTML = `
+                    <div class="auth-check-error">
+                        <p><strong>Authentication Error:</strong></p>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 1rem;">
+                            <a href="/">Click here to login</a>
+                        </p>
+                    </div>
+                `;
+            }
+        });
+
+        function setupSidebar() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
+            // Mobile menu toggle
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    sidebar.classList.add('active');
+                    sidebarBackdrop.classList.add('active');
+                });
+            }
+            
+            // Sidebar backdrop click to close
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    sidebarBackdrop.classList.remove('active');
+                });
+            }
+            
+            // Logout button
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        try {
+                            await auth.logout();
+                        } catch (error) {
+                            console.error('Logout error:', error);
+                            window.location.href = '/';
+                        }
+                    }
+                });
+            }
+            
+            // Navigation active state
+            const currentPage = window.location.pathname.split('/').pop();
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                const href = item.getAttribute('href');
+                if (href && href.includes(currentPage)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        function updateUserProfile(user) {
+            const profileName = document.getElementById('profileName');
+            const profileRole = document.getElementById('profileRole');
+            const profileAvatar = document.getElementById('profileAvatar');
+            
+            if (profileName && user.name) {
+                profileName.textContent = user.name;
+            }
+            
+            if (profileRole && user.department) {
+                profileRole.textContent = user.department;
+            }
+            
+            if (profileAvatar && user.name) {
+                // Get initials from name
+                const initials = user.name
+                    .split(' ')
+                    .map(word => word.charAt(0))
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+                profileAvatar.textContent = initials;
+            }
+        }
+
+        async function loadDashboardData() {
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            try {
+                // Show loading state
+                connectionStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading dashboard data...</span>';
+                connectionStatus.style.backgroundColor = 'var(--blue-50)';
+                connectionStatus.style.borderColor = 'var(--blue-200)';
+                
+                // Show loading skeletons
+                renderLoadingStats();
+                renderLoadingSeizures();
+                renderLoadingOffenders();
+                
+                // Get auth headers
+                const headers = auth.getAuthHeaders();
+                
+                // Fetch dashboard data
+                const response = await fetch('/api/stats/dashboard', {
+                    headers: headers
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update connection status
+                    connectionStatus.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected to server</span>';
+                    connectionStatus.style.backgroundColor = 'var(--green-50)';
+                    connectionStatus.style.borderColor = 'var(--green-200)';
+                    
+                    // Render the data
+                    renderStatsCards(result.data.stats);
+                    renderRecentSeizures(result.data.recentSeizures);
+                    renderRepeatOffenders(result.data.repeatOffendersList);
+                } else {
+                    throw new Error(result.message || 'Failed to load dashboard data');
+                }
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                
+                // Update connection status
+                connectionStatus.innerHTML = `<i class="fas fa-exclamation-circle"></i><span>Error: ${error.message}</span>`;
+                connectionStatus.style.backgroundColor = 'var(--red-50)';
+                connectionStatus.style.borderColor = 'var(--red-200)';
+                
+                // Show error states
+                showErrorStates();
+            }
+        }
+
+        function renderLoadingStats() {
+            const statsGrid = document.getElementById('stats-grid');
+            if (!statsGrid) return;
+            
+            const loadingHTML = `
+                <div class="stats-card loading">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Total Seizures</dt>
+                                <dd>
+                                    <div class="stats-value">Loading...</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">All time records</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card loading">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Today's Seizures</dt>
+                                <dd>
+                                    <div class="stats-value">Loading...</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Recorded today</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card loading">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Total Persons</dt>
+                                <dd>
+                                    <div class="stats-value">Loading...</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Unique offenders</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card loading">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon red">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Repeat Offenders</dt>
+                                <dd>
+                                    <div class="stats-value">Loading...</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">2+ seizures recorded</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            statsGrid.innerHTML = loadingHTML;
+        }
+
+        function renderStatsCards(stats) {
+            const statsGrid = document.getElementById('stats-grid');
+            if (!statsGrid || !stats) return;
+            
+            const statsHTML = `
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Total Seizures</dt>
+                                <dd>
+                                    <div class="stats-value">${stats.totalSeizures || 0}</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">All time records</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Today's Seizures</dt>
+                                <dd>
+                                    <div class="stats-value">${stats.todaySeizures || 0}</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Recorded today</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Total Persons</dt>
+                                <dd>
+                                    <div class="stats-value">${stats.totalPersons || 0}</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Unique offenders</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon red">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Repeat Offenders</dt>
+                                <dd>
+                                    <div class="stats-value">${stats.repeatOffenders || 0}</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">2+ seizures recorded</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            statsGrid.innerHTML = statsHTML;
+        }
+
+        function renderLoadingSeizures() {
+            const tbody = document.getElementById('recent-seizures');
+            if (!tbody) return;
+            
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 3rem 1rem;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                        <p style="color: var(--slate-600);">Loading recent seizures...</p>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function renderRecentSeizures(seizures) {
+            const tbody = document.getElementById('recent-seizures');
+            if (!tbody) return;
+            
+            if (!seizures || seizures.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 3rem 1rem;">
+                            <i class="fas fa-clock" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                            <p style="color: var(--slate-600);">No recent seizures found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            seizures.forEach(seizure => {
+                const date = new Date(seizure.createdAt);
+                const timeString = date.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                html += `
+                    <tr>
+                        <td>${timeString}</td>
+                        <td>
+                            <div class="person-name">${seizure.person?.name || 'Unknown'}</div>
+                            <div class="matric-number">${seizure.person?.matricNumber || ''}</div>
+                        </td>
+                        <td>${seizure.phoneModel || 'Unknown'}</td>
+                        <td>${seizure.location || 'Unknown'}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function renderLoadingOffenders() {
+            const offendersList = document.getElementById('offenders-list');
+            if (!offendersList) return;
+            
+            offendersList.innerHTML = `
+                <div style="text-align: center; padding: 2rem 1rem;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--slate-600);">Loading repeat offenders...</p>
+                </div>
+            `;
+        }
+
+        function renderRepeatOffenders(offenders) {
+            const offendersList = document.getElementById('offenders-list');
+            if (!offendersList) return;
+            
+            if (!offenders || offenders.length === 0) {
+                offendersList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem 1rem;">
+                        <i class="fas fa-user-shield" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                        <p style="color: var(--slate-600);">No repeat offenders found</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            offenders.forEach(offender => {
+                const seizureCount = offender.totalSeizures || 0;
+                const badgeClass = seizureCount >= 3 ? 'badge danger' : 'badge';
+                const badgeText = seizureCount >= 3 ? 'Frequent' : 'Repeat';
+                
+                html += `
+                    <li>
+                        <div class="person-info">
+                            <div class="person-count">${seizureCount}</div>
+                            <div class="person-details">
+                                <div class="name">${offender.name || 'Unknown'}</div>
+                                <div class="matric">${offender.matricNumber || ''} • ${offender.department || ''}</div>
+                            </div>
+                        </div>
+                        <span class="${badgeClass}">${badgeText}</span>
+                    </li>
+                `;
+            });
+            
+            offendersList.innerHTML = html;
+        }
+
+        function showErrorStates() {
+            const statsGrid = document.getElementById('stats-grid');
+            const tbody = document.getElementById('recent-seizures');
+            const offendersList = document.getElementById('offenders-list');
+            
+            if (statsGrid) {
+                statsGrid.innerHTML = `
+                    <div class="stats-card">
+                        <div class="stats-card-inner">
+                            <div class="stats-icon blue">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div class="stats-content">
+                                <dl>
+                                    <dt>Total Seizures</dt>
+                                    <dd>
+                                        <div class="stats-value">N/A</div>
+                                    </dd>
+                                </dl>
+                                <div class="stats-description">Failed to load</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-card-inner">
+                            <div class="stats-icon blue">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="stats-content">
+                                <dl>
+                                    <dt>Today's Seizures</dt>
+                                    <dd>
+                                        <div class="stats-value">N/A</div>
+                                    </dd>
+                                </dl>
+                                <div class="stats-description">Failed to load</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-card-inner">
+                            <div class="stats-icon blue">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stats-content">
+                                <dl>
+                                    <dt>Total Persons</dt>
+                                    <dd>
+                                        <div class="stats-value">N/A</div>
+                                    </dd>
+                                </dl>
+                                <div class="stats-description">Failed to load</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-card-inner">
+                            <div class="stats-icon red">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stats-content">
+                                <dl>
+                                    <dt>Repeat Offenders</dt>
+                                    <dd>
+                                        <div class="stats-value">N/A</div>
+                                    </dd>
+                                </dl>
+                                <div class="stats-description">Failed to load</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 3rem 1rem;">
+                            <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--red-400); margin-bottom: 1rem;"></i>
+                            <p style="color: var(--slate-600);">Failed to load recent seizures</p>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            if (offendersList) {
+                offendersList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem 1rem;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--red-400); margin-bottom: 1rem;"></i>
+                        <p style="color: var(--slate-600);">Failed to load repeat offenders</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (document.getElementById('dashboardContent').style.display === 'block') {
+                loadDashboardData();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
