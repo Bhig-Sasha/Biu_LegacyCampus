@@ -8,6 +8,7 @@ const rateLimit = require("express-rate-limit"); // For rate limiting
 const { createClient } = require("@supabase/supabase-js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fs = require('fs');
 
 // =============================================
 // SEIZETRACK SERVER WITH SUPABASE - PRODUCTION
@@ -127,11 +128,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.set('trust proxy', 1);
 
 // Serve static files with caching
-app.use(express.static('public', {
-    maxAge: '1d',
-    etag: true,
-    lastModified: true
-}));
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'dist')));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  });
+} else {
+  app.use(express.static('public'));
+}
 
 // Request logging in production
 if (config.NODE_ENV === 'production') {
