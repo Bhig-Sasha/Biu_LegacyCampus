@@ -1,8 +1,8 @@
-// Authentication utilities for frontend
+// Authentication utilities for frontend with Supabase
 class Auth {
     constructor() {
-        // Use relative URL to avoid CORS issues
-        this.API_BASE_URL = 'http://localhost:5000/api';
+        // Production URL only - Render backend
+        this.API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
         this.currentUser = null;
         this.loadUserFromStorage();
     }
@@ -25,7 +25,7 @@ class Auth {
         return !!localStorage.getItem('token');
     }
 
-    // Login function
+    // Login function with Supabase
     async login(email, password) {
         try {
             const response = await fetch(`${this.API_BASE_URL}/auth/login`, {
@@ -38,7 +38,8 @@ class Auth {
 
             // Check if response is OK and has content
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
             // Check if response has content
@@ -50,10 +51,12 @@ class Auth {
             const data = await response.json();
 
             if (data.success) {
-                // Save token and user data
+                // Save token and user data from Supabase
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('supabase_user_id', data.user.id); // Store Supabase user ID
                 this.currentUser = data.user;
+                
                 return { 
                     success: true, 
                     message: data.message,
@@ -96,7 +99,7 @@ class Auth {
         }
     }
 
-    // Check authentication with server validation
+    // Check authentication with server validation (Supabase session check)
     async checkAuth() {
         const token = localStorage.getItem('token');
         
@@ -120,6 +123,11 @@ class Auth {
                     return this.currentUser;
                 }
             }
+            
+            // If response is not ok, clear auth
+            if (response.status === 401) {
+                this.clearAuth();
+            }
             return null;
             
         } catch (error) {
@@ -133,23 +141,29 @@ class Auth {
         return this.currentUser;
     }
 
+    // Get Supabase user ID
+    getSupabaseUserId() {
+        return localStorage.getItem('supabase_user_id');
+    }
+
     // Get auth token
     getToken() {
         return localStorage.getItem('token');
     }
 
-    // Logout
+    // Logout (clear Supabase session)
     async logout() {
         try {
             const token = this.getToken();
             if (token) {
-                await fetch(`${this.API_BASE_URL}/auth/logout`, {
+                // Attempt to notify server, but don't wait for response
+                fetch(`${this.API_BASE_URL}/auth/logout`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
-                });
+                }).catch(err => console.warn('Logout notification failed:', err));
             }
         } catch (error) {
             console.error('Logout error:', error);
@@ -167,6 +181,7 @@ class Auth {
         localStorage.removeItem('name');
         localStorage.removeItem('role');
         localStorage.removeItem('department');
+        localStorage.removeItem('supabase_user_id');
         this.currentUser = null;
     }
 
@@ -197,21 +212,27 @@ class Auth {
     async authFetch(url, options = {}) {
         const headers = this.getAuthHeaders();
         
-        const response = await fetch(`${this.API_BASE_URL}${url}`, {
-            ...options,
-            headers: {
-                ...headers,
-                ...options.headers
+        try {
+            const response = await fetch(`${this.API_BASE_URL}${url}`, {
+                ...options,
+                headers: {
+                    ...headers,
+                    ...options.headers
+                }
+            });
+
+            if (response.status === 401) {
+                // Token expired or invalid
+                this.clearAuth();
+                window.location.href = '/';
+                throw new Error('Session expired. Please login again.');
             }
-        });
 
-        if (response.status === 401) {
-            // Token expired or invalid
-            this.logout();
-            throw new Error('Session expired. Please login again.');
+            return response;
+        } catch (error) {
+            console.error('Auth fetch error:', error);
+            throw error;
         }
-
-        return response;
     }
 
     // Check user role
@@ -222,6 +243,11 @@ class Auth {
     // Check user role
     isSecurity() {
         return this.currentUser && this.currentUser.role === 'security';
+    }
+
+    // Check if user is a student
+    isStudent() {
+        return this.currentUser && this.currentUser.role === 'student';
     }
 }
 
@@ -253,6 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Update profile in sidebar
             const profileName = document.querySelector('.profile-name');
             const profileRole = document.querySelector('.profile-role');
+            const userAvatar = document.querySelector('.user-avatar span');
             
             if (profileName) {
                 profileName.textContent = user.name || user.email || 'User';
@@ -262,10 +289,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 profileRole.textContent = user.department || user.role || 'Security Dept';
             }
 
+            if (userAvatar) {
+                userAvatar.textContent = (user.name || user.email || 'U').charAt(0).toUpperCase();
+            }
+
             // Update logout button
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', async (e) => {
+                // Remove any existing event listeners
+                const newLogoutBtn = logoutBtn.cloneNode(true);
+                logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+                
+                newLogoutBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     if (confirm('Are you sure you want to logout?')) {
                         await auth.logout();
@@ -275,5 +310,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error('Auth initialization error:', error);
+    }
+});
+
+// Add global error handler for fetch failures
+window.addEventListener('unhandledrejection', function(event) {
+    if (event.reason && event.reason.message && 
+        (event.reason.message.includes('Failed to fetch') || 
+         event.reason.message.includes('Network error'))) {
+        console.warn('Network error detected - server might be starting up');
+        // Optionally show a user-friendly message
     }
 });

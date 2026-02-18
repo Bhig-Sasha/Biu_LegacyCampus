@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="./js/auth.js"></script>
-  <title>Security Login</title>
+  <title>Security Login - SeizeTrack</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family:'Poppins', sans-serif;
-      background: linear-gradient(135deg,#f5f6fa 0%,#e8ecf1 100%);
+      background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
       display:flex; justify-content:center; align-items:center;
       min-height:100vh; padding:20px;
     }
@@ -23,172 +23,389 @@
       text-align:center;
     }
     .login-box:hover { transform:translateY(-5px); box-shadow:0 15px 30px rgba(0,0,0,0.15); }
-    .logo { width:100%; max-width:250px; height:auto; margin:0 auto 5px; display:block; object-fit:contain; }
-    @media(max-width:480px){ .logo{ max-width:200px; margin-bottom:15px; } }
-    h2 { text-align:center; margin-bottom:25px; color:#2c3e50; font-weight:600; position:relative; padding-bottom:10px; }
-    h2:after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:50px; height:3px; background:#007bff; border-radius:2px; }
-    .input-group{ position:relative; margin-bottom:25px; text-align:left; }
-    input{
-      width:100%; padding:12px 40px 12px 15px; border:1px solid #ddd; border-radius:8px; font-size:14px;
-      background:#f9f9f9; transition:all 0.3s ease;
-    }
-    input:focus{
-      outline:none; border-color:#007bff;
-      box-shadow:0 0 0 3px rgba(0,123,255,0.1); background:#fff; transform:translateY(-2px);
-    }
-    label{
-      position:absolute; top:50%; left:15px; transform:translateY(-50%);
-      color:#999; font-size:14px; pointer-events:none; transition:all 0.3s ease;
-    }
-    input:focus + label,
-    input:not(:placeholder-shown) + label{
-      top:-10px; left:10px; font-size:12px; color:#007bff; background:#fff; padding:0 5px;
-    }
-    .toggle-password{
-      position:absolute; right:12px; top:50%; transform:translateY(-50%);
-      cursor:pointer; font-size:16px; color:#666; user-select:none;
-    }
-    .toggle-password:hover{ color:#007bff; }
-    button{
-      width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px;
-      cursor:pointer; font-size:16px; font-weight:500; transition:all 0.3s ease;
-    }
-    button:hover{ background:#0056b3; transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,123,255,0.3); }
-    .message{ text-align:center; margin-top:15px; min-height:22px; font-weight:500; opacity:1; transition:opacity 0.5s ease; }
-    .fade-out{ opacity:0; }
-    .success{ color:#28a745; }
-    .error{ color:#dc3545; }
-    .loading{
-      display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,.3);
-      border-radius:50%; border-top-color:#fff; animation:spin 1s ease-in-out infinite;
-      margin-right:10px; vertical-align:middle;
-    }
-    .request-account{ text-align:center; margin-top:20px; font-size:14px; color:#555; }
-    .request-account a{ color:#007bff; text-decoration:none; font-weight:500; }
-    .request-account a:hover{ text-decoration:underline; }
-    @keyframes fadeIn{ from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
-    @keyframes spin{ to{ transform:rotate(360deg);} }
-    @keyframes shake{ 0%,100%{transform:translateX(0);} 10%,30%,50%,70%,90%{transform:translateX(-5px);} 20%,40%,60%,80%{transform:translateX(5px);} }
-    .shake{ animation:shake 0.5s ease-in-out; }
-    @media(max-width:480px){ .login-box{ padding:30px 20px; } h2{ font-size:22px; } }
     
-    /* Fix for missing logo - add a fallback */
-    .logo-placeholder {
-      display: none; /* Hidden by default, shown only if logo fails */
-    }
-    
+    /* Logo styling */
     .logo {
       background: linear-gradient(135deg, #007bff, #0056b3);
       border-radius: 10px;
-      padding: 20px;
+      padding: 25px 20px;
       color: white;
-      font-size: 40px;
       text-align: center;
       margin-bottom: 20px;
+      box-shadow: 0 5px 15px rgba(0,123,255,0.3);
     }
     
     .logo i {
-      font-size: 50px;
+      font-size: 60px;
+      margin-bottom: 10px;
+      animation: pulse 2s infinite;
+    }
+    
+    .logo div {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    
+    .logo span {
+      font-size: 14px;
+      opacity: 0.9;
+      display: block;
+      margin-top: 5px;
+      font-weight: 300;
+    }
+    
+    h2 { 
+      text-align:center; 
+      margin-bottom:25px; 
+      color:#2c3e50; 
+      font-weight:600; 
+      position:relative; 
+      padding-bottom:10px; 
+    }
+    
+    h2:after { 
+      content:''; 
+      position:absolute; 
+      bottom:0; 
+      left:50%; 
+      transform:translateX(-50%); 
+      width:50px; 
+      height:3px; 
+      background:#007bff; 
+      border-radius:2px; 
+    }
+    
+    .input-group { 
+      position:relative; 
+      margin-bottom:25px; 
+      text-align:left; 
+    }
+    
+    input {
+      width:100%; 
+      padding:15px 45px 15px 15px; 
+      border:2px solid #e0e0e0; 
+      border-radius:10px; 
+      font-size:15px;
+      background:#f9f9f9; 
+      transition:all 0.3s ease;
+    }
+    
+    input:focus {
+      outline:none; 
+      border-color:#007bff;
+      box-shadow:0 0 0 3px rgba(0,123,255,0.1); 
+      background:#fff; 
+    }
+    
+    .input-group label {
+      position:absolute; 
+      top:50%; 
+      left:15px; 
+      transform:translateY(-50%);
+      color:#999; 
+      font-size:14px; 
+      pointer-events:none; 
+      transition:all 0.3s ease;
+      background: transparent;
+      padding: 0 5px;
+    }
+    
+    input:focus + label,
+    input:not(:placeholder-shown) + label {
+      top:-10px; 
+      left:10px; 
+      font-size:12px; 
+      color:#007bff; 
+      background:#fff; 
+      padding:0 5px;
+    }
+    
+    .input-group i {
+      position:absolute; 
+      right:15px; 
+      top:50%; 
+      transform:translateY(-50%);
+      color:#999;
+      font-size:18px;
+    }
+    
+    .toggle-password {
+      position:absolute; 
+      right:15px; 
+      top:50%; 
+      transform:translateY(-50%);
+      cursor:pointer; 
+      color:#666; 
+      user-select:none;
+      font-size:18px;
+      z-index: 2;
+    }
+    
+    .toggle-password:hover { 
+      color:#007bff; 
+    }
+    
+    button {
+      width:100%; 
+      padding:15px; 
+      background:linear-gradient(135deg, #007bff, #0056b3); 
+      color:#fff; 
+      border:none; 
+      border-radius:10px;
+      cursor:pointer; 
+      font-size:16px; 
+      font-weight:600; 
+      transition:all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    button:hover { 
+      transform:translateY(-2px); 
+      box-shadow:0 5px 15px rgba(0,123,255,0.4); 
+    }
+    
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .message { 
+      text-align:center; 
+      margin-top:15px; 
+      min-height:30px; 
+      font-weight:500; 
+      padding: 10px;
+      border-radius: 5px;
+      transition:opacity 0.5s ease; 
+    }
+    
+    .fade-out { 
+      opacity:0; 
+    }
+    
+    .success { 
+      color:#155724; 
+      background:#d4edda; 
+      border:1px solid #c3e6cb;
+    }
+    
+    .error { 
+      color:#721c24; 
+      background:#f8d7da; 
+      border:1px solid #f5c6cb;
+    }
+    
+    .loading {
+      display:inline-block; 
+      width:20px; 
+      height:20px; 
+      border:3px solid rgba(255,255,255,.3);
+      border-radius:50%; 
+      border-top-color:#fff; 
+      animation:spin 1s ease-in-out infinite;
+      margin-right:10px; 
+      vertical-align:middle;
+    }
+    
+    .request-account { 
+      text-align:center; 
+      margin-top:20px; 
+      font-size:14px; 
+      color:#555; 
+    }
+    
+    .request-account a { 
+      color:#007bff; 
+      text-decoration:none; 
+      font-weight:500; 
+      display: inline-block;
+      margin-top: 5px;
+    }
+    
+    .request-account a:hover { 
+      text-decoration:underline; 
+    }
+    
+    @keyframes fadeIn { 
+      from{opacity:0; transform:translateY(20px);} 
+      to{opacity:1; transform:translateY(0);} 
+    }
+    
+    @keyframes spin { 
+      to{ transform:rotate(360deg);} 
+    }
+    
+    @keyframes shake { 
+      0%,100%{transform:translateX(0);} 
+      10%,30%,50%,70%,90%{transform:translateX(-5px);} 
+      20%,40%,60%,80%{transform:translateX(5px);} 
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .shake { 
+      animation:shake 0.5s ease-in-out; 
+    }
+    
+    @media(max-width:480px) { 
+      .login-box{ padding:30px 20px; } 
+      h2{ font-size:22px; } 
+      .logo i { font-size: 50px; }
+      .logo div { font-size: 20px; }
     }
   </style>
 </head>
 <body>
 <div class="login-container">
   <div class="login-box">
-    <!-- Replace the broken logo with Font Awesome icon -->
+    <!-- Logo with Font Awesome icon -->
     <div class="logo">
       <i class="fas fa-shield-alt"></i>
-      <div style="font-size: 18px; margin-top: 10px; font-weight: 500;">SeizeTrack</div>
+      <div>SeizeTrack</div>
+      <span>Security Management System</span>
     </div>
+    
     <h2>Welcome Back!</h2>
+    
     <form id="loginForm" novalidate>
       <div class="input-group">
         <input id="email" type="email" placeholder=" " autocomplete="email" required />
         <label for="email">Email Address</label>
+        <i class="fas fa-envelope"></i>
       </div>
+      
       <div class="input-group">
         <input id="password" type="password" placeholder=" " autocomplete="current-password" required />
         <label for="password">Password</label>
         <span class="toggle-password" id="togglePassword" role="button" aria-label="Toggle password visibility">
+          <i class="fas fa-eye"></i>
         </span>
       </div>
-      <button type="submit"><span id="button-text">Login</span></button>
+      
+      <button type="submit" id="loginButton">
+        <span id="button-text">Login</span>
+      </button>
+      
       <div id="msg" class="message"></div>
     </form>
-    <p class="request-account">Don't have an account?<br><a href="javascript:void(0)" onclick="requestAccount()">Request one from admin</a></p>
+    
+    <p class="request-account">
+      Don't have an account?<br>
+      <a href="javascript:void(0)" onclick="requestAccount()">Request one from admin</a>
+    </p>
   </div>
 </div>
 
 <script>
-// Make sure auth is loaded
-window.addEventListener('DOMContentLoaded', function() {
+// Wait for auth to be loaded
+document.addEventListener('DOMContentLoaded', function() {
     // Initialize form after DOM is loaded
     const form = document.getElementById("loginForm");
     const msg = document.getElementById("msg");
-    const button = form.querySelector("button");
+    const button = document.getElementById("loginButton");
     const buttonText = document.getElementById("button-text");
     const loginBox = document.querySelector(".login-box");
     const passwordField = document.getElementById("password");
     const togglePassword = document.getElementById("togglePassword");
+    const emailField = document.getElementById("email");
+
+    // Check if auth object exists
+    if (typeof auth === 'undefined') {
+        console.error('Auth object not loaded. Check auth.js path.');
+        showMessage("Authentication system not loaded. Please refresh.", "error");
+        return;
+    }
 
     // Check if already logged in
-    if (auth && auth.isLoggedIn && auth.isLoggedIn()) {
+    if (auth.isLoggedIn && auth.isLoggedIn()) {
         window.location.href = '/index.html';
+        return;
     }
 
     // 👁️ Toggle password visibility
-    togglePassword.addEventListener("click", () => {
-        passwordField.type = passwordField.type === "password" ? "text" : "password";
-        togglePassword.textContent = passwordField.type === "password" ? "👁️" : "👁️‍🗨️";
+    togglePassword.addEventListener("click", function() {
+        const type = passwordField.type === "password" ? "text" : "password";
+        passwordField.type = type;
+        
+        // Toggle eye icon
+        const icon = togglePassword.querySelector('i');
+        if (icon) {
+            icon.className = type === "password" ? "fas fa-eye" : "fas fa-eye-slash";
+        }
     });
 
     // 🔐 Login submit
-    form.addEventListener("submit", async (e) => {
+    form.addEventListener("submit", async function(e) {
       e.preventDefault();
 
-      const email = document.getElementById("email").value.trim();
+      const email = emailField.value.trim();
       const password = passwordField.value.trim();
 
+      // Clear previous messages
       msg.textContent = "";
       msg.className = "message";
 
+      // Validation
       if (!email || !password) {
           showMessage("Please fill in all fields", "error");
           shake();
           return;
       }
 
-      // Validate email format
       if (!validateEmail(email)) {
           showMessage("Please enter a valid email address", "error");
           shake();
           return;
       }
 
+      // Disable button and show loading
       button.disabled = true;
       buttonText.innerHTML = '<span class="loading"></span> Logging in...';
 
       try {
+          // Call auth.login
           const result = await auth.login(email, password);
 
-          if (!result.success) {
-              showMessage(result.message || "Login failed", "error");
+          if (!result || !result.success) {
+              showMessage(result?.message || "Login failed. Please check your credentials.", "error");
               shake();
               return;
           }
 
-          // Note: result.user is directly accessible now, not result.data.user
-          showMessage(result.message || `Welcome, ${result.user.name}!`, "success");
+          // Show success message
+          const userName = result.user?.name || result.user?.email || 'User';
+          showMessage(`Welcome back, ${userName}!`, "success");
 
-          setTimeout(() => window.location.href = "/index.html", 800);
+          // Redirect after delay
+          setTimeout(() => {
+              window.location.href = "/index.html";
+          }, 1000);
 
       } catch (err) {
-          console.error(err);
-          showMessage("Server not responding", "error");
+          console.error('Login error:', err);
+          
+          // Check for specific error messages
+          if (err.message?.includes('Failed to fetch') || err.message?.includes('Network error')) {
+              showMessage("Cannot connect to server. Please check your connection.", "error");
+          } else {
+              showMessage(err.message || "Login failed. Please try again.", "error");
+          }
+          
           shake();
       } finally {
-          button.disabled = false;
-          buttonText.textContent = "Login";
+          // Re-enable button after 2 seconds minimum to prevent double submission
+          setTimeout(() => {
+              button.disabled = false;
+              buttonText.textContent = "Login";
+          }, 2000);
       }
     });
 
@@ -196,7 +413,17 @@ window.addEventListener('DOMContentLoaded', function() {
     function showMessage(text, type) {
         msg.textContent = text;
         msg.className = `message ${type}`;
-        setTimeout(() => msg.classList.add("fade-out"), 3000);
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            msg.classList.add("fade-out");
+            setTimeout(() => {
+                if (msg.classList.contains('fade-out')) {
+                    msg.textContent = '';
+                    msg.className = 'message';
+                }
+            }, 500);
+        }, 5000);
     }
 
     function shake() {
@@ -209,13 +436,57 @@ window.addEventListener('DOMContentLoaded', function() {
         return re.test(email);
     }
 
-    function requestAccount() {
-        alert("Please contact the system administrator to request an account.\n\nDefault login:\nEmail: admin@seizetrack.com\nPassword: admin123");
-    }
+    // Add input validation on blur
+    emailField.addEventListener('blur', function() {
+        if (this.value && !validateEmail(this.value)) {
+            this.style.borderColor = '#dc3545';
+        } else {
+            this.style.borderColor = '#e0e0e0';
+        }
+    });
 
-    // Set default credentials for testing (remove in production)
-    document.getElementById("email").value = "admin@seizetrack.com";
-    document.getElementById("password").value = "admin123";
+    emailField.addEventListener('focus', function() {
+        this.style.borderColor = '#e0e0e0';
+    });
+});
+
+// Global function for account request
+window.requestAccount = function() {
+    alert(
+        "To request an account, please contact your system administrator.\n\n" +
+        "For testing purposes, you can use:\n" +
+        "Email: admin@seizetrack.com\n" +
+        "Password: admin123"
+    );
+    
+    // Auto-fill test credentials (remove in production)
+    setTimeout(() => {
+        const emailField = document.getElementById("email");
+        const passwordField = document.getElementById("password");
+        if (emailField && passwordField) {
+            emailField.value = "admin@seizetrack.com";
+            passwordField.value = "admin123";
+            
+            // Trigger label animation
+            emailField.dispatchEvent(new Event('input'));
+            passwordField.dispatchEvent(new Event('input'));
+        }
+    }, 100);
+}
+
+// Add network status check
+window.addEventListener('online', function() {
+    const msg = document.getElementById('msg');
+    if (msg) {
+        showMessage('Network connection restored.', 'success');
+    }
+});
+
+window.addEventListener('offline', function() {
+    const msg = document.getElementById('msg');
+    if (msg) {
+        showMessage('You are offline. Please check your connection.', 'error');
+    }
 });
 </script>
 </body>
