@@ -27,7 +27,11 @@
             --red-50: #fef2f2;
             --red-100: #fee2e2;
             --red-600: #dc2626;
+            --green-50: #f0fdf4;
+            --green-100: #dcfce7;
+            --green-200: #bbf7d0;
             --green-600: #16a34a;
+            --green-700: #15803d;
             --yellow-100: #fef3c7;
             --yellow-800: #92400e;
         }
@@ -46,8 +50,8 @@
             overflow-x: hidden;
         }
         
-        /* Auth Check Overlay */
-        .auth-check-overlay {
+        /* Loading Overlay */
+        .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -61,19 +65,19 @@
             z-index: 10000;
         }
         
-        .auth-check-spinner {
+        .loading-spinner {
             font-size: 3rem;
             color: var(--blue-600);
             margin-bottom: 1rem;
         }
         
-        .auth-check-message {
+        .loading-message {
             font-size: 1.125rem;
             color: var(--slate-600);
             margin-bottom: 1rem;
         }
         
-        .auth-check-error {
+        .loading-error {
             background: var(--red-50);
             border: 1px solid var(--red-200);
             color: var(--red-600);
@@ -81,16 +85,6 @@
             border-radius: 0.5rem;
             max-width: 400px;
             text-align: center;
-        }
-        
-        .auth-check-error a {
-            color: var(--blue-600);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .auth-check-error a:hover {
-            text-decoration: underline;
         }
         
         /* Layout Container */
@@ -192,69 +186,6 @@
             width: 1.5rem;
             font-size: 1.125rem;
             margin-right: 0.75rem;
-        }
-        
-        /* Sidebar Profile */
-        .sidebar-profile {
-            border-top: 1px solid var(--slate-800);
-            padding: 1rem 0.5rem;
-        }
-        
-        .profile-container {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.5rem;
-        }
-        
-        .profile-avatar {
-            width: 2.5rem;
-            height: 2.5rem;
-            background-color: var(--blue-600);
-            border-radius: 9999px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-        
-        .profile-info {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .profile-name {
-            font-weight: 500;
-            font-size: 0.875rem;
-            color: white;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .profile-role {
-            font-size: 0.75rem;
-            color: var(--slate-400);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .logout-btn {
-            background: none;
-            border: none;
-            color: var(--slate-400);
-            cursor: pointer;
-            font-size: 1.125rem;
-            padding: 0.5rem;
-            border-radius: 0.375rem;
-            transition: all 0.2s ease;
-        }
-        
-        .logout-btn:hover {
-            color: var(--red-600);
-            background-color: var(--slate-800);
         }
         
         /* Main Content */
@@ -739,12 +670,12 @@
     </style>
 </head>
 <body>
-    <!-- Authentication Check Overlay -->
-    <div class="auth-check-overlay" id="authCheckOverlay">
-        <div class="auth-check-spinner">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
         </div>
-        <div class="auth-check-message" id="authCheckMessage">Checking authentication...</div>
+        <div class="loading-message" id="loadingMessage">Loading dashboard...</div>
     </div>
     
     <!-- Main Dashboard Content (initially hidden) -->
@@ -781,20 +712,6 @@
                         Persons
                     </a>
                 </nav>
-                
-                <!-- User Profile -->
-                <div class="sidebar-profile">
-                    <div class="profile-container">
-                        <div class="profile-avatar" id="profileAvatar">AD</div>
-                        <div class="profile-info">
-                            <div class="profile-name" id="profileName">Admin User</div>
-                            <div class="profile-role" id="profileRole">Security Dept</div>
-                        </div>
-                        <button class="logout-btn" id="logoutBtn">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </button>
-                    </div>
-                </div>
             </aside>
             
             <!-- Main Content -->
@@ -930,321 +847,44 @@
     </div>
 
     <script>
-        // ==================== AUTHENTICATION CLASS ====================
-        class Auth {
-            constructor() {
-                // Production URL only - Render backend
-                this.API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
-                this.currentUser = null;
-                this.loadUserFromStorage();
-            }
-
-            // Load user from localStorage
-            loadUserFromStorage() {
-                const userStr = localStorage.getItem('user');
-                if (userStr) {
-                    try {
-                        this.currentUser = JSON.parse(userStr);
-                    } catch (e) {
-                        console.error('Failed to parse user from storage:', e);
-                        this.clearAuth();
-                    }
-                }
-            }
-
-            // Check if user is logged in (synchronous)
-            isLoggedIn() {
-                return !!localStorage.getItem('token');
-            }
-
-            // Login function with Supabase
-            async login(email, password) {
-                try {
-                    const response = await fetch(`${this.API_BASE_URL}/auth/login`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ email, password })
-                    });
-
-                    // Check if response is OK and has content
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                    }
-
-                    // Check if response has content
-                    const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        throw new Error('Server returned non-JSON response');
-                    }
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        // Save token and user data from Supabase
-                        localStorage.setItem('token', data.token);
-                        localStorage.setItem('user', JSON.stringify(data.user));
-                        localStorage.setItem('supabase_user_id', data.user.id); // Store Supabase user ID
-                        this.currentUser = data.user;
-                        
-                        return { 
-                            success: true, 
-                            message: data.message,
-                            user: data.user,
-                            token: data.token 
-                        };
-                    } else {
-                        return { 
-                            success: false, 
-                            message: data.message || 'Login failed' 
-                        };
-                    }
-                } catch (error) {
-                    console.error('Login error:', error);
-                    return { 
-                        success: false, 
-                        message: error.message || 'Network error. Please try again.' 
-                    };
-                }
-            }
-
-            // Check authentication and redirect if not logged in
-            async requireAuth() {
-                if (!this.isLoggedIn()) {
-                    this.redirectToLogin();
-                    return null;
-                }
-
-                try {
-                    const user = await this.checkAuth();
-                    if (!user) {
-                        this.redirectToLogin();
-                        return null;
-                    }
-                    return user;
-                } catch (error) {
-                    console.error('Auth check error:', error);
-                    this.redirectToLogin();
-                    return null;
-                }
-            }
-
-            // Check authentication with server validation (Supabase session check)
-            async checkAuth() {
-                const token = localStorage.getItem('token');
-                
-                if (!token) {
-                    return null;
-                }
-
-                try {
-                    const response = await fetch(`${this.API_BASE_URL}/auth/check`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.success) {
-                            this.currentUser = data.user;
-                            localStorage.setItem('user', JSON.stringify(data.user));
-                            return this.currentUser;
-                        }
-                    }
-                    
-                    // If response is not ok, clear auth
-                    if (response.status === 401) {
-                        this.clearAuth();
-                    }
-                    return null;
-                    
-                } catch (error) {
-                    console.warn('Auth check failed:', error);
-                    return null;
-                }
-            }
-
-            // Get current user info
-            getCurrentUser() {
-                return this.currentUser;
-            }
-
-            // Get Supabase user ID
-            getSupabaseUserId() {
-                return localStorage.getItem('supabase_user_id');
-            }
-
-            // Get auth token
-            getToken() {
-                return localStorage.getItem('token');
-            }
-
-            // Logout (clear Supabase session)
-            async logout() {
-                try {
-                    const token = this.getToken();
-                    if (token) {
-                        // Attempt to notify server, but don't wait for response
-                        fetch(`${this.API_BASE_URL}/auth/logout`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        }).catch(err => console.warn('Logout notification failed:', err));
-                    }
-                } catch (error) {
-                    console.error('Logout error:', error);
-                }
-
-                this.clearAuth();
-                window.location.href = '/';
-            }
-
-            // Clear authentication data
-            clearAuth() {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                localStorage.removeItem('email');
-                localStorage.removeItem('name');
-                localStorage.removeItem('role');
-                localStorage.removeItem('department');
-                localStorage.removeItem('supabase_user_id');
-                this.currentUser = null;
-            }
-
-            // Redirect to login page
-            redirectToLogin() {
-                // Only redirect if we're not already on login page
-                const currentPath = window.location.pathname;
-                if (!currentPath.includes('login') && currentPath !== '/') {
-                    window.location.href = '/';
-                }
-            }
-
-            // Add authorization headers to fetch requests
-            getAuthHeaders() {
-                const token = this.getToken();
-                const headers = {
-                    'Content-Type': 'application/json'
-                };
-                
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-                
-                return headers;
-            }
-
-            // Wrapper for fetch with authentication
-            async authFetch(url, options = {}) {
-                const headers = this.getAuthHeaders();
-                
-                try {
-                    const response = await fetch(`${this.API_BASE_URL}${url}`, {
-                        ...options,
-                        headers: {
-                            ...headers,
-                            ...options.headers
-                        }
-                    });
-
-                    if (response.status === 401) {
-                        // Token expired or invalid
-                        this.clearAuth();
-                        window.location.href = '/';
-                        throw new Error('Session expired. Please login again.');
-                    }
-
-                    return response;
-                } catch (error) {
-                    console.error('Auth fetch error:', error);
-                    throw error;
-                }
-            }
-
-            // Check user role
-            isAdmin() {
-                return this.currentUser && this.currentUser.role === 'admin';
-            }
-
-            // Check user role
-            isSecurity() {
-                return this.currentUser && this.currentUser.role === 'security';
-            }
-
-            // Check if user is a student
-            isStudent() {
-                return this.currentUser && this.currentUser.role === 'student';
-            }
-        }
+        // ==================== API CONFIGURATION ====================
+        const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
 
         // ==================== INITIALIZATION ====================
-        // Create global auth instance
-        const auth = new Auth();
-
-        // Wait for DOM and auth to be ready
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('Dashboard initialization started...');
             
-            // Show auth check overlay
-            const authCheckOverlay = document.getElementById('authCheckOverlay');
-            const authCheckMessage = document.getElementById('authCheckMessage');
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingMessage = document.getElementById('loadingMessage');
             const dashboardContent = document.getElementById('dashboardContent');
             
             try {
-                // Check if user is logged in
-                if (!auth.isLoggedIn()) {
-                    authCheckMessage.textContent = 'Not logged in. Redirecting to login...';
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1000);
-                    return;
-                }
+                // Load dashboard data
+                loadingMessage.textContent = 'Loading dashboard data...';
                 
-                // Verify token with server
-                authCheckMessage.textContent = 'Verifying session...';
-                const user = await auth.checkAuth();
+                // Setup sidebar functionality
+                setupSidebar();
                 
-                if (!user) {
-                    authCheckMessage.textContent = 'Session expired. Redirecting to login...';
-                    setTimeout(() => {
-                        auth.clearAuth();
-                        window.location.href = '/';
-                    }, 1000);
-                    return;
-                }
+                // Load dashboard data
+                await loadDashboardData();
                 
-                // Authentication successful - show dashboard
-                authCheckMessage.textContent = 'Authentication successful! Loading dashboard...';
-                
-                // Update user profile
-                updateUserProfile(user);
-                
-                // Initialize dashboard
+                // Hide loading overlay and show dashboard
                 setTimeout(() => {
-                    authCheckOverlay.style.display = 'none';
+                    loadingOverlay.style.display = 'none';
                     dashboardContent.style.display = 'block';
-                    
-                    // Setup sidebar
-                    setupSidebar();
-                    
-                    // Load dashboard data
-                    loadDashboardData();
                 }, 500);
                 
             } catch (error) {
-                console.error('Authentication error:', error);
-                authCheckMessage.innerHTML = `
-                    <div class="auth-check-error">
-                        <p><strong>Authentication Error:</strong></p>
+                console.error('Initialization error:', error);
+                loadingMessage.innerHTML = `
+                    <div class="loading-error">
+                        <p><strong>Error loading dashboard:</strong></p>
                         <p>${error.message}</p>
                         <p style="margin-top: 1rem;">
-                            <a href="/">Click here to login</a>
+                            <button onclick="location.reload()" style="padding: 0.5rem 1rem; background: var(--blue-600); color: white; border: none; border-radius: 0.375rem; cursor: pointer;">
+                                Retry
+                            </button>
                         </p>
                     </div>
                 `;
@@ -1255,7 +895,6 @@
             const mobileMenuBtn = document.getElementById('mobileMenuBtn');
             const sidebar = document.getElementById('sidebar');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-            const logoutBtn = document.getElementById('logoutBtn');
             
             // Mobile menu toggle
             if (mobileMenuBtn) {
@@ -1273,21 +912,6 @@
                 });
             }
             
-            // Logout button
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    if (confirm('Are you sure you want to logout?')) {
-                        try {
-                            await auth.logout();
-                        } catch (error) {
-                            console.error('Logout error:', error);
-                            window.location.href = '/';
-                        }
-                    }
-                });
-            }
-            
             // Navigation active state
             const currentPage = window.location.pathname.split('/').pop() || 'index.html';
             const navItems = document.querySelectorAll('.nav-item');
@@ -1299,39 +923,6 @@
                     item.classList.add('active');
                 }
             });
-        }
-
-        function updateUserProfile(user) {
-            const profileName = document.getElementById('profileName');
-            const profileRole = document.getElementById('profileRole');
-            const profileAvatar = document.getElementById('profileAvatar');
-            
-            if (profileName && user.name) {
-                profileName.textContent = user.name;
-            } else if (profileName && user.email) {
-                profileName.textContent = user.email.split('@')[0];
-            }
-            
-            if (profileRole && user.department) {
-                profileRole.textContent = user.department;
-            } else if (profileRole && user.role) {
-                profileRole.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1) + ' Dept';
-            }
-            
-            if (profileAvatar) {
-                if (user.name) {
-                    // Get initials from name
-                    const initials = user.name
-                        .split(' ')
-                        .map(word => word.charAt(0))
-                        .join('')
-                        .toUpperCase()
-                        .substring(0, 2);
-                    profileAvatar.textContent = initials;
-                } else if (user.email) {
-                    profileAvatar.textContent = user.email.charAt(0).toUpperCase();
-                }
-            }
         }
 
         async function loadDashboardData() {
@@ -1348,13 +939,8 @@
                 renderLoadingSeizures();
                 renderLoadingOffenders();
                 
-                // Get auth headers
-                const headers = auth.getAuthHeaders();
-                
-                // Fetch dashboard data
-                const response = await fetch(`${auth.API_BASE_URL}/stats/dashboard`, {
-                    headers: headers
-                });
+                // Fetch dashboard data (no auth headers needed now)
+                const response = await fetch(`${API_BASE_URL}/api/stats/dashboard`);
                 
                 if (!response.ok) {
                     throw new Error(`Server returned ${response.status}: ${response.statusText}`);
@@ -1371,7 +957,9 @@
                     // Render the data
                     renderStatsCards(result.data.stats);
                     renderRecentSeizures(result.data.recentSeizures);
-                    renderRepeatOffenders(result.data.repeatOffendersList);
+                    
+                    // Fetch repeat offenders separately
+                    await loadRepeatOffenders();
                 } else {
                     throw new Error(result.message || 'Failed to load dashboard data');
                 }
@@ -1386,6 +974,32 @@
                 
                 // Show error states
                 showErrorStates();
+            }
+        }
+
+        async function loadRepeatOffenders() {
+            try {
+                // Fetch all persons
+                const response = await fetch(`${API_BASE_URL}/api/persons`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch persons');
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Filter for repeat offenders (total_seizures >= 2)
+                    const repeatOffenders = (result.data || [])
+                        .filter(person => person.total_seizures >= 2)
+                        .sort((a, b) => b.total_seizures - a.total_seizures)
+                        .slice(0, 5); // Top 5
+                    
+                    renderRepeatOffenders(repeatOffenders);
+                }
+            } catch (error) {
+                console.error('Error loading repeat offenders:', error);
+                renderRepeatOffenders([]);
             }
         }
 
@@ -1619,7 +1233,7 @@
             
             let html = '';
             offenders.forEach(offender => {
-                const seizureCount = offender.totalSeizures || 0;
+                const seizureCount = offender.total_seizures || 0;
                 const badgeClass = seizureCount >= 3 ? 'badge danger' : 'badge';
                 const badgeText = seizureCount >= 3 ? 'Frequent' : 'Repeat';
                 
@@ -1629,7 +1243,7 @@
                             <div class="person-count">${seizureCount}</div>
                             <div class="person-details">
                                 <div class="name">${offender.name || 'Unknown'}</div>
-                                <div class="matric">${offender.matricNumber || ''} • ${offender.department || ''}</div>
+                                <div class="matric">${offender.matric_number || ''} • ${offender.department || ''}</div>
                             </div>
                         </div>
                         <span class="${badgeClass}">${badgeText}</span>

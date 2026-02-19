@@ -5,15 +5,13 @@ const helmet = require("helmet");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const { createClient } = require("@supabase/supabase-js");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 
 // =============================================
 // SEIZETRACK API SERVER WITH SUPABASE - PRODUCTION
 // =============================================
 
 // Configuration with validation
-const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET'];
+const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
 for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
         console.error(`❌ Missing required environment variable: ${envVar}`);
@@ -26,8 +24,6 @@ const config = {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
-    JWT_SECRET: process.env.JWT_SECRET,
-    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
     NODE_ENV: process.env.NODE_ENV || 'production',
     CLIENT_URL: process.env.CLIENT_URL || 'https://biulegacycampus.vercel.app',
     API_URL: process.env.API_URL || 'https://biu-legacycampus.onrender.com',
@@ -137,33 +133,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// ========== AUTHENTICATION MIDDLEWARE ==========
-
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) {
-        return res.status(401).json({
-            success: false,
-            message: 'Access token required. Please login.'
-        });
-    }
-
-    jwt.verify(token, config.JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({
-                success: false,
-                message: err.name === 'TokenExpiredError' 
-                    ? 'Token has expired' 
-                    : 'Invalid token'
-            });
-        }
-        req.user = user;
-        next();
-    });
-};
-
 // ========== DATABASE CONNECTION ==========
 
 async function checkDatabaseConnection() {
@@ -225,159 +194,7 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-// LOGIN ENDPOINT - SIMPLIFIED PATH
-app.post('/api/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email and password are required'
-            });
-        }
-        
-        const sanitizedEmail = email.toLowerCase().trim();
-        
-        const { data: users, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', sanitizedEmail);
-        
-        if (error) {
-            console.error('Database error:', error);
-            return res.status(500).json({
-                success: false,
-                message: 'Login service unavailable'
-            });
-        }
-        
-        if (!users || users.length === 0) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid email or password'
-            });
-        }
-        
-        const user = users[0];
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        
-        if (!isValidPassword) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid email or password'
-            });
-        }
-        
-        const token = jwt.sign(
-            {
-                userId: user.id,
-                email: user.email,
-                role: user.role
-            },
-            config.JWT_SECRET,
-            { 
-                expiresIn: config.JWT_EXPIRES_IN
-            }
-        );
-        
-        console.log(`✅ User logged in: ${user.email} (${user.role})`);
-        
-        res.json({
-            success: true,
-            token: token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                department: user.department
-            },
-            message: `Welcome back, ${user.name}!`
-        });
-        
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred during login'
-        });
-    }
-});
-
-// CHECK SESSION ENDPOINT - SIMPLIFIED PATH
-app.get('/api/check', async (req, res) => {
-    try {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: 'No token provided'
-            });
-        }
-        
-        const decoded = jwt.verify(token, config.JWT_SECRET);
-        
-        const { data: users, error } = await supabase
-            .from('users')
-            .select('id, name, email, role, department')
-            .eq('id', decoded.userId);
-        
-        if (error) throw error;
-        
-        if (!users || users.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-        
-        const user = users[0];
-        
-        res.json({
-            success: true,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                department: user.department
-            }
-        });
-        
-    } catch (error) {
-        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-            return res.status(403).json({
-                success: false,
-                message: error.name === 'TokenExpiredError' 
-                    ? 'Session expired' 
-                    : 'Invalid session'
-            });
-        }
-        
-        console.error('Check session error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Session check failed'
-        });
-    }
-});
-
-// LOGOUT ENDPOINT - SIMPLIFIED PATH
-app.post('/api/logout', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Logged out successfully'
-    });
-});
-
-// ========== PROTECTED API ROUTES ==========
-// All routes below this middleware require authentication
-app.use('/api', authenticateToken);
-
-// Dashboard stats endpoint
+// Dashboard stats endpoint (public now since no auth required)
 app.get('/api/stats/dashboard', async (req, res) => {
     try {
         res.set('Cache-Control', 'public, max-age=60');
@@ -449,7 +266,7 @@ app.get('/api/stats/dashboard', async (req, res) => {
     }
 });
 
-// CRUD Operations for Persons
+// CRUD Operations for Persons (public now)
 app.get('/api/persons', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -631,7 +448,7 @@ app.delete('/api/persons/:id', async (req, res) => {
     }
 });
 
-// CRUD Operations for Seizures
+// CRUD Operations for Seizures (public now)
 app.get('/api/seizures', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -851,17 +668,15 @@ app.use('/api/*', (req, res) => {
     });
 });
 
-// Root route - return API info (UPDATED WITH SIMPLIFIED PATHS)
+// Root route - return API info
 app.get('/', (req, res) => {
     res.json({
         name: 'SeizeTrack API',
         version: '1.0.0',
         status: 'running',
+        message: 'Public API - No authentication required',
         endpoints: {
             health: '/api/health',
-            login: '/api/login',
-            check: '/api/check',
-            logout: '/api/logout',
             dashboard: '/api/stats/dashboard',
             persons: '/api/persons',
             seizures: '/api/seizures'
@@ -904,10 +719,8 @@ async function startServer() {
             console.log(`💾 Database: ${dbConnected ? 'Connected' : 'Disconnected'}`);
             console.log(`🚦 Status: Ready to accept API requests`);
             console.log('='.repeat(60));
-            console.log('\n📝 Available endpoints:');
-            console.log(`   • POST ${config.API_URL}/api/login`);
-            console.log(`   • GET  ${config.API_URL}/api/check`);
-            console.log(`   • POST ${config.API_URL}/api/logout`);
+            console.log('\n📝 Available endpoints (PUBLIC - No Auth Required):');
+            console.log(`   • GET  ${config.API_URL}/api/health`);
             console.log(`   • GET  ${config.API_URL}/api/stats/dashboard`);
             console.log(`   • CRUD ${config.API_URL}/api/persons`);
             console.log(`   • CRUD ${config.API_URL}/api/seizures`);
