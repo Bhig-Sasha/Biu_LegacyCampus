@@ -128,14 +128,23 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.set('trust proxy', 1);
 
 // Serve static files with caching
+app.use(express.static(path.join(__dirname, 'Public'), {
+  maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0 // Cache static assets for 1 day in production
+}));
+
+// Handle SPA routing if needed (remove the catch-all if you want specific routes)
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'dist')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  // For any request that doesn't match an API route or static file
+  app.get(/^(?!\/api).*/, (req, res) => {
+    // Check if the file exists in Public folder
+    const filePath = path.join(__dirname, 'Public', req.path === '/' ? 'login.html' : req.path);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        // If file doesn't exist, serve login.html
+        res.sendFile(path.join(__dirname, 'Public', 'login.html'));
+      }
+    });
   });
-} else {
-  app.use(express.static('public'));
 }
 
 // Request logging in production
@@ -232,11 +241,11 @@ async function initializeDatabase() {
 // ========== PUBLIC HTML ROUTES ==========
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'Public', 'login.html'));
 });
 
 app.get('/login.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'Public', 'login.html'));
 });
 
 // ========== PUBLIC API ROUTES ==========
@@ -456,19 +465,19 @@ app.use('/api', (req, res, next) => {
 // ========== PROTECTED HTML ROUTES ==========
 
 app.get('/index.html', authenticateToken, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'Public', 'index.html'));
 });
 
 app.get('/AddSeizure.html', authenticateToken, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'AddSeizure.html'));
+    res.sendFile(path.join(__dirname, 'Public', 'AddSeizure.html'));
 });
 
 app.get('/History.html', authenticateToken, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'History.html'));
+    res.sendFile(path.join(__dirname, 'Public', 'History.html'));
 });
 
 app.get('/Person.html', authenticateToken, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'Person.html'));
+    res.sendFile(path.join(__dirname, 'Public', 'Person.html'));
 });
 
 // ========== PROTECTED API ROUTES ==========
@@ -965,7 +974,7 @@ app.use((req, res) => {
             message: 'API endpoint not found'
         });
     } else {
-        res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+        res.status(404).sendFile(path.join(__dirname, 'Public', '404.html'));
     }
 });
 
