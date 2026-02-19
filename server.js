@@ -1054,10 +1054,8 @@ async function startServer() {
     }
 }
 
-// Start server if not in test mode
-if (require.main === module) {
-    startServer();
-}
+// Start server
+startServer();
 
 // Export for testing
 module.exports = app;
