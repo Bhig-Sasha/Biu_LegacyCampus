@@ -343,13 +343,11 @@ class Auth {
                 body: JSON.stringify({ email, password })
             });
 
-            // Check if response is OK and has content
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
-            // Check if response has content
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 throw new Error('Server returned non-JSON response');
@@ -358,10 +356,9 @@ class Auth {
             const data = await response.json();
 
             if (data.success) {
-                // Save token and user data from Supabase
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
-                localStorage.setItem('supabase_user_id', data.user.id); // Store Supabase user ID
+                localStorage.setItem('supabase_user_id', data.user.id);
                 this.currentUser = data.user;
                 
                 return { 
@@ -385,28 +382,7 @@ class Auth {
         }
     }
 
-    // Check authentication and redirect if not logged in
-    async requireAuth() {
-        if (!this.isLoggedIn()) {
-            this.redirectToLogin();
-            return null;
-        }
-
-        try {
-            const user = await this.checkAuth();
-            if (!user) {
-                this.redirectToLogin();
-                return null;
-            }
-            return user;
-        } catch (error) {
-            console.error('Auth check error:', error);
-            this.redirectToLogin();
-            return null;
-        }
-    }
-
-    // Check authentication with server validation (Supabase session check)
+    // Check authentication with server validation
     async checkAuth() {
         const token = localStorage.getItem('token');
         
@@ -431,7 +407,6 @@ class Auth {
                 }
             }
             
-            // If response is not ok, clear auth
             if (response.status === 401) {
                 this.clearAuth();
             }
@@ -443,27 +418,16 @@ class Auth {
         }
     }
 
-    // Get current user info
-    getCurrentUser() {
-        return this.currentUser;
-    }
-
-    // Get Supabase user ID
-    getSupabaseUserId() {
-        return localStorage.getItem('supabase_user_id');
-    }
-
     // Get auth token
     getToken() {
         return localStorage.getItem('token');
     }
 
-    // Logout (clear Supabase session)
+    // Logout
     async logout() {
         try {
             const token = this.getToken();
             if (token) {
-                // Attempt to notify server, but don't wait for response
                 fetch(`${this.API_BASE_URL}/auth/logout`, {
                     method: 'POST',
                     headers: {
@@ -477,28 +441,28 @@ class Auth {
         }
 
         this.clearAuth();
-        window.location.href = '/';
+        window.location.href = '/login';
     }
 
     // Clear authentication data
     clearAuth() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        localStorage.removeItem('email');
-        localStorage.removeItem('name');
-        localStorage.removeItem('role');
-        localStorage.removeItem('department');
         localStorage.removeItem('supabase_user_id');
         this.currentUser = null;
     }
 
     // Redirect to login page
     redirectToLogin() {
-        // Only redirect if we're not already on login page
         const currentPath = window.location.pathname;
-        if (!currentPath.includes('login') && currentPath !== '/') {
-            window.location.href = '/';
+        if (currentPath !== '/login') {
+            window.location.href = '/login';
         }
+    }
+
+    // Redirect to dashboard
+    redirectToDashboard() {
+        window.location.href = '/';
     }
 
     // Add authorization headers to fetch requests
@@ -529,9 +493,8 @@ class Auth {
             });
 
             if (response.status === 401) {
-                // Token expired or invalid
                 this.clearAuth();
-                window.location.href = '/';
+                window.location.href = '/login';
                 throw new Error('Session expired. Please login again.');
             }
 
@@ -547,24 +510,46 @@ class Auth {
         return this.currentUser && this.currentUser.role === 'admin';
     }
 
-    // Check user role
     isSecurity() {
         return this.currentUser && this.currentUser.role === 'security';
     }
 
-    // Check if user is a student
     isStudent() {
         return this.currentUser && this.currentUser.role === 'student';
     }
 }
 
 // ==================== INITIALIZATION ====================
-// Create global auth instance
 const auth = new Auth();
 
-// ==================== DOM CONTENT LOADED ====================
+// ==================== PAGE LOAD HANDLER ====================
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize form after DOM is loaded
+    const path = window.location.pathname;
+    
+    // If we're on the login page
+    if (path === '/login') {
+        // If already logged in, redirect to dashboard
+        if (auth.isLoggedIn()) {
+            auth.redirectToDashboard();
+            return;
+        }
+        
+        // Initialize login form
+        initializeLoginForm();
+    }
+    // If we're on the root (dashboard)
+    else if (path === '/') {
+        // Check if user is authenticated
+        auth.checkAuth().then(user => {
+            if (!user) {
+                auth.redirectToLogin();
+            }
+        });
+    }
+});
+
+// ==================== LOGIN FORM ====================
+function initializeLoginForm() {
     const form = document.getElementById("loginForm");
     const msg = document.getElementById("msg");
     const button = document.getElementById("loginButton");
@@ -574,97 +559,82 @@ document.addEventListener('DOMContentLoaded', function() {
     const togglePassword = document.getElementById("togglePassword");
     const emailField = document.getElementById("email");
 
-    // Check if already logged in
-    if (auth.isLoggedIn()) {
-        window.location.href = '/index.html';
-        return;
-    }
+    if (!form) return;
 
-    // 👁️ Toggle password visibility
+    // Toggle password visibility
     togglePassword.addEventListener("click", function() {
         const type = passwordField.type === "password" ? "text" : "password";
         passwordField.type = type;
-        
-        // Toggle eye icon
         const icon = togglePassword.querySelector('i');
         if (icon) {
             icon.className = type === "password" ? "fas fa-eye" : "fas fa-eye-slash";
         }
     });
 
-    // 🔐 Login submit
+    // Login submit
     form.addEventListener("submit", async function(e) {
-      e.preventDefault();
+        e.preventDefault();
 
-      const email = emailField.value.trim();
-      const password = passwordField.value.trim();
+        const email = emailField.value.trim();
+        const password = passwordField.value.trim();
 
-      // Clear previous messages
-      msg.textContent = "";
-      msg.className = "message";
+        msg.textContent = "";
+        msg.className = "message";
 
-      // Validation
-      if (!email || !password) {
-          showMessage("Please fill in all fields", "error");
-          shake();
-          return;
-      }
+        if (!email || !password) {
+            showMessage("Please fill in all fields", "error");
+            shake();
+            return;
+        }
 
-      if (!validateEmail(email)) {
-          showMessage("Please enter a valid email address", "error");
-          shake();
-          return;
-      }
+        if (!validateEmail(email)) {
+            showMessage("Please enter a valid email address", "error");
+            shake();
+            return;
+        }
 
-      // Disable button and show loading
-      button.disabled = true;
-      buttonText.innerHTML = '<span class="loading"></span> Logging in...';
+        button.disabled = true;
+        buttonText.innerHTML = '<span class="loading"></span> Logging in...';
 
-      try {
-          // Call auth.login
-          const result = await auth.login(email, password);
+        try {
+            const result = await auth.login(email, password);
 
-          if (!result || !result.success) {
-              showMessage(result?.message || "Login failed. Please check your credentials.", "error");
-              shake();
-              return;
-          }
+            if (!result || !result.success) {
+                showMessage(result?.message || "Login failed. Please check your credentials.", "error");
+                shake();
+                return;
+            }
 
-          // Show success message
-          const userName = result.user?.name || result.user?.email || 'User';
-          showMessage(`Welcome back, ${userName}!`, "success");
+            const userName = result.user?.name || result.user?.email || 'User';
+            showMessage(`Welcome back, ${userName}!`, "success");
 
-          // Redirect after delay
-          setTimeout(() => {
-              window.location.href = "/index.html";
-          }, 1000);
+            // Redirect to dashboard (root)
+            setTimeout(() => {
+                auth.redirectToDashboard();
+            }, 1000);
 
-      } catch (err) {
-          console.error('Login error:', err);
-          
-          // Check for specific error messages
-          if (err.message?.includes('Failed to fetch') || err.message?.includes('Network error')) {
-              showMessage("Cannot connect to server. Please check your connection.", "error");
-          } else {
-              showMessage(err.message || "Login failed. Please try again.", "error");
-          }
-          
-          shake();
-      } finally {
-          // Re-enable button after 2 seconds minimum to prevent double submission
-          setTimeout(() => {
-              button.disabled = false;
-              buttonText.textContent = "Login";
-          }, 2000);
-      }
+        } catch (err) {
+            console.error('Login error:', err);
+            
+            if (err.message?.includes('Failed to fetch') || err.message?.includes('Network error')) {
+                showMessage("Cannot connect to server. Please check your connection.", "error");
+            } else {
+                showMessage(err.message || "Login failed. Please try again.", "error");
+            }
+            
+            shake();
+        } finally {
+            setTimeout(() => {
+                button.disabled = false;
+                buttonText.textContent = "Login";
+            }, 2000);
+        }
     });
 
-    // Helper functions
     function showMessage(text, type) {
         msg.textContent = text;
         msg.className = `message ${type}`;
         
-        // Auto hide after 5 seconds
         setTimeout(() => {
             msg.classList.add("fade-out");
             setTimeout(() => {
@@ -686,7 +656,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return re.test(email);
     }
 
-    // Add input validation on blur
     emailField.addEventListener('blur', function() {
         if (this.value && !validateEmail(this.value)) {
             this.style.borderColor = '#dc3545';
@@ -698,10 +667,9 @@ document.addEventListener('DOMContentLoaded', function() {
     emailField.addEventListener('focus', function() {
         this.style.borderColor = '#e0e0e0';
     });
-});
+}
 
 // ==================== GLOBAL FUNCTIONS ====================
-// Global function for account request
 window.requestAccount = function() {
     alert(
         "To request an account, please contact your system administrator.\n\n" +
@@ -710,33 +678,36 @@ window.requestAccount = function() {
         "Password: admin123"
     );
     
-    // Auto-fill test credentials (remove in production)
     setTimeout(() => {
         const emailField = document.getElementById("email");
         const passwordField = document.getElementById("password");
         if (emailField && passwordField) {
             emailField.value = "admin@seizetrack.com";
             passwordField.value = "admin123";
-            
-            // Trigger label animation
             emailField.dispatchEvent(new Event('input'));
             passwordField.dispatchEvent(new Event('input'));
         }
     }, 100);
 }
 
-// Add network status check
+// Network status check
 window.addEventListener('online', function() {
     const msg = document.getElementById('msg');
     if (msg) {
-        showMessage('Network connection restored.', 'success');
+        msg.textContent = 'Network connection restored.';
+        msg.className = 'message success';
+        setTimeout(() => {
+            msg.textContent = '';
+            msg.className = 'message';
+        }, 3000);
     }
 });
 
 window.addEventListener('offline', function() {
     const msg = document.getElementById('msg');
     if (msg) {
-        showMessage('You are offline. Please check your connection.', 'error');
+        msg.textContent = 'You are offline. Please check your connection.';
+        msg.className = 'message error';
     }
 });
 </script>
