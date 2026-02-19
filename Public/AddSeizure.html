@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="./js/auth.js"></script>
+    <!-- Remove auth.js script -->
     <title>SeizeTrack - Add Seizure</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* [Keep all your existing styles exactly as they are] */
         :root {
             --blue-50: #eff6ff;
             --blue-100: #dbeafe;
@@ -800,10 +801,10 @@
             <!-- User Profile -->
             <div class="sidebar-profile">
                 <div class="profile-container">
-                    <div class="profile-avatar">AD</div>
+                    <div class="profile-avatar" id="profileAvatar">AD</div>
                     <div class="profile-info">
-                        <div class="profile-name">Admin User</div>
-                        <div class="profile-role">Security Dept</div>
+                        <div class="profile-name" id="profileName">Loading...</div>
+                        <div class="profile-role" id="profileRole">Loading...</div>
                     </div>
                     <button class="logout-btn" id="logoutBtn">
                         <i class="fas fa-sign-out-alt"></i>
@@ -876,7 +877,7 @@
                                 
                                 <!-- New Person Form (Initially Hidden) -->
                                 <div class="new-person-form" id="newPersonForm">
-                                    <div class="section-header">
+                                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
                                         <h3>Add New Person</h3>
                                         <button type="button" class="button ghost sm" id="cancelNewPerson">Cancel</button>
                                     </div>
@@ -950,9 +951,9 @@
                                         <h4>Selected Person</h4>
                                         <button type="button" class="button ghost sm" id="changePerson">Change</button>
                                     </div>
-                                    <div class="person-card selected">
+                                    <div class="person-card selected" style="cursor: default;">
                                         <div class="person-info">
-                                            <div class="person-avatar">
+                                            <div class="person-avatar" id="selectedAvatar">
                                                 <i class="fas fa-user"></i>
                                             </div>
                                             <div>
@@ -1017,7 +1018,7 @@
                                                 <div class="input-container">
                                                     <i class="fas fa-user-shield input-icon"></i>
                                                     <input type="text" id="seizedBy" class="input-field" 
-                                                           placeholder="Security officer name" value="Admin User">
+                                                           placeholder="Security officer name">
                                                 </div>
                                             </div>
                                         </div>
@@ -1085,86 +1086,163 @@
     </div>
     
     <script>
+    // ==================== CONFIGURATION ====================
+    const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+    
+    // ==================== STATE MANAGEMENT ====================
     let selectedPerson = null;
     let searchTimeout = null;
+    let currentUser = null;
 
-    document.addEventListener('DOMContentLoaded', async function() {
+    // ==================== AUTHENTICATION UTILITIES ====================
+    function getToken() {
+        return localStorage.getItem('token');
+    }
+
+    function getUser() {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                return JSON.parse(userStr);
+            } catch (e) {
+                console.error('Failed to parse user:', e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    function isLoggedIn() {
+        return !!getToken();
+    }
+
+    function clearAuth() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+    }
+
+    function getAuthHeaders() {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        const token = getToken();
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        return headers;
+    }
+
+    async function authFetch(url, options = {}) {
         try {
-            // Check authentication using your auth.js
-            const user = await auth.checkAuth();
-            if (!user) return;
-            
-            // Update user profile in sidebar
-            updateUserProfile(user);
-            
-            // Initialize sidebar
-            setupSidebar();
-            
-            // Initialize add seizure form
-            setupAddSeizureListeners();
-            
-            // Update connection status
-            updateConnectionStatus('Ready to record seizure', 'connected');
-            
-            // Focus on search input
-            document.getElementById('personSearch')?.focus();
-            
-        } catch (error) {
-            console.error('Initialization error:', error);
-            updateConnectionStatus('Failed to initialize', 'error');
-            showNotification('Failed to initialize page', 'error');
-        }
-    });
-
-    function setupSidebar() {
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-        
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', function() {
-                sidebar.classList.add('active');
-                sidebarBackdrop.classList.add('active');
-            });
-        }
-        
-        if (sidebarBackdrop) {
-            sidebarBackdrop.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarBackdrop.classList.remove('active');
-            });
-        }
-        
-        // Setup logout button
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to logout?')) {
-                    await auth.logout();
+            const response = await fetch(`${API_BASE_URL}${url}`, {
+                ...options,
+                headers: {
+                    ...getAuthHeaders(),
+                    ...options.headers
                 }
             });
+
+            if (response.status === 401) {
+                console.error('Authentication failed - redirecting to login');
+                clearAuth();
+                throw new Error('Session expired. Please login again.');
+            }
+
+            return response;
+        } catch (error) {
+            console.error('Auth fetch error:', error);
+            throw error;
         }
     }
 
-    function updateUserProfile(user) {
-        const profileName = document.querySelector('.profile-name');
-        const profileRole = document.querySelector('.profile-role');
-        const profileAvatar = document.querySelector('.profile-avatar');
-        
-        if (profileName && user.name) {
-            profileName.textContent = user.name;
+    // ==================== AUTHENTICATION CHECK ====================
+    async function checkAuth() {
+        if (!isLoggedIn()) {
+            window.location.href = '/';
+            return null;
         }
-        
-        if (profileRole && user.department) {
-            profileRole.textContent = user.department;
-        }
-        
-        if (profileAvatar && user.name) {
-            profileAvatar.textContent = user.name.charAt(0).toUpperCase();
+
+        try {
+            const token = getToken();
+            const response = await fetch(`${API_BASE_URL}/auth/check`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    updateUserProfile();
+                    return currentUser;
+                }
+            }
+            
+            // If response is not ok, clear auth
+            clearAuth();
+            return null;
+            
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            // Don't clear auth on network errors, just return null
+            return null;
         }
     }
 
+    // ==================== PROFILE MANAGEMENT ====================
+    function updateUserProfile() {
+        const user = getUser();
+        if (!user) return;
+
+        const profileName = document.getElementById('profileName');
+        const profileRole = document.getElementById('profileRole');
+        const profileAvatar = document.getElementById('profileAvatar');
+        
+        if (profileName) {
+            profileName.textContent = user.name || user.email || 'User';
+        }
+        
+        if (profileRole) {
+            profileRole.textContent = user.department || user.role || 'Security Dept';
+        }
+
+        if (profileAvatar && (user.name || user.email)) {
+            profileAvatar.textContent = (user.name || user.email || 'U').charAt(0).toUpperCase();
+        }
+
+        // Auto-fill seizedBy with current user's name
+        const seizedByInput = document.getElementById('seizedBy');
+        if (seizedByInput && user.name) {
+            seizedByInput.value = user.name;
+        }
+    }
+
+    // ==================== LOGOUT FUNCTION ====================
+    async function logout() {
+        try {
+            const token = getToken();
+            if (token) {
+                // Attempt to notify server, but don't wait for response
+                fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }).catch(err => console.warn('Logout notification failed:', err));
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            clearAuth();
+        }
+    }
+
+    // ==================== UI FUNCTIONS ====================
     function updateConnectionStatus(message, status = 'connecting') {
         const statusElement = document.getElementById('connectionStatus');
         if (!statusElement) return;
@@ -1180,7 +1258,485 @@
         }
     }
 
-    function setupAddSeizureListeners() {
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const bgColor = type === 'success' ? 'var(--green-100)' : 
+                    type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
+        const textColor = type === 'success' ? 'var(--green-800)' : 
+                        type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
+        const borderColor = type === 'success' ? 'var(--green-300)' : 
+                        type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
+        const icon = type === 'success' ? 'fa-check-circle' : 
+                    type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            background-color: ${bgColor};
+            color: ${textColor};
+            border: 1px solid ${borderColor};
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            font-family: inherit;
+            font-size: 14px;
+            min-width: 300px;
+            max-width: 400px;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Add keyframes for animation if not already present
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Remove notification after 5 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 5000);
+    }
+
+    // ==================== SEARCH FUNCTION ====================
+    async function handlePersonSearch(query) {
+        const searchResults = document.getElementById('searchResults');
+        
+        if (!query.trim()) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        
+        try {
+            // Show loading state
+            searchResults.innerHTML = `
+                <div class="results-heading">Search Results</div>
+                <div class="person-card">
+                    <div class="person-info">
+                        <div class="person-avatar">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <div>
+                            <div class="person-name">Searching...</div>
+                            <div class="person-details">Please wait while we search for persons</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            searchResults.style.display = 'block';
+            
+            // Search persons via API
+            const response = await authFetch(`/persons?search=${encodeURIComponent(query)}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    // Display search results
+                    searchResults.innerHTML = `
+                        <div class="results-heading">Search Results (${data.data.length} found)</div>
+                        ${data.data.map(person => `
+                            <div class="person-card" data-id="${person.id}">
+                                <div class="person-info">
+                                    <div class="person-avatar">
+                                        ${person.name ? person.name.charAt(0).toUpperCase() : '?'}
+                                    </div>
+                                    <div>
+                                        <div class="person-name">${person.name || 'Unknown'}</div>
+                                        <div class="person-details">
+                                            ${person.matric_number || 'No matric'} • ${person.department || 'No department'}
+                                            ${person.total_seizures ? ` • ${person.total_seizures} previous seizure(s)` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    `;
+                    
+                    // Add click listeners to person cards
+                    document.querySelectorAll('.person-card[data-id]').forEach(card => {
+                        card.addEventListener('click', function() {
+                            const personId = this.getAttribute('data-id');
+                            selectPerson(personId);
+                        });
+                    });
+                } else {
+                    searchResults.innerHTML = `
+                        <div class="results-heading">Search Results</div>
+                        <div class="person-card">
+                            <div class="person-info">
+                                <div class="person-avatar">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div>
+                                    <div class="person-name">No persons found</div>
+                                    <div class="person-details">Try a different search term or add a new person</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error('Search failed');
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            searchResults.innerHTML = `
+                <div class="results-heading">Search Results</div>
+                <div class="person-card">
+                    <div class="person-info">
+                        <div class="person-avatar">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <div class="person-name">Search unavailable</div>
+                            <div class="person-details">Server connection error. Try adding a new person.</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        document.getElementById('newPersonForm').classList.remove('active');
+    }
+
+    // ==================== SELECT PERSON FUNCTION ====================
+    async function selectPerson(personId) {
+        try {
+            // Get person details from API
+            const response = await authFetch(`/persons/${personId}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    const person = data.data;
+                    selectedPerson = person;
+                    
+                    // Update selected person display
+                    document.getElementById('selectedName').textContent = person.name;
+                    document.getElementById('selectedMatric').textContent = person.matric_number || '';
+                    document.getElementById('selectedDept').textContent = person.department || 'Not specified';
+                    
+                    // Update avatar
+                    const avatar = document.getElementById('selectedAvatar');
+                    if (avatar) {
+                        avatar.innerHTML = person.name ? person.name.charAt(0).toUpperCase() : '<i class="fas fa-user"></i>';
+                    }
+                    
+                    // Show selected person and seizure form
+                    document.getElementById('selectedPersonDisplay').style.display = 'block';
+                    document.getElementById('seizureDetailsForm').style.display = 'block';
+                    
+                    // Hide search results and clear search
+                    document.getElementById('searchResults').style.display = 'none';
+                    document.getElementById('personSearch').value = '';
+                    
+                    // Hide new person form if open
+                    document.getElementById('newPersonForm').classList.remove('active');
+                    
+                    // Scroll to seizure form
+                    document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    showNotification(`Selected: ${person.name}`, 'success');
+                } else {
+                    throw new Error(data.message || 'Failed to load person details');
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}: Failed to load person details`);
+            }
+        } catch (error) {
+            console.error('Error selecting person:', error);
+            showNotification('Error loading person details: ' + error.message, 'error');
+        }
+    }
+
+    // ==================== NEW PERSON SUBMIT FUNCTION ====================
+    async function handleNewPersonSubmit() {
+        const name = document.getElementById('newPersonName').value.trim();
+        const matric = document.getElementById('newMatricNumber').value.trim();
+        const dept = document.getElementById('department').value;
+        const level = document.getElementById('level').value;
+        
+        // Validate
+        if (!name || !matric) {
+            showNotification('Please fill in all required fields.', 'error');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            const addPersonBtn = document.getElementById('addPersonBtn');
+            const originalText = addPersonBtn.innerHTML;
+            addPersonBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> Adding...</span>';
+            addPersonBtn.disabled = true;
+            
+            // Create new person via API
+            const response = await authFetch('/persons', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: name,
+                    matric_number: matric,
+                    department: dept || null,
+                    level: level || null
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Hide new person form
+                    document.getElementById('newPersonForm').classList.remove('active');
+                    document.getElementById('newPersonFormFields').reset();
+                    document.getElementById('matricHint').textContent = '';
+                    
+                    // Auto-select the newly created person
+                    selectedPerson = data.data;
+                    
+                    // Update selected person display
+                    document.getElementById('selectedName').textContent = selectedPerson.name;
+                    document.getElementById('selectedMatric').textContent = selectedPerson.matric_number || '';
+                    document.getElementById('selectedDept').textContent = selectedPerson.department || "Not specified";
+                    
+                    // Update avatar
+                    const avatar = document.getElementById('selectedAvatar');
+                    if (avatar) {
+                        avatar.innerHTML = selectedPerson.name ? selectedPerson.name.charAt(0).toUpperCase() : '<i class="fas fa-user"></i>';
+                    }
+                    
+                    // Show selected person and seizure form
+                    document.getElementById('selectedPersonDisplay').style.display = 'block';
+                    document.getElementById('seizureDetailsForm').style.display = 'block';
+                    
+                    // Clear search input
+                    document.getElementById('personSearch').value = '';
+                    document.getElementById('searchResults').style.display = 'none';
+                    
+                    showNotification(`New person "${name}" added successfully!`, 'success');
+                    
+                    // Scroll to seizure form
+                    document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    throw new Error(data.message || 'Failed to add person');
+                }
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to add person');
+            }
+        } catch (error) {
+            console.error('Error adding person:', error);
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            // Reset button
+            const addPersonBtn = document.getElementById('addPersonBtn');
+            addPersonBtn.innerHTML = originalText;
+            addPersonBtn.disabled = false;
+        }
+    }
+
+    // ==================== SEIZURE SUBMIT FUNCTION ====================
+    async function handleSeizureSubmit() {
+        if (!selectedPerson) {
+            showNotification('Please select a person first.', 'error');
+            return;
+        }
+        
+        // Get seizure details
+        const phoneModel = document.getElementById('phoneModel').value.trim();
+        const deviceColor = document.getElementById('deviceColor').value.trim();
+        const location = document.getElementById('location').value;
+        const seizedBy = document.getElementById('seizedBy').value.trim() || (currentUser ? currentUser.name : 'Admin User');
+        const seizureReason = document.getElementById('seizureReason').value;
+        const notes = document.getElementById('notes').value.trim();
+        
+        // Validate form
+        if (!phoneModel || !location) {
+            showNotification('Please fill in all required fields (Device Model and Location).', 'error');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            const recordBtn = document.getElementById('recordSeizureBtn');
+            const originalText = recordBtn.innerHTML;
+            recordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> Recording...</span>';
+            recordBtn.disabled = true;
+            
+            // Create seizure via API
+            const response = await authFetch('/seizures', {
+                method: 'POST',
+                body: JSON.stringify({
+                    person_id: selectedPerson.id,
+                    phone_model: phoneModel,
+                    device_color: deviceColor || null,
+                    location: location,
+                    seized_by: seizedBy,
+                    seizure_reason: seizureReason || null,
+                    notes: notes || null,
+                    status: 'active'
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show success screen
+                    document.querySelector('.card').style.display = 'none';
+                    document.getElementById('successScreen').style.display = 'block';
+                    
+                    showNotification(`Seizure recorded successfully for ${selectedPerson.name}`, 'success');
+                    
+                    // Log success
+                    console.log('Seizure recorded successfully:', data.data);
+                } else {
+                    throw new Error(data.message || 'Failed to record seizure');
+                }
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to record seizure');
+            }
+        } catch (error) {
+            console.error('Error recording seizure:', error);
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            // Reset button
+            const recordBtn = document.getElementById('recordSeizureBtn');
+            recordBtn.innerHTML = originalText;
+            recordBtn.disabled = false;
+        }
+    }
+
+    // ==================== RESET FORM FUNCTION ====================
+    function resetAddSeizureForm() {
+        // Reset form fields
+        document.getElementById('personSearch').value = '';
+        document.getElementById('newPersonFormFields').reset();
+        document.getElementById('matricHint').textContent = '';
+        document.getElementById('seizureForm').reset();
+        
+        // Reset selects to default
+        document.getElementById('department').value = '';
+        document.getElementById('level').value = '';
+        document.getElementById('location').value = '';
+        document.getElementById('seizureReason').value = '';
+        
+        // Set default seized by
+        const user = getUser();
+        if (user && user.name) {
+            document.getElementById('seizedBy').value = user.name;
+        }
+        
+        // Hide success screen and show main form
+        document.getElementById('successScreen').style.display = 'none';
+        document.querySelector('.card').style.display = 'block';
+        
+        // Hide other elements
+        document.getElementById('newPersonForm').classList.remove('active');
+        document.getElementById('selectedPersonDisplay').style.display = 'none';
+        document.getElementById('seizureDetailsForm').style.display = 'none';
+        document.getElementById('searchResults').style.display = 'none';
+        
+        // Focus on search input
+        document.getElementById('personSearch').focus();
+        
+        selectedPerson = null;
+        
+        updateConnectionStatus('Ready to record seizure', 'connected');
+    }
+
+    // ==================== VALIDATION FUNCTIONS ====================
+    function validateMatricNumber(matric) {
+        const hint = document.getElementById('matricHint');
+        
+        if (!matric.trim()) {
+            hint.textContent = '';
+            hint.className = 'form-hint';
+            return false;
+        }
+        
+        hint.textContent = '✓ Valid matric number';
+        hint.className = 'form-hint success';
+        return true;
+    }
+
+    // ==================== SETUP EVENT LISTENERS ====================
+    function setupEventListeners() {
+        // Mobile menu
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                sidebarBackdrop.classList.add('active');
+            });
+        }
+        
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                sidebarBackdrop.classList.remove('active');
+            });
+        }
+        
+        // Logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    await logout();
+                }
+            });
+        }
+        
         // Person search with debounce
         const personSearchInput = document.getElementById('personSearch');
         if (personSearchInput) {
@@ -1271,451 +1827,28 @@
         }
     }
 
-    async function handlePersonSearch(query) {
-        const searchResults = document.getElementById('searchResults');
-        
-        if (!query.trim()) {
-            searchResults.style.display = 'none';
-            return;
-        }
-        
+    // ==================== INITIALIZATION ====================
+    document.addEventListener('DOMContentLoaded', async function() {
         try {
-            // Show loading state
-            searchResults.innerHTML = `
-                <div class="results-heading">Search Results</div>
-                <div class="person-card">
-                    <div class="person-info">
-                        <div class="person-avatar">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </div>
-                        <div>
-                            <div class="person-name">Searching...</div>
-                            <div class="person-details">Please wait while we search for persons</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            searchResults.style.display = 'block';
+            // Check authentication
+            const user = await checkAuth();
+            if (!user) return;
             
-            // Search persons via API using auth.authFetch
-            const response = await auth.authFetch(`/search?q=${encodeURIComponent(query)}`);
+            // Update connection status
+            updateConnectionStatus('Connected to server', 'connected');
             
-            if (response.ok) {
-                const data = await response.json();
-                
-                if (data.success && data.data && data.data.length > 0) {
-                    // Display search results
-                    searchResults.innerHTML = `
-                        <div class="results-heading">Search Results (${data.data.length} found)</div>
-                        ${data.data.map(person => `
-                            <div class="person-card" data-id="${person.id}" data-matric="${person.matric_number || person.matricNumber}">
-                                <div class="person-info">
-                                    <div class="person-avatar">
-                                        ${person.name ? person.name.charAt(0).toUpperCase() : '?'}
-                                    </div>
-                                    <div>
-                                        <div class="person-name">${person.name || 'Unknown'}</div>
-                                        <div class="person-details">
-                                            ${person.matric_number || person.matricNumber || 'No matric'} • ${person.department || 'No department'}
-                                            ${person.total_seizures || person.totalSeizures ? ` • ${person.total_seizures || person.totalSeizures} previous seizure(s)` : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    `;
-                    
-                    // Add click listeners to person cards
-                    document.querySelectorAll('.person-card[data-id]').forEach(card => {
-                        card.addEventListener('click', function() {
-                            const personId = this.getAttribute('data-id');
-                            const matricNumber = this.getAttribute('data-matric');
-                            selectPerson(personId, matricNumber);
-                        });
-                    });
-                } else {
-                    searchResults.innerHTML = `
-                        <div class="results-heading">Search Results</div>
-                        <div class="person-card">
-                            <div class="person-info">
-                                <div class="person-avatar">
-                                    <i class="fas fa-search"></i>
-                                </div>
-                                <div>
-                                    <div class="person-name">No persons found</div>
-                                    <div class="person-details">Try a different search term or add a new person</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            } else {
-                throw new Error('Search failed');
-            }
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Focus on search input
+            document.getElementById('personSearch').focus();
+            
         } catch (error) {
-            console.error('Search error:', error);
-            searchResults.innerHTML = `
-                <div class="results-heading">Search Results</div>
-                <div class="person-card">
-                    <div class="person-info">
-                        <div class="person-avatar">
-                            <i class="fas fa-exclamation-circle"></i>
-                        </div>
-                        <div>
-                            <div class="person-name">Search unavailable</div>
-                            <div class="person-details">Server connection error. Try adding a new person.</div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            console.error('Initialization error:', error);
+            updateConnectionStatus('Failed to connect to server', 'error');
+            showNotification('Failed to initialize page', 'error');
         }
-        
-        document.getElementById('newPersonForm').classList.remove('active');
-    }
-
-    async function selectPerson(personId, matricNumber) {
-        try {
-            // Get person details from API using auth.authFetch
-            const response = await auth.authFetch(`/persons/${personId}`);
-            
-            if (response.ok) {
-                const data = await response.json();
-                
-                if (data.success) {
-                    const person = data.data;
-                    selectedPerson = person;
-                    
-                    // Update selected person display
-                    document.getElementById('selectedName').textContent = person.name;
-                    document.getElementById('selectedMatric').textContent = person.matric_number || person.matricNumber || '';
-                    document.getElementById('selectedDept').textContent = person.department || 'Not specified';
-                    
-                    // Show selected person and seizure form
-                    document.getElementById('selectedPersonDisplay').style.display = 'block';
-                    document.getElementById('seizureDetailsForm').style.display = 'block';
-                    
-                    // Hide search results
-                    document.getElementById('searchResults').style.display = 'none';
-                    document.getElementById('personSearch').value = '';
-                    
-                    // Auto-fill department if available
-                    if (person.department && document.getElementById('department')) {
-                        document.getElementById('department').value = person.department;
-                    }
-                    
-                    // Auto-fill level if available
-                    if (person.level && document.getElementById('level')) {
-                        document.getElementById('level').value = person.level;
-                    }
-                    
-                    // Scroll to seizure form
-                    document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    
-                    showNotification(`Selected: ${person.name} (${person.matric_number || person.matricNumber})`, 'success');
-                } else {
-                    throw new Error(data.message || 'Failed to load person details');
-                }
-            } else {
-                throw new Error(`HTTP ${response.status}: Failed to load person details`);
-            }
-        } catch (error) {
-            console.error('Error selecting person:', error);
-            showNotification('Error loading person details: ' + error.message, 'error');
-        }
-    }
-
-    function validateMatricNumber(matric) {
-        const hint = document.getElementById('matricHint');
-        
-        if (!matric.trim()) {
-            hint.textContent = '';
-            hint.className = 'form-hint';
-            return false;
-        }
-        
-        // Remove any extra validation - just check if it's not empty
-        hint.textContent = '✓ Valid matric number';
-        hint.className = 'form-hint success';
-        return true;
-    }
-
-    async function handleNewPersonSubmit() {
-        const name = document.getElementById('newPersonName').value.trim();
-        const matric = document.getElementById('newMatricNumber').value.trim();
-        const dept = document.getElementById('department').value;
-        const level = document.getElementById('level').value;
-        
-        // Validate
-        if (!name || !matric) {
-            showNotification('Please fill in all required fields.', 'error');
-            return;
-        }
-        
-        // Validate matric number
-        if (!validateMatricNumber(matric)) {
-            showNotification('Please enter a valid matric number.', 'error');
-            return;
-        }
-        
-        try {
-            // Show loading state
-            const addPersonBtn = document.getElementById('addPersonBtn');
-            const originalText = addPersonBtn.innerHTML;
-            addPersonBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> Adding...</span>';
-            addPersonBtn.disabled = true;
-            
-            // Create new person via API using auth.authFetch
-            const response = await auth.authFetch('/persons', {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: name,
-                    matricNumber: matric,
-                    department: dept || null,
-                    level: level || null
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Hide new person form
-                    document.getElementById('newPersonForm').classList.remove('active');
-                    document.getElementById('newPersonFormFields').reset();
-                    document.getElementById('matricHint').textContent = '';
-                    
-                    // Auto-select the newly created person
-                    selectedPerson = data.data;
-                    
-                    // Update selected person display
-                    document.getElementById('selectedName').textContent = selectedPerson.name;
-                    document.getElementById('selectedMatric').textContent = selectedPerson.matric_number || selectedPerson.matricNumber;
-                    document.getElementById('selectedDept').textContent = selectedPerson.department || "Not specified";
-                    
-                    // Show selected person and seizure form
-                    document.getElementById('selectedPersonDisplay').style.display = 'block';
-                    document.getElementById('seizureDetailsForm').style.display = 'block';
-                    
-                    // Clear search input
-                    document.getElementById('personSearch').value = '';
-                    document.getElementById('searchResults').style.display = 'none';
-                    
-                    showNotification(`New person "${name}" (${matric}) has been added successfully!`, 'success');
-                    
-                    // Scroll to seizure form
-                    document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                    throw new Error(data.message || 'Failed to add person');
-                }
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to add person');
-            }
-        } catch (error) {
-            console.error('Error adding person:', error);
-            showNotification(`Error: ${error.message}`, 'error');
-        } finally {
-            // Reset button
-            const addPersonBtn = document.getElementById('addPersonBtn');
-            addPersonBtn.innerHTML = originalText;
-            addPersonBtn.disabled = false;
-        }
-    }
-
-    async function handleSeizureSubmit() {
-        if (!selectedPerson) {
-            showNotification('Please select a person first.', 'error');
-            return;
-        }
-        
-        // Get seizure details
-        const phoneModel = document.getElementById('phoneModel').value.trim();
-        const deviceColor = document.getElementById('deviceColor').value.trim();
-        const location = document.getElementById('location').value;
-        const seizedBy = document.getElementById('seizedBy').value.trim() || 'Admin User';
-        const seizureReason = document.getElementById('seizureReason').value;
-        const notes = document.getElementById('notes').value.trim();
-        
-        // Get person details for auto-fill
-        const dept = document.getElementById('department').value;
-        const level = document.getElementById('level').value;
-        
-        // Validate form
-        if (!phoneModel || !location) {
-            showNotification('Please fill in all required fields (Device Model and Location).', 'error');
-            return;
-        }
-        
-        try {
-            // Show loading state
-            const recordBtn = document.getElementById('recordSeizureBtn');
-            const originalText = recordBtn.innerHTML;
-            recordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span> Recording...</span>';
-            recordBtn.disabled = true;
-            
-            // Create seizure via API using auth.authFetch
-            const response = await auth.authFetch('/seizures', {
-                method: 'POST',
-                body: JSON.stringify({
-                    matricNumber: selectedPerson.matric_number || selectedPerson.matricNumber,
-                    fullName: selectedPerson.name,
-                    phoneModel: phoneModel,
-                    deviceColor: deviceColor || null,
-                    location: location,
-                    seizedBy: seizedBy,
-                    seizureReason: seizureReason || null,
-                    notes: notes || null,
-                    department: dept || selectedPerson.department || null,
-                    level: level || selectedPerson.level || null
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Show success screen
-                    document.querySelector('.card').style.display = 'none';
-                    document.getElementById('successScreen').style.display = 'block';
-                    
-                    showNotification(`Seizure recorded successfully for ${selectedPerson.name}`, 'success');
-                    
-                    // Log success
-                    console.log('Seizure recorded successfully:', data.data);
-                } else {
-                    throw new Error(data.message || 'Failed to record seizure');
-                }
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to record seizure');
-            }
-        } catch (error) {
-            console.error('Error recording seizure:', error);
-            showNotification(`Error: ${error.message}`, 'error');
-        } finally {
-            // Reset button
-            const recordBtn = document.getElementById('recordSeizureBtn');
-            recordBtn.innerHTML = originalText;
-            recordBtn.disabled = false;
-        }
-    }
-
-    function resetAddSeizureForm() {
-        // Reset form fields
-        document.getElementById('personSearch').value = '';
-        document.getElementById('newPersonFormFields').reset();
-        document.getElementById('matricHint').textContent = '';
-        document.getElementById('seizureForm').reset();
-        
-        // Reset selects to default
-        document.getElementById('department').value = '';
-        document.getElementById('level').value = '';
-        document.getElementById('location').value = '';
-        document.getElementById('seizureReason').value = '';
-        
-        // Set default seized by
-        const user = auth.getCurrentUser();
-        document.getElementById('seizedBy').value = user ? user.name : 'Admin User';
-        
-        // Hide success screen and show main form
-        document.getElementById('successScreen').style.display = 'none';
-        document.querySelector('.card').style.display = 'block';
-        
-        // Hide other elements
-        document.getElementById('newPersonForm').classList.remove('active');
-        document.getElementById('selectedPersonDisplay').style.display = 'none';
-        document.getElementById('seizureDetailsForm').style.display = 'none';
-        document.getElementById('searchResults').style.display = 'none';
-        
-        // Focus on search input
-        document.getElementById('personSearch').focus();
-        
-        selectedPerson = null;
-    }
-
-    function showNotification(message, type = 'info') {
-        // Remove existing notifications
-        document.querySelectorAll('.notification').forEach(n => n.remove());
-        
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        
-        const bgColor = type === 'success' ? 'var(--green-100)' : 
-                    type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
-        const textColor = type === 'success' ? 'var(--green-800)' : 
-                        type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
-        const borderColor = type === 'success' ? 'var(--green-300)' : 
-                        type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
-        const icon = type === 'success' ? 'fa-check-circle' : 
-                    type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-        
-        notification.style.cssText = `
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            background-color: ${bgColor};
-            color: ${textColor};
-            border: 1px solid ${borderColor};
-            z-index: 1000;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            animation: slideIn 0.3s ease;
-            font-family: inherit;
-            font-size: 14px;
-            min-width: 300px;
-            max-width: 400px;
-        `;
-        
-        notification.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas ${icon}"></i>
-                <span>${message}</span>
-            </div>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        // Add keyframes for animation if not already present
-        if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                @keyframes slideOut {
-                    from {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                    to {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        // Remove notification after 5 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 5000);
-    }
+    });
 
     // Export functions for debugging
     window.addSeizure = {

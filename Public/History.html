@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="./js/auth.js"></script>
+    <!-- Remove auth.js script -->
     <title>SeizeTrack - Seizure History</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* [Keep all your existing styles exactly as they are] */
         :root {
             --blue-50: #eff6ff;
             --blue-100: #dbeafe;
@@ -739,10 +740,10 @@
             <!-- User Profile -->
             <div class="sidebar-profile">
                 <div class="profile-container">
-                    <div class="profile-avatar">AD</div>
+                    <div class="profile-avatar" id="profileAvatar">AD</div>
                     <div class="profile-info">
-                        <div class="profile-name">Admin User</div>
-                        <div class="profile-role">Security Dept</div>
+                        <div class="profile-name" id="profileName">Loading...</div>
+                        <div class="profile-role" id="profileRole">Loading...</div>
                     </div>
                     <button class="logout-btn" id="logoutBtn">
                         <i class="fas fa-sign-out-alt"></i>
@@ -866,138 +867,163 @@
     </div>
     
 <script>
+    // ==================== CONFIGURATION ====================
+    const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+    
+    // ==================== STATE MANAGEMENT ====================
     let allSeizures = [];
     let filteredSeizures = [];
     let currentPage = 1;
-    const itemsPerPage = 10;
+    let itemsPerPage = 10;
     let debounceTimer;
+    let currentUser = null;
 
-    document.addEventListener('DOMContentLoaded', async function() {
+    // ==================== AUTHENTICATION UTILITIES ====================
+    function getToken() {
+        return localStorage.getItem('token');
+    }
+
+    function getUser() {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                return JSON.parse(userStr);
+            } catch (e) {
+                console.error('Failed to parse user:', e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    function isLoggedIn() {
+        return !!getToken();
+    }
+
+    function clearAuth() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+    }
+
+    function getAuthHeaders() {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        const token = getToken();
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        return headers;
+    }
+
+    async function authFetch(url, options = {}) {
         try {
-            // Check authentication using your auth.js
-            const user = await auth.checkAuth();
-            if (!user) return;
+            const response = await fetch(`${API_BASE_URL}${url}`, {
+                ...options,
+                headers: {
+                    ...getAuthHeaders(),
+                    ...options.headers
+                }
+            });
+
+            if (response.status === 401) {
+                console.error('Authentication failed - redirecting to login');
+                clearAuth();
+                throw new Error('Session expired. Please login again.');
+            }
+
+            return response;
+        } catch (error) {
+            console.error('Auth fetch error:', error);
+            throw error;
+        }
+    }
+
+    // ==================== AUTHENTICATION CHECK ====================
+    async function checkAuth() {
+        if (!isLoggedIn()) {
+            window.location.href = '/';
+            return null;
+        }
+
+        try {
+            const token = getToken();
+            const response = await fetch(`${API_BASE_URL}/auth/check`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    updateUserProfile();
+                    return currentUser;
+                }
+            }
             
-            // Update user profile in sidebar
-            updateUserProfile(user);
-            
-            // Initialize sidebar
-            setupSidebar();
-            
-            // Setup event listeners
-            setupEventListeners();
-            
-            // Set today's date as default for date filter
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('dateFilter').value = today;
-            
-            // Load data
-            await loadDashboardStats();
-            await loadSeizureHistory();
+            // If response is not ok, clear auth
+            clearAuth();
+            return null;
             
         } catch (error) {
-            console.error('Initialization error:', error);
-            showNotification('Failed to initialize history page', 'error');
-        }
-    });
-
-    function setupSidebar() {
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-        
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', function() {
-                sidebar.classList.add('active');
-                sidebarBackdrop.classList.add('active');
-            });
-        }
-        
-        if (sidebarBackdrop) {
-            sidebarBackdrop.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarBackdrop.classList.remove('active');
-            });
-        }
-        
-        // Setup logout button
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to logout?')) {
-                    await auth.logout();
-                }
-            });
+            console.error('Auth check failed:', error);
+            // Don't clear auth on network errors, just return null
+            return null;
         }
     }
 
-    function updateUserProfile(user) {
-        const profileName = document.querySelector('.profile-name');
-        const profileRole = document.querySelector('.profile-role');
-        const profileAvatar = document.querySelector('.profile-avatar');
+    // ==================== PROFILE MANAGEMENT ====================
+    function updateUserProfile() {
+        const user = getUser();
+        if (!user) return;
+
+        const profileName = document.getElementById('profileName');
+        const profileRole = document.getElementById('profileRole');
+        const profileAvatar = document.getElementById('profileAvatar');
         
-        if (profileName && user.name) {
-            profileName.textContent = user.name;
+        if (profileName) {
+            profileName.textContent = user.name || user.email || 'User';
         }
         
-        if (profileRole && user.department) {
-            profileRole.textContent = user.department;
+        if (profileRole) {
+            profileRole.textContent = user.department || user.role || 'Security Dept';
         }
-        
-        if (profileAvatar && user.name) {
-            profileAvatar.textContent = user.name.charAt(0).toUpperCase();
+
+        if (profileAvatar && (user.name || user.email)) {
+            profileAvatar.textContent = (user.name || user.email || 'U').charAt(0).toUpperCase();
         }
     }
 
-    function setupEventListeners() {
-        // Refresh button
-        const refreshBtn = document.getElementById('refreshBtn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', async function() {
-                try {
-                    await loadDashboardStats();
-                    await loadSeizureHistory();
-                    showNotification('Data refreshed successfully', 'success');
-                } catch (error) {
-                    showNotification('Failed to refresh data', 'error');
-                }
-            });
-        }
-        
-        // Retry button
-        const retryBtn = document.getElementById('retryBtn');
-        if (retryBtn) {
-            retryBtn.addEventListener('click', async function() {
-                await loadDashboardStats();
-                await loadSeizureHistory();
-            });
-        }
-        
-        // Search input with debounce
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', function(e) {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    filterSeizures();
-                }, 300);
-            });
-        }
-        
-        // Date filter
-        const dateFilter = document.getElementById('dateFilter');
-        if (dateFilter) {
-            dateFilter.addEventListener('change', function() {
-                filterSeizures();
-            });
+    // ==================== LOGOUT FUNCTION ====================
+    async function logout() {
+        try {
+            const token = getToken();
+            if (token) {
+                // Attempt to notify server, but don't wait for response
+                fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }).catch(err => console.warn('Logout notification failed:', err));
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            clearAuth();
         }
     }
 
+    // ==================== DATA LOADING FUNCTIONS ====================
     async function loadDashboardStats() {
         try {
-            // Use auth.authFetch for API calls
-            const response = await auth.authFetch('/stats/dashboard');
+            const response = await authFetch('/stats/dashboard');
             
             if (response.ok) {
                 const data = await response.json();
@@ -1011,7 +1037,6 @@
             }
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
-            // Use default stats on error
             renderStats({
                 totalSeizures: 0,
                 todaySeizures: 0,
@@ -1027,13 +1052,27 @@
         hideEmpty();
         
         try {
-            // Use auth.authFetch for API calls
-            const response = await auth.authFetch('/seizures');
+            const response = await authFetch('/seizures');
             
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    allSeizures = data.data || [];
+                    // Transform the data to match our expected format
+                    allSeizures = (data.data || []).map(seizure => ({
+                        id: seizure.id,
+                        createdAt: seizure.created_at,
+                        personName: seizure.persons?.name || 'N/A',
+                        personMatric: seizure.persons?.matric_number || 'N/A',
+                        personDepartment: seizure.persons?.department || 'N/A',
+                        phoneModel: seizure.phone_model,
+                        deviceColor: seizure.device_color,
+                        location: seizure.location,
+                        seizedBy: seizure.seized_by,
+                        seizureReason: seizure.seizure_reason,
+                        notes: seizure.notes,
+                        status: seizure.status
+                    }));
+                    
                     filteredSeizures = [...allSeizures];
                     
                     if (allSeizures.length === 0) {
@@ -1056,6 +1095,7 @@
         }
     }
 
+    // ==================== FILTERING FUNCTIONS ====================
     function filterSeizures() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const dateFilter = document.getElementById('dateFilter').value;
@@ -1077,7 +1117,7 @@
             
             // Date filter
             if (dateFilter) {
-                const seizureDate = new Date(seizure.createdAt || seizure['Date & Time']);
+                const seizureDate = new Date(seizure.createdAt);
                 const filterDate = new Date(dateFilter);
                 
                 // Check if dates are the same day
@@ -1101,6 +1141,7 @@
         }
     }
 
+    // ==================== RENDERING FUNCTIONS ====================
     function renderStats(stats) {
         const statsContainer = document.getElementById('statsContainer');
         if (!statsContainer) return;
@@ -1177,7 +1218,7 @@
         
         // Add rows
         currentItems.forEach(seizure => {
-            const seizureDate = new Date(seizure.createdAt || seizure['Date & Time'] || new Date());
+            const seizureDate = new Date(seizure.createdAt);
             const formattedDate = seizureDate.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
@@ -1193,9 +1234,8 @@
             let statusClass = 'status-active';
             let statusText = 'Active';
             
-            const status = seizure.status || seizure.Status;
-            if (status) {
-                const statusLower = status.toLowerCase();
+            if (seizure.status) {
+                const statusLower = seizure.status.toLowerCase();
                 if (statusLower.includes('return')) {
                     statusClass = 'status-returned';
                     statusText = 'Returned';
@@ -1212,18 +1252,21 @@
                     <div class="date-time">${formattedTime}</div>
                 </td>
                 <td>
-                    <div class="person-name">${seizure.personName || seizure['Full Name'] || 'N/A'}</div>
-                    <div class="matric-number">${seizure.personMatric || seizure['Matric Number'] || 'N/A'}</div>
+                    <div class="person-name">${seizure.personName}</div>
+                    <div class="matric-number">${seizure.personMatric}</div>
                 </td>
-                <td class="device-info">${seizure.phoneModel || seizure['Device Model'] || 'N/A'}</td>
-                <td class="location">${seizure.location || seizure.Location || 'N/A'}</td>
+                <td class="device-info">
+                    ${seizure.phoneModel}
+                    ${seizure.deviceColor ? `<br><small style="color: var(--slate-400);">${seizure.deviceColor}</small>` : ''}
+                </td>
+                <td class="location">${seizure.location || 'N/A'}</td>
                 <td>
                     <span class="status-badge ${statusClass}">${statusText}</span>
                 </td>
-                <td class="notes" title="${seizure.notes || seizure.Note || ''}">
-                    ${seizure.notes || seizure.Note || '-'}
+                <td class="notes" title="${seizure.notes || ''}">
+                    ${seizure.notes || '-'}
                 </td>
-                <td>${seizure.seizedBy || seizure['Seized By'] || 'N/A'}</td>
+                <td>${seizure.seizedBy || 'N/A'}</td>
             `;
             
             seizureTable.appendChild(row);
@@ -1295,61 +1338,45 @@
         paginationContainer.appendChild(nextButton);
         
         // Page info
-        const pageInfo = document.createElement('div');
+        const pageInfo = document.createElement('span');
         pageInfo.className = 'pagination-info';
         pageInfo.textContent = `Page ${currentPage} of ${totalPages} • ${filteredSeizures.length} records`;
         paginationContainer.appendChild(pageInfo);
     }
 
-    // UI State Management
+    // ==================== UI STATE MANAGEMENT ====================
     function showLoading() {
-        const loadingState = document.getElementById('loadingState');
-        const seizureTable = document.getElementById('seizureTable');
-        
-        if (loadingState) loadingState.style.display = 'block';
-        if (seizureTable) seizureTable.style.display = 'none';
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('seizureTable').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'none';
     }
 
     function hideLoading() {
-        const loadingState = document.getElementById('loadingState');
-        const seizureTable = document.getElementById('seizureTable');
-        
-        if (loadingState) loadingState.style.display = 'none';
-        if (seizureTable) seizureTable.style.display = 'table-row-group';
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('seizureTable').style.display = 'table-row-group';
     }
 
     function showEmpty() {
-        const emptyState = document.getElementById('emptyState');
-        const seizureTable = document.getElementById('seizureTable');
-        const paginationContainer = document.getElementById('paginationContainer');
-        
-        if (emptyState) emptyState.style.display = 'block';
-        if (seizureTable) seizureTable.style.display = 'none';
-        if (paginationContainer) paginationContainer.style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('seizureTable').style.display = 'none';
+        document.getElementById('paginationContainer').style.display = 'none';
     }
 
     function hideEmpty() {
-        const emptyState = document.getElementById('emptyState');
-        
-        if (emptyState) emptyState.style.display = 'none';
+        document.getElementById('emptyState').style.display = 'none';
     }
 
     function showError(message) {
-        const errorMessage = document.getElementById('errorMessage');
-        const errorState = document.getElementById('errorState');
-        const seizureTable = document.getElementById('seizureTable');
-        const paginationContainer = document.getElementById('paginationContainer');
-        
-        if (errorMessage) errorMessage.textContent = message;
-        if (errorState) errorState.style.display = 'block';
-        if (seizureTable) seizureTable.style.display = 'none';
-        if (paginationContainer) paginationContainer.style.display = 'none';
+        document.getElementById('errorMessage').textContent = message;
+        document.getElementById('errorState').style.display = 'block';
+        document.getElementById('seizureTable').style.display = 'none';
+        document.getElementById('paginationContainer').style.display = 'none';
+        document.getElementById('loadingState').style.display = 'none';
     }
 
     function hideError() {
-        const errorState = document.getElementById('errorState');
-        
-        if (errorState) errorState.style.display = 'none';
+        document.getElementById('errorState').style.display = 'none';
     }
 
     function showNotification(message, type = 'info') {
@@ -1436,14 +1463,104 @@
         }, 5000);
     }
 
-    // Export functions for debugging
-    window.historyPage = {
-        loadDashboardStats,
-        loadSeizureHistory,
-        filterSeizures,
-        renderTable,
-        setupPagination
-    };
-    </script>
+    // ==================== EVENT LISTENERS ====================
+    function setupEventListeners() {
+        // Mobile menu
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                sidebarBackdrop.classList.add('active');
+            });
+        }
+        
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                sidebarBackdrop.classList.remove('active');
+            });
+        }
+        
+        // Logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    await logout();
+                }
+            });
+        }
+        
+        // Refresh button
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                try {
+                    await loadDashboardStats();
+                    await loadSeizureHistory();
+                    showNotification('Data refreshed successfully', 'success');
+                } catch (error) {
+                    showNotification('Failed to refresh data', 'error');
+                }
+            });
+        }
+        
+        // Retry button
+        const retryBtn = document.getElementById('retryBtn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', async () => {
+                await loadDashboardStats();
+                await loadSeizureHistory();
+            });
+        }
+        
+        // Search input with debounce
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterSeizures();
+                }, 300);
+            });
+        }
+        
+        // Date filter
+        const dateFilter = document.getElementById('dateFilter');
+        if (dateFilter) {
+            dateFilter.addEventListener('change', () => {
+                filterSeizures();
+            });
+        }
+    }
+
+    // ==================== INITIALIZATION ====================
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            // Check authentication
+            const user = await checkAuth();
+            if (!user) return;
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Set today's date as default for date filter
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFilter').value = today;
+            
+            // Load data
+            await loadDashboardStats();
+            await loadSeizureHistory();
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            showNotification('Failed to initialize history page', 'error');
+        }
+    });
+</script>
 </body>
 </html>

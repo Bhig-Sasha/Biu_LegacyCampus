@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="./js/auth.js"></script>
+    <!-- Remove auth.js script -->
     <title>SeizeTrack - Persons Registry</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* [Keep all your existing styles exactly as they are] */
         :root {
             --blue-50: #eff6ff;
             --blue-100: #dbeafe;
@@ -304,6 +305,30 @@
         /* Common Components */
         .space-y-6 > * + * {
             margin-top: 1.5rem;
+        }
+        
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+        
+        .mt-8 {
+            margin-top: 2rem;
+        }
+        
+        .text-lg {
+            font-size: 1.125rem;
+        }
+        
+        .font-semibold {
+            font-weight: 600;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+        
+        .text-sm {
+            font-size: 0.875rem;
         }
         
         /* Header */
@@ -741,6 +766,7 @@
             display: grid;
             grid-template-columns: repeat(1, 1fr);
             gap: 1.5rem;
+            margin-bottom: 2rem;
         }
         
         @media (min-width: 768px) {
@@ -797,10 +823,10 @@
             <!-- User Profile -->
             <div class="sidebar-profile">
                 <div class="profile-container">
-                    <div class="profile-avatar">AD</div>
+                    <div class="profile-avatar" id="profileAvatar">AD</div>
                     <div class="profile-info">
-                        <div class="profile-name">Admin User</div>
-                        <div class="profile-role">Security Dept</div>
+                        <div class="profile-name" id="profileName">Loading...</div>
+                        <div class="profile-role" id="profileRole">Loading...</div>
                     </div>
                     <button class="logout-btn" id="logoutBtn">
                         <i class="fas fa-sign-out-alt"></i>
@@ -948,625 +974,775 @@
     </div>
     
 <script>
-    let allPersons = [];
-    let filteredPersons = [];
-    let debounceTimer;
+// ==================== CONFIGURATION ====================
+const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
 
-    document.addEventListener('DOMContentLoaded', async function() {
+// ==================== STATE MANAGEMENT ====================
+let allPersons = [];
+let filteredPersons = [];
+let debounceTimer;
+let currentUser = null;
+
+// ==================== AUTHENTICATION UTILITIES ====================
+function getToken() {
+    return localStorage.getItem('token');
+}
+
+function getUser() {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
         try {
-            // Check authentication using your auth.js
-            const user = await auth.checkAuth();
-            if (!user) return;
-            
-            // Update user profile in sidebar
-            updateUserProfile(user);
-            
-            // Initialize sidebar
-            setupSidebar();
-            
-            // Setup event listeners
-            setupEventListeners();
-            
-            // Load data
-            await loadPersons();
-            
-        } catch (error) {
-            console.error('Initialization error:', error);
-            showNotification('Failed to initialize persons page', 'error');
-        }
-    });
-
-    function setupSidebar() {
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-        
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', function() {
-                sidebar.classList.add('active');
-                sidebarBackdrop.classList.add('active');
-            });
-        }
-        
-        if (sidebarBackdrop) {
-            sidebarBackdrop.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarBackdrop.classList.remove('active');
-            });
-        }
-        
-        // Setup logout button
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to logout?')) {
-                    await auth.logout();
-                }
-            });
+            return JSON.parse(userStr);
+        } catch (e) {
+            console.error('Failed to parse user:', e);
+            return null;
         }
     }
+    return null;
+}
 
-    function updateUserProfile(user) {
-        const profileName = document.querySelector('.profile-name');
-        const profileRole = document.querySelector('.profile-role');
-        const profileAvatar = document.querySelector('.profile-avatar');
-        
-        if (profileName && user.name) {
-            profileName.textContent = user.name;
+function isLoggedIn() {
+    return !!getToken();
+}
+
+function clearAuth() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/';
+}
+
+function getAuthHeaders() {
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    const token = getToken();
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+}
+
+async function authFetch(url, options = {}) {
+    try {
+        const response = await fetch(`${API_BASE_URL}${url}`, {
+            ...options,
+            headers: {
+                ...getAuthHeaders(),
+                ...options.headers
+            }
+        });
+
+        if (response.status === 401) {
+            console.error('Authentication failed - redirecting to login');
+            clearAuth();
+            throw new Error('Session expired. Please login again.');
         }
-        
-        if (profileRole && user.department) {
-            profileRole.textContent = user.department;
-        }
-        
-        if (profileAvatar && user.name) {
-            profileAvatar.textContent = user.name.charAt(0).toUpperCase();
-        }
+
+        return response;
+    } catch (error) {
+        console.error('Auth fetch error:', error);
+        throw error;
+    }
+}
+
+// ==================== AUTHENTICATION CHECK ====================
+async function checkAuth() {
+    if (!isLoggedIn()) {
+        window.location.href = '/';
+        return null;
     }
 
-    function setupEventListeners() {
-        // Refresh button
-        const refreshBtn = document.getElementById('refreshBtn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', async function() {
-                try {
-                    await loadPersons();
-                    showNotification('Persons data refreshed successfully', 'success');
-                } catch (error) {
-                    showNotification('Failed to refresh data', 'error');
-                }
-            });
+    try {
+        const token = getToken();
+        const response = await fetch(`${API_BASE_URL}/auth/check`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                currentUser = data.user;
+                localStorage.setItem('user', JSON.stringify(data.user));
+                updateUserProfile();
+                return currentUser;
+            }
         }
         
-        // Retry button
-        const retryBtn = document.getElementById('retryBtn');
-        if (retryBtn) {
-            retryBtn.addEventListener('click', async function() {
-                await loadPersons();
-            });
-        }
+        // If response is not ok, clear auth
+        clearAuth();
+        return null;
         
-        // Search input with debounce
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', function(e) {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    filterPersons();
-                }, 300);
-            });
-        }
-        
-        // Modal close button
-        const modalClose = document.getElementById('modalClose');
-        if (modalClose) {
-            modalClose.addEventListener('click', function() {
-                const personModal = document.getElementById('personModal');
-                if (personModal) personModal.classList.remove('active');
-            });
-        }
-        
-        // Close modal when clicking outside
-        const personModal = document.getElementById('personModal');
-        if (personModal) {
-            personModal.addEventListener('click', function(e) {
-                if (e.target === personModal) {
-                    personModal.classList.remove('active');
-                }
-            });
-        }
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        // Don't clear auth on network errors, just return null
+        return null;
+    }
+}
+
+// ==================== PROFILE MANAGEMENT ====================
+function updateUserProfile() {
+    const user = getUser();
+    if (!user) return;
+
+    const profileName = document.getElementById('profileName');
+    const profileRole = document.getElementById('profileRole');
+    const profileAvatar = document.getElementById('profileAvatar');
+    
+    if (profileName) {
+        profileName.textContent = user.name || user.email || 'User';
+    }
+    
+    if (profileRole) {
+        profileRole.textContent = user.department || user.role || 'Security Dept';
     }
 
-    async function loadPersons() {
-        showLoading();
-        hideError();
-        hideEmpty();
+    if (profileAvatar && (user.name || user.email)) {
+        profileAvatar.textContent = (user.name || user.email || 'U').charAt(0).toUpperCase();
+    }
+}
+
+// ==================== LOGOUT FUNCTION ====================
+async function logout() {
+    try {
+        const token = getToken();
+        if (token) {
+            // Attempt to notify server, but don't wait for response
+            fetch(`${API_BASE_URL}/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }).catch(err => console.warn('Logout notification failed:', err));
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    } finally {
+        clearAuth();
+    }
+}
+
+// ==================== DATA LOADING FUNCTIONS ====================
+async function loadPersons() {
+    showLoading();
+    hideError();
+    hideEmpty();
+    
+    try {
+        // Use authFetch for API calls
+        const response = await authFetch('/persons');
         
-        try {
-            // Use auth.authFetch for API calls
-            const response = await auth.authFetch('/persons');
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    allPersons = data.data || [];
-                    filteredPersons = [...allPersons];
-                    
-                    // Calculate statistics
-                    const stats = calculateStatistics(allPersons);
-                    renderStats(stats);
-                    
-                    if (allPersons.length === 0) {
-                        showEmpty();
-                    } else {
-                        renderTable();
-                    }
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Transform the data to match our expected format
+                allPersons = (data.data || []).map(person => ({
+                    id: person.id,
+                    name: person.name,
+                    matric_number: person.matric_number,
+                    department: person.department,
+                    level: person.level,
+                    total_seizures: person.total_seizures || 0,
+                    last_seized: person.last_seized,
+                    created_at: person.created_at,
+                    // Also keep camelCase versions for compatibility
+                    matricNumber: person.matric_number,
+                    totalSeizures: person.total_seizures || 0,
+                    lastSeized: person.last_seized,
+                    createdAt: person.created_at
+                }));
+                
+                filteredPersons = [...allPersons];
+                
+                // Calculate statistics
+                const stats = calculateStatistics(allPersons);
+                renderStats(stats);
+                
+                if (allPersons.length === 0) {
+                    showEmpty();
                 } else {
-                    throw new Error(data.message || 'Failed to load persons');
+                    renderTable();
                 }
             } else {
-                throw new Error(`HTTP ${response.status}: Failed to load persons`);
+                throw new Error(data.message || 'Failed to load persons');
             }
-        } catch (error) {
-            console.error('Error loading persons:', error);
-            showError(error.message);
-        } finally {
-            hideLoading();
-        }
-    }
-
-    function calculateStatistics(persons) {
-        const totalPersons = persons.length;
-        const totalSeizures = persons.reduce((sum, person) => 
-            sum + (parseInt(person.totalSeizures) || 0), 0);
-        const repeatOffenders = persons.filter(person => 
-            (parseInt(person.totalSeizures) || 0) >= 2).length;
-        const avgSeizures = totalPersons > 0 ? (totalSeizures / totalPersons).toFixed(1) : 0;
-        
-        return {
-            totalPersons,
-            totalSeizures,
-            repeatOffenders,
-            avgSeizures
-        };
-    }
-
-    function filterPersons() {
-        const searchInput = document.getElementById('searchInput');
-        if (!searchInput) return;
-        
-        const searchTerm = searchInput.value.toLowerCase();
-        
-        filteredPersons = allPersons.filter(person => {
-            if (!searchTerm) return true;
-            
-            return (
-                (person.name && person.name.toLowerCase().includes(searchTerm)) ||
-                (person.matricNumber && person.matricNumber.toLowerCase().includes(searchTerm)) ||
-                (person.department && person.department.toLowerCase().includes(searchTerm))
-            );
-        });
-        
-        renderTable();
-        
-        // Show empty state if no results
-        if (filteredPersons.length === 0) {
-            showEmpty();
         } else {
-            hideEmpty();
+            throw new Error(`HTTP ${response.status}: Failed to load persons`);
         }
+    } catch (error) {
+        console.error('Error loading persons:', error);
+        showError(error.message);
+    } finally {
+        hideLoading();
     }
+}
 
-    function renderStats(stats) {
-        const statsContainer = document.getElementById('statsContainer');
-        if (!statsContainer) return;
-        
-        statsContainer.innerHTML = `
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Total Persons</span>
-                    <div class="stat-icon blue">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-                <div class="stat-value">${stats.totalPersons}</div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Total Seizures</span>
-                    <div class="stat-icon red">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
-                </div>
-                <div class="stat-value">${stats.totalSeizures}</div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Repeat Offenders</span>
-                    <div class="stat-icon yellow">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <div class="stat-value">${stats.repeatOffenders}</div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Avg. per Person</span>
-                    <div class="stat-icon green">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                </div>
-                <div class="stat-value">${stats.avgSeizures}</div>
-            </div>
-        `;
-    }
+function calculateStatistics(persons) {
+    const totalPersons = persons.length;
+    const totalSeizures = persons.reduce((sum, person) => 
+        sum + (parseInt(person.total_seizures) || 0), 0);
+    const repeatOffenders = persons.filter(person => 
+        (parseInt(person.total_seizures) || 0) >= 2).length;
+    const avgSeizures = totalPersons > 0 ? (totalSeizures / totalPersons).toFixed(1) : 0;
+    
+    return {
+        totalPersons,
+        totalSeizures,
+        repeatOffenders,
+        avgSeizures
+    };
+}
 
-    function renderTable() {
-        const personsTable = document.getElementById('personsTable');
-        if (!personsTable) return;
+function filterPersons() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+    
+    const searchTerm = searchInput.value.toLowerCase();
+    
+    filteredPersons = allPersons.filter(person => {
+        if (!searchTerm) return true;
         
-        // Sort by most seizures
-        const sortedPersons = [...filteredPersons].sort((a, b) => 
-            (parseInt(b.totalSeizures) || 0) - (parseInt(a.totalSeizures) || 0)
+        return (
+            (person.name && person.name.toLowerCase().includes(searchTerm)) ||
+            (person.matric_number && person.matric_number.toLowerCase().includes(searchTerm)) ||
+            (person.department && person.department.toLowerCase().includes(searchTerm))
         );
+    });
+    
+    renderTable();
+    
+    // Show empty state if no results
+    if (filteredPersons.length === 0) {
+        showEmpty();
+    } else {
+        hideEmpty();
+    }
+}
+
+// ==================== RENDERING FUNCTIONS ====================
+function renderStats(stats) {
+    const statsContainer = document.getElementById('statsContainer');
+    if (!statsContainer) return;
+    
+    statsContainer.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Total Persons</span>
+                <div class="stat-icon blue">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-value">${stats.totalPersons}</div>
+        </div>
         
-        // Clear table
-        personsTable.innerHTML = '';
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Total Seizures</span>
+                <div class="stat-icon red">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+            </div>
+            <div class="stat-value">${stats.totalSeizures}</div>
+        </div>
         
-        // Add rows
-        sortedPersons.forEach(person => {
-            const totalSeizures = parseInt(person.totalSeizures) || 0;
-            const lastSeized = person.lastSeized || person.last_seized;
-            const formattedLastSeized = lastSeized ? 
-                new Date(lastSeized).toLocaleDateString('en-US', {
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Repeat Offenders</span>
+                <div class="stat-icon yellow">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+            <div class="stat-value">${stats.repeatOffenders}</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Avg. per Person</span>
+                <div class="stat-icon green">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="stat-value">${stats.avgSeizures}</div>
+        </div>
+    `;
+}
+
+function renderTable() {
+    const personsTable = document.getElementById('personsTable');
+    if (!personsTable) return;
+    
+    // Sort by most seizures
+    const sortedPersons = [...filteredPersons].sort((a, b) => 
+        (parseInt(b.total_seizures) || 0) - (parseInt(a.total_seizures) || 0)
+    );
+    
+    // Clear table
+    personsTable.innerHTML = '';
+    
+    // Add rows
+    sortedPersons.forEach(person => {
+        const totalSeizures = parseInt(person.total_seizures) || 0;
+        const lastSeized = person.last_seized;
+        const formattedLastSeized = lastSeized ? 
+            new Date(lastSeized).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }) : 
+            'No seizures';
+        
+        let statusBadge = '';
+        if (totalSeizures >= 3) {
+            statusBadge = `
+                <span class="badge danger">
+                    <i class="fas fa-exclamation-triangle badge-icon"></i>
+                    Frequent Offender
+                </span>
+            `;
+        } else if (totalSeizures === 2) {
+            statusBadge = `
+                <span class="badge warning">
+                    <i class="fas fa-exclamation-circle badge-icon"></i>
+                    Repeat Offender
+                </span>
+            `;
+        } else if (totalSeizures === 1) {
+            statusBadge = `
+                <span class="badge info">
+                    <i class="fas fa-user badge-icon"></i>
+                    First Offense
+                </span>
+            `;
+        } else {
+            statusBadge = `
+                <span class="badge neutral">
+                    <i class="fas fa-check badge-icon"></i>
+                    No Record
+                </span>
+            `;
+        }
+        
+        const row = document.createElement('tr');
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => showPersonDetails(person));
+        
+        row.innerHTML = `
+            <td>
+                <div class="student-info">
+                    <div class="student-avatar">${person.name ? person.name.charAt(0).toUpperCase() : '?'}</div>
+                    <div>
+                        <div class="student-name">${person.name || 'Unknown'}</div>
+                        <div class="student-matric">${person.matric_number || 'No matric'}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="department">${person.department || 'Not specified'}</td>
+            <td class="level">${person.level || 'Not specified'}</td>
+            <td>
+                <div class="seizure-count">${totalSeizures}</div>
+            </td>
+            <td class="last-incident">${formattedLastSeized}</td>
+            <td>${statusBadge}</td>
+        `;
+        
+        personsTable.appendChild(row);
+    });
+}
+
+async function showPersonDetails(person) {
+    try {
+        // Load person details with seizures using authFetch
+        const response = await authFetch(`/persons/${person.id}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                const personData = data.data;
+                
+                // Load seizures for this person
+                const seizuresResponse = await authFetch(`/seizures?person_id=${person.id}`);
+                let seizures = [];
+                
+                if (seizuresResponse.ok) {
+                    const seizuresData = await seizuresResponse.json();
+                    if (seizuresData.success) {
+                        seizures = seizuresData.data || [];
+                    }
+                }
+                
+                renderPersonDetails(personData, seizures);
+                
+                // Show modal
+                const personModal = document.getElementById('personModal');
+                if (personModal) personModal.classList.add('active');
+            } else {
+                throw new Error(data.message || 'Failed to load person details');
+            }
+        } else {
+            throw new Error(`HTTP ${response.status}: Failed to load person details`);
+        }
+    } catch (error) {
+        console.error('Error loading person details:', error);
+        showNotification('Failed to load person details: ' + error.message, 'error');
+    }
+}
+
+function renderPersonDetails(personData, seizures) {
+    const personDetails = document.getElementById('personDetails');
+    const personSeizuresTable = document.getElementById('personSeizuresTable');
+    
+    if (!personDetails || !personSeizuresTable) return;
+    
+    // Render person details
+    const lastSeized = personData.last_seized;
+    const createdAt = personData.created_at;
+    
+    personDetails.innerHTML = `
+        <div class="detail-item">
+            <h4>Full Name</h4>
+            <p>${personData.name || 'Not specified'}</p>
+        </div>
+        <div class="detail-item">
+            <h4>Matric Number</h4>
+            <p>${personData.matric_number || 'Not specified'}</p>
+        </div>
+        <div class="detail-item">
+            <h4>Department</h4>
+            <p>${personData.department || 'Not specified'}</p>
+        </div>
+        <div class="detail-item">
+            <h4>Level</h4>
+            <p>${personData.level || 'Not specified'}</p>
+        </div>
+        <div class="detail-item">
+            <h4>Total Seizures</h4>
+            <p>${personData.total_seizures || 0}</p>
+        </div>
+        <div class="detail-item">
+            <h4>Last Seized</h4>
+            <p>${lastSeized ? 
+                new Date(lastSeized).toLocaleString('en-US', {
                     year: 'numeric',
-                    month: 'short',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 
+                'Never'}</p>
+        </div>
+        <div class="detail-item">
+            <h4>Registered Since</h4>
+            <p>${createdAt ? 
+                new Date(createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
                     day: 'numeric'
                 }) : 
-                'No seizures';
-            
-            let statusBadge = '';
-            if (totalSeizures >= 3) {
-                statusBadge = `
-                    <span class="badge danger">
-                        <i class="fas fa-exclamation-triangle badge-icon"></i>
-                        Frequent Offender
-                    </span>
-                `;
-            } else if (totalSeizures === 2) {
-                statusBadge = `
-                    <span class="badge warning">
-                        <i class="fas fa-exclamation-circle badge-icon"></i>
-                        Repeat Offender
-                    </span>
-                `;
-            } else if (totalSeizures === 1) {
-                statusBadge = `
-                    <span class="badge info">
-                        <i class="fas fa-user badge-icon"></i>
-                        First Offense
-                    </span>
-                `;
-            } else {
-                statusBadge = `
-                    <span class="badge neutral">
-                        <i class="fas fa-check badge-icon"></i>
-                        No Record
-                    </span>
-                `;
-            }
-            
+                'Unknown'}</p>
+        </div>
+    `;
+    
+    // Render seizures history
+    if (seizures && Array.isArray(seizures) && seizures.length > 0) {
+        personSeizuresTable.innerHTML = '';
+        
+        seizures.forEach(seizure => {
+            const seizureDate = new Date(seizure.created_at);
             const row = document.createElement('tr');
-            row.style.cursor = 'pointer';
-            row.addEventListener('click', () => showPersonDetails(person));
+            
+            // Determine status badge class
+            let statusClass = 'badge info';
+            let statusText = 'Active';
+            
+            if (seizure.status) {
+                const statusLower = seizure.status.toLowerCase();
+                if (statusLower.includes('return')) {
+                    statusClass = 'badge';
+                    statusText = 'Returned';
+                } else if (statusLower.includes('lost')) {
+                    statusClass = 'badge danger';
+                    statusText = 'Lost';
+                }
+            }
             
             row.innerHTML = `
+                <td>${seizureDate.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}</td>
+                <td>${seizure.phone_model || 'N/A'}</td>
+                <td>${seizure.location || 'N/A'}</td>
+                <td>${seizure.seizure_reason || 'N/A'}</td>
                 <td>
-                    <div class="student-info">
-                        <div class="student-avatar">${person.name ? person.name.charAt(0).toUpperCase() : '?'}</div>
-                        <div>
-                            <div class="student-name">${person.name || 'Unknown'}</div>
-                            <div class="student-matric">${person.matricNumber || person.matric_number || 'No matric'}</div>
-                        </div>
-                    </div>
+                    <span class="${statusClass}">${statusText}</span>
                 </td>
-                <td class="department">${person.department || 'Not specified'}</td>
-                <td class="level">${person.level || 'Not specified'}</td>
-                <td>
-                    <div class="seizure-count">${totalSeizures}</div>
-                </td>
-                <td class="last-incident">${formattedLastSeized}</td>
-                <td>${statusBadge}</td>
             `;
-            
-            personsTable.appendChild(row);
+            personSeizuresTable.appendChild(row);
+        });
+    } else {
+        personSeizuresTable.innerHTML = `
+            <tr>
+                <td colspan="5" style="padding: 2rem; text-align: center; color: var(--slate-500);">
+                    No seizure records found for this person.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// ==================== UI STATE MANAGEMENT ====================
+function showLoading() {
+    const loadingState = document.getElementById('loadingState');
+    const personsTable = document.getElementById('personsTable');
+    const statsContainer = document.getElementById('statsContainer');
+    
+    if (loadingState) loadingState.style.display = 'block';
+    if (personsTable) personsTable.style.display = 'none';
+    if (statsContainer) statsContainer.style.display = 'none';
+}
+
+function hideLoading() {
+    const loadingState = document.getElementById('loadingState');
+    const personsTable = document.getElementById('personsTable');
+    const statsContainer = document.getElementById('statsContainer');
+    
+    if (loadingState) loadingState.style.display = 'none';
+    if (personsTable) personsTable.style.display = 'table-row-group';
+    if (statsContainer) statsContainer.style.display = 'grid';
+}
+
+function showEmpty() {
+    const emptyState = document.getElementById('emptyState');
+    const personsTable = document.getElementById('personsTable');
+    
+    if (emptyState) emptyState.style.display = 'block';
+    if (personsTable) personsTable.style.display = 'none';
+}
+
+function hideEmpty() {
+    const emptyState = document.getElementById('emptyState');
+    
+    if (emptyState) emptyState.style.display = 'none';
+}
+
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    const errorState = document.getElementById('errorState');
+    const personsTable = document.getElementById('personsTable');
+    const statsContainer = document.getElementById('statsContainer');
+    
+    if (errorMessage) errorMessage.textContent = message;
+    if (errorState) errorState.style.display = 'block';
+    if (personsTable) personsTable.style.display = 'none';
+    if (statsContainer) statsContainer.style.display = 'none';
+}
+
+function hideError() {
+    const errorState = document.getElementById('errorState');
+    
+    if (errorState) errorState.style.display = 'none';
+}
+
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    document.querySelectorAll('.notification').forEach(n => n.remove());
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    const bgColor = type === 'success' ? 'var(--green-100)' : 
+                type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
+    const textColor = type === 'success' ? 'var(--green-800)' : 
+                    type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
+    const borderColor = type === 'success' ? 'var(--green-300)' : 
+                    type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
+    const icon = type === 'success' ? 'fa-check-circle' : 
+                type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        background-color: ${bgColor};
+        color: ${textColor};
+        border: 1px solid ${borderColor};
+        z-index: 1000;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        animation: slideIn 0.3s ease;
+        font-family: inherit;
+        font-size: 14px;
+        min-width: 300px;
+        max-width: 400px;
+    `;
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Add keyframes for animation if not already present
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Remove notification after 5 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// ==================== EVENT LISTENERS ====================
+function setupEventListeners() {
+    // Mobile menu
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            sidebarBackdrop.classList.add('active');
         });
     }
-
-    async function showPersonDetails(person) {
-        try {
-            // Load person details using auth.authFetch
-            const response = await auth.authFetch(`/persons/${person.id}`);
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    renderPersonDetails(data.data);
-                    
-                    // Show modal
-                    const personModal = document.getElementById('personModal');
-                    if (personModal) personModal.classList.add('active');
-                } else {
-                    throw new Error(data.message || 'Failed to load person details');
-                }
-            } else {
-                throw new Error(`HTTP ${response.status}: Failed to load person details`);
+    
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            sidebarBackdrop.classList.remove('active');
+        });
+    }
+    
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                await logout();
             }
-        } catch (error) {
-            console.error('Error loading person details:', error);
-            showNotification('Failed to load person details: ' + error.message, 'error');
-        }
+        });
     }
-
-    function renderPersonDetails(personData) {
-        const personDetails = document.getElementById('personDetails');
-        const personSeizuresTable = document.getElementById('personSeizuresTable');
-        
-        if (!personDetails || !personSeizuresTable) return;
-        
-        // Render person details
-        const lastSeized = personData.lastSeized || personData.last_seized;
-        const createdAt = personData.createdAt || personData.created_at;
-        
-        personDetails.innerHTML = `
-            <div class="detail-item">
-                <h4>Full Name</h4>
-                <p>${personData.name || 'Not specified'}</p>
-            </div>
-            <div class="detail-item">
-                <h4>Matric Number</h4>
-                <p>${personData.matricNumber || personData.matric_number || 'Not specified'}</p>
-            </div>
-            <div class="detail-item">
-                <h4>Department</h4>
-                <p>${personData.department || 'Not specified'}</p>
-            </div>
-            <div class="detail-item">
-                <h4>Level</h4>
-                <p>${personData.level || 'Not specified'}</p>
-            </div>
-            <div class="detail-item">
-                <h4>Total Seizures</h4>
-                <p>${personData.totalSeizures || personData.total_seizures || 0}</p>
-            </div>
-            <div class="detail-item">
-                <h4>Last Seized</h4>
-                <p>${lastSeized ? 
-                    new Date(lastSeized).toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }) : 
-                    'Never'}</p>
-            </div>
-            <div class="detail-item">
-                <h4>Registered Since</h4>
-                <p>${createdAt ? 
-                    new Date(createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    }) : 
-                    'Unknown'}</p>
-            </div>
-        `;
-        
-        // Render seizures history
-        if (personData.seizures && Array.isArray(personData.seizures) && personData.seizures.length > 0) {
-            const seizures = personData.seizures;
-            personSeizuresTable.innerHTML = '';
-            
-            seizures.forEach(seizure => {
-                const seizureDate = new Date(seizure.createdAt || seizure.created_at || seizure['Date & Time']);
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${seizureDate.toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}</td>
-                    <td>${seizure.phoneModel || seizure.phone_model || seizure['Device Model'] || 'N/A'}</td>
-                    <td>${seizure.location || seizure.Location || 'N/A'}</td>
-                    <td>${seizure.seizureReason || seizure.seizure_reason || seizure.Reason || 'N/A'}</td>
-                    <td>
-                        <span class="${getStatusBadgeClass(seizure.status || seizure.Status)}">
-                            ${getStatusText(seizure.status || seizure.Status)}
-                        </span>
-                    </td>
-                `;
-                personSeizuresTable.appendChild(row);
-            });
-        } else {
-            personSeizuresTable.innerHTML = `
-                <tr>
-                    <td colspan="5" style="padding: 2rem; text-align: center; color: var(--slate-500);">
-                        No seizure records found for this person.
-                    </td>
-                </tr>
-            `;
-        }
+    
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            try {
+                await loadPersons();
+                showNotification('Persons data refreshed successfully', 'success');
+            } catch (error) {
+                showNotification('Failed to refresh data', 'error');
+            }
+        });
     }
-
-    function getStatusBadgeClass(status) {
-        if (!status) return 'badge neutral';
-        const statusLower = status.toLowerCase();
-        if (statusLower.includes('active')) return 'badge info';
-        if (statusLower.includes('return')) return 'badge';
-        if (statusLower.includes('lost')) return 'badge danger';
-        return 'badge neutral';
+    
+    // Retry button
+    const retryBtn = document.getElementById('retryBtn');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', async () => {
+            await loadPersons();
+        });
     }
-
-    function getStatusText(status) {
-        if (!status) return 'Unknown';
-        const statusLower = status.toLowerCase();
-        if (statusLower.includes('active')) return 'Active';
-        if (statusLower.includes('return')) return 'Returned';
-        if (statusLower.includes('lost')) return 'Lost';
-        return status;
-    }
-
-    // UI State Management
-    function showLoading() {
-        const loadingState = document.getElementById('loadingState');
-        const personsTable = document.getElementById('personsTable');
-        const statsContainer = document.getElementById('statsContainer');
-        
-        if (loadingState) loadingState.style.display = 'block';
-        if (personsTable) personsTable.style.display = 'none';
-        if (statsContainer) statsContainer.style.display = 'none';
-    }
-
-    function hideLoading() {
-        const loadingState = document.getElementById('loadingState');
-        const personsTable = document.getElementById('personsTable');
-        const statsContainer = document.getElementById('statsContainer');
-        
-        if (loadingState) loadingState.style.display = 'none';
-        if (personsTable) personsTable.style.display = 'table-row-group';
-        if (statsContainer) statsContainer.style.display = 'grid';
-    }
-
-    function showEmpty() {
-        const emptyState = document.getElementById('emptyState');
-        const personsTable = document.getElementById('personsTable');
-        
-        if (emptyState) emptyState.style.display = 'block';
-        if (personsTable) personsTable.style.display = 'none';
-    }
-
-    function hideEmpty() {
-        const emptyState = document.getElementById('emptyState');
-        
-        if (emptyState) emptyState.style.display = 'none';
-    }
-
-    function showError(message) {
-        const errorMessage = document.getElementById('errorMessage');
-        const errorState = document.getElementById('errorState');
-        const personsTable = document.getElementById('personsTable');
-        const statsContainer = document.getElementById('statsContainer');
-        
-        if (errorMessage) errorMessage.textContent = message;
-        if (errorState) errorState.style.display = 'block';
-        if (personsTable) personsTable.style.display = 'none';
-        if (statsContainer) statsContainer.style.display = 'none';
-    }
-
-    function hideError() {
-        const errorState = document.getElementById('errorState');
-        
-        if (errorState) errorState.style.display = 'none';
-    }
-
-    function showNotification(message, type = 'info') {
-        // Remove existing notifications
-        document.querySelectorAll('.notification').forEach(n => n.remove());
-        
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        
-        const bgColor = type === 'success' ? 'var(--green-100)' : 
-                    type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
-        const textColor = type === 'success' ? 'var(--green-800)' : 
-                        type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
-        const borderColor = type === 'success' ? 'var(--green-300)' : 
-                        type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
-        const icon = type === 'success' ? 'fa-check-circle' : 
-                    type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-        
-        notification.style.cssText = `
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            background-color: ${bgColor};
-            color: ${textColor};
-            border: 1px solid ${borderColor};
-            z-index: 1000;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            animation: slideIn 0.3s ease;
-            font-family: inherit;
-            font-size: 14px;
-            min-width: 300px;
-            max-width: 400px;
-        `;
-        
-        notification.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas ${icon}"></i>
-                <span>${message}</span>
-            </div>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        // Add keyframes for animation if not already present
-        if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                @keyframes slideOut {
-                    from {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                    to {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        // Remove notification after 5 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
+    
+    // Search input with debounce
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                filterPersons();
             }, 300);
-        }, 5000);
+        });
     }
+    
+    // Modal close button
+    const modalClose = document.getElementById('modalClose');
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
+            const personModal = document.getElementById('personModal');
+            if (personModal) personModal.classList.remove('active');
+        });
+    }
+    
+    // Close modal when clicking outside
+    const personModal = document.getElementById('personModal');
+    if (personModal) {
+        personModal.addEventListener('click', (e) => {
+            if (e.target === personModal) {
+                personModal.classList.remove('active');
+            }
+        });
+    }
+}
 
-    // Export functions for debugging
-    window.personsPage = {
-        loadPersons,
-        filterPersons,
-        showPersonDetails,
-        renderTable
-    };
-    </script>
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Check authentication
+        const user = await checkAuth();
+        if (!user) return;
+        
+        // Setup event listeners
+        setupEventListeners();
+        
+        // Load data
+        await loadPersons();
+        
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showNotification('Failed to initialize persons page', 'error');
+    }
+});
+
+// Export functions for debugging
+window.personsPage = {
+    loadPersons,
+    filterPersons,
+    showPersonDetails,
+    renderTable
+};
+</script>
 </body>
 </html>
