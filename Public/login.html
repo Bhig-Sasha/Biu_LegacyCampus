@@ -335,7 +335,7 @@ class Auth {
     // Login function with Supabase
     async login(email, password) {
         try {
-            const response = await fetch(`${this.API_BASE_URL}/login`, {
+            const response = await fetch(`${this.API_BASE_URL}/api/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -391,7 +391,7 @@ class Auth {
         }
 
         try {
-            const response = await fetch(`${this.API_BASE_URL}/check`, {
+            const response = await fetch(`${this.API_BASE_URL}/api/check`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -428,7 +428,7 @@ class Auth {
         try {
             const token = this.getToken();
             if (token) {
-                fetch(`${this.API_BASE_URL}/logout`, {
+                fetch(`${this.API_BASE_URL}/api/logout`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,

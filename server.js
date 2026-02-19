@@ -29,8 +29,8 @@ const config = {
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
     NODE_ENV: process.env.NODE_ENV || 'production',
-    CLIENT_URL: process.env.CLIENT_URL || 'https://biulegacycampus.vercel.app', // Your Vercel frontend
-    API_URL: process.env.API_URL || 'https://biu-legacycampus.onrender.com', // Your Render backend
+    CLIENT_URL: process.env.CLIENT_URL || 'https://biulegacycampus.vercel.app',
+    API_URL: process.env.API_URL || 'https://biu-legacycampus.onrender.com',
     RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW) || 15 * 60 * 1000,
     RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX) || 100
 };
@@ -101,7 +101,9 @@ const corsOptions = {
             config.CLIENT_URL,
             'https://biulegacycampus.vercel.app',
             'http://localhost:3000',
-            'http://localhost:5000'
+            'http://localhost:5000',
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:5000'
         ].filter(Boolean);
         
         // Allow requests with no origin (like mobile apps or curl)
@@ -223,8 +225,8 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-// Login endpoint
-app.post('/api/auth/login', async (req, res) => {
+// LOGIN ENDPOINT - SIMPLIFIED PATH
+app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         
@@ -303,8 +305,8 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// Check session endpoint
-app.get('/api/auth/check', async (req, res) => {
+// CHECK SESSION ENDPOINT - SIMPLIFIED PATH
+app.get('/api/check', async (req, res) => {
     try {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
@@ -363,8 +365,8 @@ app.get('/api/auth/check', async (req, res) => {
     }
 });
 
-// Logout endpoint
-app.post('/api/auth/logout', (req, res) => {
+// LOGOUT ENDPOINT - SIMPLIFIED PATH
+app.post('/api/logout', (req, res) => {
     res.json({
         success: true,
         message: 'Logged out successfully'
@@ -849,7 +851,7 @@ app.use('/api/*', (req, res) => {
     });
 });
 
-// Root route - return API info
+// Root route - return API info (UPDATED WITH SIMPLIFIED PATHS)
 app.get('/', (req, res) => {
     res.json({
         name: 'SeizeTrack API',
@@ -857,8 +859,9 @@ app.get('/', (req, res) => {
         status: 'running',
         endpoints: {
             health: '/api/health',
-            login: '/api/auth/login',
-            check: '/api/auth/check',
+            login: '/api/login',
+            check: '/api/check',
+            logout: '/api/logout',
             dashboard: '/api/stats/dashboard',
             persons: '/api/persons',
             seizures: '/api/seizures'
@@ -901,7 +904,14 @@ async function startServer() {
             console.log(`💾 Database: ${dbConnected ? 'Connected' : 'Disconnected'}`);
             console.log(`🚦 Status: Ready to accept API requests`);
             console.log('='.repeat(60));
-            console.log('\n📝 This server only handles API requests.');
+            console.log('\n📝 Available endpoints:');
+            console.log(`   • POST ${config.API_URL}/api/login`);
+            console.log(`   • GET  ${config.API_URL}/api/check`);
+            console.log(`   • POST ${config.API_URL}/api/logout`);
+            console.log(`   • GET  ${config.API_URL}/api/stats/dashboard`);
+            console.log(`   • CRUD ${config.API_URL}/api/persons`);
+            console.log(`   • CRUD ${config.API_URL}/api/seizures`);
+            console.log('='.repeat(60));
             console.log(`🌐 Frontend is served by Vercel at: ${config.CLIENT_URL}`);
             console.log('='.repeat(60));
         });
