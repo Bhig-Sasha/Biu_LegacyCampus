@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="./js/auth.js"></script>
     <title>SeizeTrack - Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ALL YOUR DASHBOARD CSS HERE (keep the same as in your second half) */
+        /* ALL YOUR DASHBOARD CSS */
         :root {
             --blue-50: #eff6ff;
             --blue-100: #dbeafe;
@@ -47,7 +46,7 @@
             overflow-x: hidden;
         }
         
-        /* Add this new style for auth check */
+        /* Auth Check Overlay */
         .auth-check-overlay {
             position: fixed;
             top: 0;
@@ -142,8 +141,601 @@
             transform: translateX(0);
         }
         
-        /* ... REST OF YOUR DASHBOARD CSS EXACTLY AS YOU HAVE IT ... */
-        /* Continue with all your CSS from the dashboard section */
+        /* Sidebar Logo */
+        .sidebar-logo {
+            padding: 1.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--slate-800);
+        }
+        
+        .logo-icon {
+            font-size: 1.875rem;
+            color: var(--blue-400);
+        }
+        
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 0;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            color: var(--slate-300);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item:hover {
+            background-color: var(--slate-800);
+            color: white;
+        }
+        
+        .nav-item.active {
+            background-color: var(--blue-600);
+            color: white;
+        }
+        
+        .nav-icon {
+            width: 1.5rem;
+            font-size: 1.125rem;
+            margin-right: 0.75rem;
+        }
+        
+        /* Sidebar Profile */
+        .sidebar-profile {
+            border-top: 1px solid var(--slate-800);
+            padding: 1rem 0.5rem;
+        }
+        
+        .profile-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+        }
+        
+        .profile-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            background-color: var(--blue-600);
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .profile-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .profile-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .profile-role {
+            font-size: 0.75rem;
+            color: var(--slate-400);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--slate-400);
+            cursor: pointer;
+            font-size: 1.125rem;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+        
+        .logout-btn:hover {
+            color: var(--red-600);
+            background-color: var(--slate-800);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background-color: white;
+            border-bottom: 1px solid var(--slate-200);
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-header {
+                display: none;
+            }
+        }
+        
+        .mobile-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .mobile-logo-icon {
+            font-size: 1.5rem;
+            color: var(--blue-600);
+        }
+        
+        .mobile-logo-text {
+            font-weight: 600;
+            color: var(--slate-900);
+        }
+        
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--slate-600);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.375rem;
+        }
+        
+        .mobile-menu-btn:hover {
+            background-color: var(--slate-100);
+        }
+        
+        /* Page Content */
+        .page-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .content-container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--slate-900);
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: var(--slate-500);
+            font-size: 1rem;
+        }
+        
+        /* Success Notice */
+        .success-notice {
+            padding: 1rem;
+            background-color: var(--green-50);
+            border: 1px solid var(--green-200);
+            border-radius: 0.5rem;
+            color: var(--green-700);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .success-notice i {
+            font-size: 1.25rem;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (min-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .stats-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s ease;
+        }
+        
+        .stats-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-card-inner {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .stats-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .stats-icon.blue {
+            background-color: var(--blue-100);
+            color: var(--blue-600);
+        }
+        
+        .stats-icon.red {
+            background-color: var(--red-100);
+            color: var(--red-600);
+        }
+        
+        .stats-content {
+            flex: 1;
+        }
+        
+        .stats-content dl dt {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+            margin-bottom: 0.25rem;
+        }
+        
+        .stats-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--slate-900);
+        }
+        
+        .stats-description {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.25rem;
+        }
+        
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+        
+        .space-y-6 > * + * {
+            margin-top: 1.5rem;
+        }
+        
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+        
+        .space-y-8 > * + * {
+            margin-top: 2rem;
+        }
+        
+        /* Card */
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--slate-100);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--slate-900);
+            margin-bottom: 0.25rem;
+        }
+        
+        .card-header p {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+        
+        .card-action {
+            font-size: 0.875rem;
+            color: var(--blue-600);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .card-action:hover {
+            color: var(--blue-800);
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--slate-500);
+            background-color: var(--slate-50);
+        }
+        
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--slate-100);
+            font-size: 0.875rem;
+        }
+        
+        .person-name {
+            font-weight: 500;
+            color: var(--slate-900);
+        }
+        
+        .matric-number {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.125rem;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .action-card {
+            text-decoration: none;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-card.blue {
+            background: linear-gradient(135deg, var(--blue-600), var(--blue-800));
+        }
+        
+        .action-card.white {
+            background-color: white;
+            border: 1px solid var(--slate-200);
+        }
+        
+        .action-card-inner {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .action-card.blue h3 {
+            color: white;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .action-card.blue p {
+            color: var(--blue-100);
+            font-size: 0.875rem;
+        }
+        
+        .action-card.white h3 {
+            color: var(--slate-900);
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .action-card.white p {
+            color: var(--slate-500);
+            font-size: 0.875rem;
+        }
+        
+        .action-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .action-card.blue .action-icon {
+            color: white;
+        }
+        
+        .action-card.white .action-icon {
+            background-color: var(--blue-100);
+            color: var(--blue-600);
+        }
+        
+        /* Offenders List */
+        .offenders-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .offenders-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--slate-100);
+        }
+        
+        .offenders-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .person-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .person-count {
+            width: 2rem;
+            height: 2rem;
+            background-color: var(--red-100);
+            color: var(--red-600);
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .person-details .name {
+            font-weight: 500;
+            color: var(--slate-900);
+            font-size: 0.875rem;
+        }
+        
+        .person-details .matric {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+        }
+        
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background-color: var(--yellow-100);
+            color: var(--yellow-800);
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+        
+        .badge.danger {
+            background-color: var(--red-100);
+            color: var(--red-600);
+        }
+        
+        /* Button */
+        .button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .button.outline {
+            background-color: transparent;
+            border: 1px solid var(--slate-300);
+            color: var(--slate-700);
+        }
+        
+        .button.outline:hover {
+            background-color: var(--slate-50);
+            border-color: var(--slate-400);
+        }
+        
+        .button.sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .full-width {
+            width: 100%;
+        }
+        
+        .ml-1 {
+            margin-left: 0.25rem;
+        }
+        
+        /* Loading State */
+        .stats-card.loading {
+            opacity: 0.7;
+        }
+        
+        .stats-card.loading .stats-value {
+            color: var(--slate-400);
+        }
     </style>
 </head>
 <body>
@@ -338,7 +930,264 @@
     </div>
 
     <script>
-        // Wait for DOM and auth.js to load
+        // ==================== AUTHENTICATION CLASS ====================
+        class Auth {
+            constructor() {
+                // Production URL only - Render backend
+                this.API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+                this.currentUser = null;
+                this.loadUserFromStorage();
+            }
+
+            // Load user from localStorage
+            loadUserFromStorage() {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    try {
+                        this.currentUser = JSON.parse(userStr);
+                    } catch (e) {
+                        console.error('Failed to parse user from storage:', e);
+                        this.clearAuth();
+                    }
+                }
+            }
+
+            // Check if user is logged in (synchronous)
+            isLoggedIn() {
+                return !!localStorage.getItem('token');
+            }
+
+            // Login function with Supabase
+            async login(email, password) {
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    // Check if response is OK and has content
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    }
+
+                    // Check if response has content
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('Server returned non-JSON response');
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Save token and user data from Supabase
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        localStorage.setItem('supabase_user_id', data.user.id); // Store Supabase user ID
+                        this.currentUser = data.user;
+                        
+                        return { 
+                            success: true, 
+                            message: data.message,
+                            user: data.user,
+                            token: data.token 
+                        };
+                    } else {
+                        return { 
+                            success: false, 
+                            message: data.message || 'Login failed' 
+                        };
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    return { 
+                        success: false, 
+                        message: error.message || 'Network error. Please try again.' 
+                    };
+                }
+            }
+
+            // Check authentication and redirect if not logged in
+            async requireAuth() {
+                if (!this.isLoggedIn()) {
+                    this.redirectToLogin();
+                    return null;
+                }
+
+                try {
+                    const user = await this.checkAuth();
+                    if (!user) {
+                        this.redirectToLogin();
+                        return null;
+                    }
+                    return user;
+                } catch (error) {
+                    console.error('Auth check error:', error);
+                    this.redirectToLogin();
+                    return null;
+                }
+            }
+
+            // Check authentication with server validation (Supabase session check)
+            async checkAuth() {
+                const token = localStorage.getItem('token');
+                
+                if (!token) {
+                    return null;
+                }
+
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/auth/check`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            this.currentUser = data.user;
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                            return this.currentUser;
+                        }
+                    }
+                    
+                    // If response is not ok, clear auth
+                    if (response.status === 401) {
+                        this.clearAuth();
+                    }
+                    return null;
+                    
+                } catch (error) {
+                    console.warn('Auth check failed:', error);
+                    return null;
+                }
+            }
+
+            // Get current user info
+            getCurrentUser() {
+                return this.currentUser;
+            }
+
+            // Get Supabase user ID
+            getSupabaseUserId() {
+                return localStorage.getItem('supabase_user_id');
+            }
+
+            // Get auth token
+            getToken() {
+                return localStorage.getItem('token');
+            }
+
+            // Logout (clear Supabase session)
+            async logout() {
+                try {
+                    const token = this.getToken();
+                    if (token) {
+                        // Attempt to notify server, but don't wait for response
+                        fetch(`${this.API_BASE_URL}/auth/logout`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        }).catch(err => console.warn('Logout notification failed:', err));
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+
+                this.clearAuth();
+                window.location.href = '/';
+            }
+
+            // Clear authentication data
+            clearAuth() {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('email');
+                localStorage.removeItem('name');
+                localStorage.removeItem('role');
+                localStorage.removeItem('department');
+                localStorage.removeItem('supabase_user_id');
+                this.currentUser = null;
+            }
+
+            // Redirect to login page
+            redirectToLogin() {
+                // Only redirect if we're not already on login page
+                const currentPath = window.location.pathname;
+                if (!currentPath.includes('login') && currentPath !== '/') {
+                    window.location.href = '/';
+                }
+            }
+
+            // Add authorization headers to fetch requests
+            getAuthHeaders() {
+                const token = this.getToken();
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                return headers;
+            }
+
+            // Wrapper for fetch with authentication
+            async authFetch(url, options = {}) {
+                const headers = this.getAuthHeaders();
+                
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}${url}`, {
+                        ...options,
+                        headers: {
+                            ...headers,
+                            ...options.headers
+                        }
+                    });
+
+                    if (response.status === 401) {
+                        // Token expired or invalid
+                        this.clearAuth();
+                        window.location.href = '/';
+                        throw new Error('Session expired. Please login again.');
+                    }
+
+                    return response;
+                } catch (error) {
+                    console.error('Auth fetch error:', error);
+                    throw error;
+                }
+            }
+
+            // Check user role
+            isAdmin() {
+                return this.currentUser && this.currentUser.role === 'admin';
+            }
+
+            // Check user role
+            isSecurity() {
+                return this.currentUser && this.currentUser.role === 'security';
+            }
+
+            // Check if user is a student
+            isStudent() {
+                return this.currentUser && this.currentUser.role === 'student';
+            }
+        }
+
+        // ==================== INITIALIZATION ====================
+        // Create global auth instance
+        const auth = new Auth();
+
+        // Wait for DOM and auth to be ready
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('Dashboard initialization started...');
             
@@ -348,11 +1197,6 @@
             const dashboardContent = document.getElementById('dashboardContent');
             
             try {
-                // Check if auth.js is loaded
-                if (!window.auth) {
-                    throw new Error('Authentication system not loaded. Please refresh the page.');
-                }
-                
                 // Check if user is logged in
                 if (!auth.isLoggedIn()) {
                     authCheckMessage.textContent = 'Not logged in. Redirecting to login...';
@@ -445,7 +1289,7 @@
             }
             
             // Navigation active state
-            const currentPage = window.location.pathname.split('/').pop();
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
             const navItems = document.querySelectorAll('.nav-item');
             
             navItems.forEach(item => {
@@ -464,21 +1308,29 @@
             
             if (profileName && user.name) {
                 profileName.textContent = user.name;
+            } else if (profileName && user.email) {
+                profileName.textContent = user.email.split('@')[0];
             }
             
             if (profileRole && user.department) {
                 profileRole.textContent = user.department;
+            } else if (profileRole && user.role) {
+                profileRole.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1) + ' Dept';
             }
             
-            if (profileAvatar && user.name) {
-                // Get initials from name
-                const initials = user.name
-                    .split(' ')
-                    .map(word => word.charAt(0))
-                    .join('')
-                    .toUpperCase()
-                    .substring(0, 2);
-                profileAvatar.textContent = initials;
+            if (profileAvatar) {
+                if (user.name) {
+                    // Get initials from name
+                    const initials = user.name
+                        .split(' ')
+                        .map(word => word.charAt(0))
+                        .join('')
+                        .toUpperCase()
+                        .substring(0, 2);
+                    profileAvatar.textContent = initials;
+                } else if (user.email) {
+                    profileAvatar.textContent = user.email.charAt(0).toUpperCase();
+                }
             }
         }
 
@@ -500,7 +1352,7 @@
                 const headers = auth.getAuthHeaders();
                 
                 // Fetch dashboard data
-                const response = await fetch('/api/stats/dashboard', {
+                const response = await fetch(`${auth.API_BASE_URL}/stats/dashboard`, {
                     headers: headers
                 });
                 
@@ -885,7 +1737,8 @@
 
         // Auto-refresh every 30 seconds
         setInterval(() => {
-            if (document.getElementById('dashboardContent').style.display === 'block') {
+            const dashboardContent = document.getElementById('dashboardContent');
+            if (dashboardContent && dashboardContent.style.display === 'block') {
                 loadDashboardData();
             }
         }, 30000);
