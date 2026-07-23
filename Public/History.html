@@ -1,75 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SeizeTrack - Seizure History</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SeizeTrack · Seizure History</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
-        /* ==================== ROOT VARIABLES ==================== */
+        /* ============================================================
+           MIDNIGHT COMMAND THEME – consistent with dashboard & add seizure
+           ============================================================ */
         :root {
-            --blue-50: #eff6ff;
-            --blue-100: #dbeafe;
-            --blue-400: #60a5fa;
-            --blue-500: #3b82f6;
-            --blue-600: #2563eb;
-            --slate-50: #f8fafc;
-            --slate-100: #f1f5f9;
-            --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-400: #94a3b8;
-            --slate-500: #64748b;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
-            --slate-950: #020617;
-            --red-50: #fef2f2;
-            --red-100: #fee2e2;
-            --red-600: #dc2626;
-            --green-50: #f0fdf4;
-            --green-100: #dcfce7;
-            --green-600: #16a34a;
-            --yellow-50: #fefce8;
-            --yellow-100: #fef9c3;
-            --yellow-600: #ca8a04;
+            --brand: #22d3ee;
+            --brand-dark: #0891b2;
+            --brand-soft: #103543;
+
+            --bg: #07111f;
+            --surface: #0b1628;
+            --surface-2: #122033;
+            --surface-3: #18273c;
+
+            --text: #e5eefc;
+            --text-muted: #9fb0c9;
+
+            --border: #23344c;
+
+            --success: #22c55e;
+            --success-bg: #10251a;
+            --warning: #f59e0b;
+            --warning-bg: #2b1d08;
+            --danger: #ef4444;
+            --danger-bg: #311012;
+
+            --glow: 0 0 0 1px rgba(34,211,238,.18), 0 0 28px rgba(34,211,238,.12);
         }
-        
-        /* ==================== RESET & BASE ==================== */
+
+        /* ----- reset & base ----- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        
+
         body {
-            background-color: var(--slate-50);
-            color: var(--slate-900);
+            background:
+                radial-gradient(circle at top right, rgba(34,211,238,0.08), transparent 25%),
+                radial-gradient(circle at bottom left, rgba(14,165,233,0.06), transparent 30%),
+                var(--bg);
+            color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
         }
-        
-        /* ==================== LAYOUT ==================== */
+
+        /* ----- layout ----- */
         .layout-container {
             min-height: 100vh;
-            background-color: var(--slate-50);
             display: flex;
+            background: transparent;
         }
-        
-        /* ==================== SIDEBAR ==================== */
+
+        /* ----- sidebar backdrop (mobile) ----- */
         .sidebar-backdrop {
             position: fixed;
             inset: 0;
             z-index: 40;
-            background-color: rgba(15, 23, 42, 0.5);
+            background: rgba(7, 17, 31, 0.7);
+            backdrop-filter: blur(3px);
             display: none;
         }
-        
-        .sidebar-backdrop.active {
-            display: block;
-        }
-        
+        .sidebar-backdrop.active { display: block; }
+
+        /* ----- sidebar ----- */
         .sidebar {
             position: fixed;
             top: 0;
@@ -77,14 +78,13 @@
             bottom: 0;
             z-index: 50;
             width: 16rem;
-            background-color: var(--slate-900);
-            color: white;
+            background: linear-gradient(180deg, #081321 0%, #0b1628 100%);
+            border-right: 1px solid var(--border);
             transform: translateX(-100%);
-            transition: transform 0.2s ease-in-out;
+            transition: transform 0.25s ease;
             display: flex;
             flex-direction: column;
         }
-        
         @media (min-width: 1024px) {
             .sidebar {
                 transform: translateX(0);
@@ -92,299 +92,230 @@
                 inset: auto;
             }
         }
-        
-        .sidebar.active {
-            transform: translateX(0);
-        }
-        
+        .sidebar.active { transform: translateX(0); }
+
         .sidebar-logo {
-            height: 4rem;
+            padding: 1.5rem 1rem;
             display: flex;
             align-items: center;
-            padding: 0 1.5rem;
-            border-bottom: 1px solid var(--slate-800);
-            flex-shrink: 0;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--border);
         }
-        
         .logo-icon {
-            font-size: 2rem;
-            color: var(--blue-400);
-            margin-right: 0.75rem;
+            font-size: 1.875rem;
+            color: var(--brand);
+            filter: drop-shadow(0 0 12px rgba(34,211,238,.35));
         }
-        
         .logo-text {
-            font-size: 1.125rem;
-            font-weight: bold;
-            letter-spacing: -0.025em;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--text);
         }
-        
+
         .sidebar-nav {
             flex: 1;
-            padding: 0.75rem;
-            padding-top: 1.5rem;
-            overflow-y: auto;
+            padding: 1.5rem 0.5rem;
         }
-        
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 0.625rem 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            margin-bottom: 0.25rem;
+            padding: 0.7rem 1rem;
+            margin: 0.25rem 0.25rem;
+            border-radius: 0.75rem;
+            color: var(--text-muted);
             text-decoration: none;
-            color: var(--slate-300);
+            transition: all 0.2s;
+            font-weight: 450;
         }
-        
         .nav-item:hover {
-            background-color: var(--slate-800);
-            color: white;
+            background: rgba(34,211,238,0.08);
+            color: var(--text);
         }
-        
         .nav-item.active {
-            background-color: var(--blue-600);
-            color: white;
+            background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(34,211,238,.08));
+            color: var(--text);
+            border: 1px solid rgba(34,211,238,.25);
+            box-shadow: var(--glow);
         }
-        
         .nav-icon {
+            width: 1.5rem;
+            font-size: 1.1rem;
             margin-right: 0.75rem;
-            font-size: 1.25rem;
-            width: 1.25rem;
-            text-align: center;
+            color: inherit;
         }
-        
+
         .sidebar-profile {
             padding: 1rem;
-            border-top: 1px solid var(--slate-800);
-            flex-shrink: 0;
+            border-top: 1px solid var(--border);
         }
-        
         .profile-container {
             display: flex;
             align-items: center;
+            gap: 0.75rem;
         }
-        
         .profile-avatar {
-            height: 2rem;
             width: 2rem;
+            height: 2rem;
             border-radius: 9999px;
-            background-color: var(--slate-700);
+            background: var(--surface-3);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: 600;
             font-size: 0.75rem;
-            font-weight: bold;
-            color: white;
+            color: var(--text);
             flex-shrink: 0;
         }
-        
-        .profile-info {
-            margin-left: 0.75rem;
-            flex: 1;
-            min-width: 0;
-        }
-        
+        .profile-info { flex: 1; }
         .profile-name {
             font-size: 0.875rem;
             font-weight: 500;
-            color: white;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            color: var(--text);
         }
-        
         .profile-role {
-            font-size: 0.75rem;
-            color: var(--slate-400);
+            font-size: 0.7rem;
+            color: var(--text-muted);
         }
-        
         .logout-btn {
-            color: var(--slate-400);
-            background: none;
+            background: transparent;
             border: none;
+            color: var(--text-muted);
             cursor: pointer;
             padding: 0.25rem;
             border-radius: 0.25rem;
-            flex-shrink: 0;
+            transition: 0.2s;
         }
-        
-        .logout-btn:hover {
-            color: white;
-        }
-        
-        /* ==================== MAIN CONTENT ==================== */
+        .logout-btn:hover { color: var(--danger); }
+
+        /* ----- main content ----- */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-width: 0;
-            overflow: hidden;
         }
-        
-        /* ==================== MOBILE HEADER ==================== */
+
+        /* mobile header */
         .mobile-header {
-            background-color: white;
-            border-bottom: 1px solid var(--slate-200);
-            height: 4rem;
             display: flex;
             align-items: center;
-            padding: 0 1rem;
             justify-content: space-between;
-            flex-shrink: 0;
+            padding: 0.8rem 1.2rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
         }
-        
-        @media (min-width: 1024px) {
-            .mobile-header {
-                display: none;
-            }
-        }
-        
+        @media (min-width: 1024px) { .mobile-header { display: none; } }
+
         .mobile-logo {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
         }
-        
         .mobile-logo-icon {
             font-size: 1.5rem;
-            color: var(--slate-900);
-            margin-right: 0.5rem;
+            color: var(--brand);
         }
-        
         .mobile-logo-text {
-            font-weight: bold;
-            color: var(--slate-900);
+            font-weight: 600;
+            color: var(--text);
         }
-        
         .mobile-menu-btn {
-            padding: 0.5rem;
-            border-radius: 0.375rem;
-            color: var(--slate-500);
-            background: none;
+            background: transparent;
             border: none;
+            font-size: 1.5rem;
+            color: var(--text-muted);
             cursor: pointer;
+            padding: 0.25rem;
         }
-        
-        .mobile-menu-btn:hover {
-            background-color: var(--slate-100);
-        }
-        
-        /* ==================== PAGE CONTENT ==================== */
+        .mobile-menu-btn:hover { color: var(--text); }
+
+        /* page content */
         .page-content {
             flex: 1;
+            padding: 1.5rem;
             overflow-y: auto;
-            padding: 1rem;
         }
-        
-        @media (min-width: 768px) {
-            .page-content {
-                padding: 2rem;
-            }
-        }
-        
         .content-container {
             max-width: 80rem;
             margin: 0 auto;
         }
-        
-        /* ==================== HEADER ==================== */
+
+        /* header */
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 1.5rem;
             flex-wrap: wrap;
             gap: 1rem;
+            margin-bottom: 1.5rem;
         }
-        
         .page-header h1 {
-            font-size: 1.5rem;
+            font-size: 1.875rem;
             font-weight: 700;
-            color: var(--slate-900);
+            color: var(--text);
         }
-        
-        @media (min-width: 768px) {
-            .page-header h1 {
-                font-size: 1.875rem;
-            }
-        }
-        
         .page-header p {
             margin-top: 0.25rem;
             font-size: 0.875rem;
-            color: var(--slate-500);
+            color: var(--text-muted);
         }
-        
-        /* ==================== CARDS ==================== */
-        .card {
-            background-color: white;
-            border-radius: 0.75rem;
-            border: 1px solid var(--slate-200);
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+
+        .refresh-btn {
+            padding: 0.5rem 1.2rem;
+            background: var(--brand);
+            color: #07111f;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        
-        .card-body {
-            padding: 1rem;
+        .refresh-btn:hover {
+            background: var(--brand-dark);
+            box-shadow: 0 0 20px rgba(34,211,238,.25);
         }
-        
-        @media (min-width: 768px) {
-            .card-body {
-                padding: 1.5rem;
-            }
-        }
-        
-        /* ==================== STATS GRID ==================== */
+
+        /* stats grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
-        
         @media (min-width: 640px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 1rem;
-            }
+            .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 1rem; }
         }
-        
+
         .stat-card {
-            background-color: white;
+            background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+            border: 1px solid var(--border);
             border-radius: 0.75rem;
-            border: 1px solid var(--slate-200);
             padding: 1rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            box-shadow: 0 12px 30px rgba(0,0,0,.35);
+            transition: border-color 0.25s, box-shadow 0.25s;
         }
-        
-        @media (min-width: 768px) {
-            .stat-card {
-                padding: 1.5rem;
-            }
+        .stat-card:hover {
+            border-color: rgba(34,211,238,.28);
+            box-shadow: 0 18px 42px rgba(0,0,0,.45), var(--glow);
         }
-        
         .stat-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.3rem;
         }
-        
         .stat-title {
             font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--slate-500);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 500;
         }
-        
-        @media (min-width: 768px) {
-            .stat-title {
-                font-size: 0.875rem;
-            }
-        }
-        
         .stat-icon {
             width: 1.75rem;
             height: 1.75rem;
@@ -392,665 +323,369 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
         }
-        
-        @media (min-width: 768px) {
-            .stat-icon {
-                width: 2rem;
-                height: 2rem;
-                font-size: 1rem;
-            }
-        }
-        
-        .stat-icon.blue { background-color: var(--blue-500); }
-        .stat-icon.green { background-color: var(--green-600); }
-        .stat-icon.red { background-color: var(--red-600); }
-        .stat-icon.yellow { background-color: var(--yellow-600); }
-        
+        .stat-icon.blue { background: rgba(34,211,238,0.15); color: var(--brand); }
+        .stat-icon.green { background: rgba(34,197,94,0.15); color: var(--success); }
+        .stat-icon.red { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .stat-icon.yellow { background: rgba(245,158,11,0.15); color: var(--warning); }
         .stat-value {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: var(--slate-900);
+            color: var(--text);
+            line-height: 1.2;
         }
-        
-        @media (min-width: 768px) {
-            .stat-value {
-                font-size: 1.875rem;
-            }
-        }
-        
         .stat-change {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
             display: flex;
             align-items: center;
-            font-size: 0.65rem;
-            margin-top: 0.25rem;
-            color: var(--slate-500);
+            gap: 0.3rem;
         }
-        
-        @media (min-width: 768px) {
-            .stat-change {
-                font-size: 0.75rem;
-            }
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--danger); }
+
+        /* card */
+        .card {
+            background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            box-shadow: 0 12px 30px rgba(0,0,0,.35);
+            overflow: hidden;
+            transition: border-color 0.25s, box-shadow 0.25s;
         }
-        
-        .stat-change.positive { color: var(--green-600); }
-        .stat-change.negative { color: var(--red-600); }
-        
-        /* ==================== FILTERS ==================== */
+        .card:hover {
+            border-color: rgba(34,211,238,.28);
+            box-shadow: 0 18px 42px rgba(0,0,0,.45), var(--glow);
+        }
+        .card-body { padding: 1.5rem; }
+
+        /* filters */
         .filter-section {
-            margin-bottom: 1rem;
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+            margin-bottom: 1.5rem;
         }
-        
         @media (min-width: 640px) {
-            .filter-section {
-                flex-direction: row;
-                gap: 1rem;
-            }
+            .filter-section { flex-direction: row; gap: 1rem; }
         }
-        
-        .filter-main {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .filter-date {
-            width: 100%;
-        }
-        
-        @media (min-width: 640px) {
-            .filter-date {
-                width: 12rem;
-            }
-        }
-        
+        .filter-main { flex: 1; min-width: 0; }
+        .filter-date { width: 100%; }
+        @media (min-width: 640px) { .filter-date { width: 12rem; } }
+
         .input-container {
             position: relative;
             width: 100%;
         }
-        
         .input-icon {
             position: absolute;
             left: 0.75rem;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--slate-400);
+            color: var(--text-muted);
             pointer-events: none;
         }
-        
         .input-field {
             width: 100%;
-            padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+            padding: 0.6rem 0.75rem 0.6rem 2.25rem;
+            background: var(--surface-3);
+            border: 1px solid var(--border);
             border-radius: 0.5rem;
-            border: 1px solid var(--slate-300);
+            color: var(--text);
             font-size: 0.875rem;
-            transition: all 0.2s ease;
-            background-color: white;
+            transition: 0.2s;
         }
-        
-        @media (min-width: 768px) {
-            .input-field {
-                padding: 0.625rem 0.75rem 0.625rem 2.5rem;
-            }
-        }
-        
         .input-field:focus {
             outline: none;
-            border-color: var(--blue-600);
-            box-shadow: 0 0 0 3px var(--blue-100);
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px rgba(34,211,238,.15);
         }
-        
-        /* ==================== TABLE ==================== */
+        .input-field::placeholder { color: var(--text-muted); opacity: 0.5; }
+        .input-field[type="date"] { color-scheme: dark; }
+
+        /* table */
         .table-container {
             overflow-x: auto;
             border-radius: 0.5rem;
-            border: 1px solid var(--slate-200);
-            background-color: white;
-            -webkit-overflow-scrolling: touch;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
         }
-        
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
         }
-        
-        @media (min-width: 768px) {
-            table {
-                font-size: 0.875rem;
-            }
-        }
-        
         thead {
-            background-color: var(--slate-50);
+            background: var(--surface-3);
+            border-bottom: 2px solid var(--border);
         }
-        
-        thead tr {
-            border-bottom: 2px solid var(--slate-200);
-        }
-        
         th {
-            padding: 0.5rem 0.75rem;
+            padding: 0.7rem 1rem;
             text-align: left;
-            font-size: 0.65rem;
-            font-weight: 500;
-            color: var(--slate-500);
+            font-size: 0.7rem;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            color: var(--text-muted);
             white-space: nowrap;
         }
-        
-        @media (min-width: 768px) {
-            th {
-                padding: 0.75rem 1.5rem;
-                font-size: 0.75rem;
-            }
-        }
-        
-        tbody tr {
-            border-bottom: 1px solid var(--slate-200);
-            transition: background-color 0.2s ease;
-        }
-        
-        tbody tr:hover {
-            background-color: var(--slate-50);
-        }
-        
         td {
-            padding: 0.5rem 0.75rem;
-            white-space: nowrap;
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            vertical-align: middle;
         }
-        
-        @media (min-width: 768px) {
-            td {
-                padding: 1rem 1.5rem;
-            }
-        }
-        
-        /* Hide less important columns on mobile */
-        @media (max-width: 640px) {
-            td:nth-child(5),
-            th:nth-child(5),
-            td:nth-child(6),
-            th:nth-child(6) {
-                display: none;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            td:nth-child(4),
-            th:nth-child(4),
-            td:nth-child(7),
-            th:nth-child(7) {
-                display: none;
-            }
-        }
-        
-        .date-cell {
-            color: var(--slate-500);
-            min-width: 80px;
-        }
-        
-        @media (min-width: 768px) {
-            .date-cell {
-                min-width: 120px;
-            }
-        }
-        
+        tbody tr:hover td { background: rgba(34,211,238,0.04); }
         .date-main {
             font-weight: 500;
-            color: var(--slate-900);
-            font-size: 0.7rem;
+            color: var(--text);
+            font-size: 0.8rem;
         }
-        
-        @media (min-width: 768px) {
-            .date-main {
-                font-size: 0.875rem;
-            }
-        }
-        
         .date-time {
-            font-size: 0.6rem;
-            margin-top: 0.125rem;
-            color: var(--slate-400);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.1rem;
         }
-        
-        @media (min-width: 768px) {
-            .date-time {
-                font-size: 0.75rem;
-            }
-        }
-        
         .person-name {
             font-weight: 500;
-            color: var(--slate-900);
-            font-size: 0.7rem;
+            color: var(--text);
         }
-        
-        @media (min-width: 768px) {
-            .person-name {
-                font-size: 0.875rem;
-            }
-        }
-        
         .matric-number {
-            font-size: 0.6rem;
-            color: var(--slate-500);
-            margin-top: 0.125rem;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.1rem;
         }
-        
-        @media (min-width: 768px) {
-            .matric-number {
-                font-size: 0.75rem;
-            }
-        }
-        
-        .device-info {
-            color: var(--slate-700);
-            font-size: 0.7rem;
-        }
-        
-        @media (min-width: 768px) {
-            .device-info {
-                font-size: 0.875rem;
-            }
-        }
-        
-        .location {
-            color: var(--slate-500);
-            font-size: 0.7rem;
-        }
-        
-        @media (min-width: 768px) {
-            .location {
-                font-size: 0.875rem;
-            }
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 0.15rem 0.5rem;
-            font-size: 0.6rem;
-            font-weight: 500;
-            border-radius: 9999px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            white-space: nowrap;
-        }
-        
-        @media (min-width: 768px) {
-            .status-badge {
-                padding: 0.25rem 0.75rem;
-                font-size: 0.75rem;
-            }
-        }
-        
-        .status-active {
-            background-color: var(--blue-50);
-            color: var(--blue-600);
-            border: 1px solid var(--blue-200);
-        }
-        
-        .status-returned {
-            background-color: var(--green-50);
-            color: var(--green-600);
-            border: 1px solid var(--green-200);
-        }
-        
-        .status-lost {
-            background-color: var(--red-50);
-            color: var(--red-600);
-            border: 1px solid var(--red-200);
-        }
-        
+        .device-info { color: var(--text); }
+        .device-info small { color: var(--text-muted); font-size: 0.6rem; }
+        .location { color: var(--text-muted); }
         .notes {
-            color: var(--slate-500);
-            max-width: 100px;
+            color: var(--text-muted);
+            max-width: 120px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            font-size: 0.7rem;
-        }
-        
-        @media (min-width: 768px) {
-            .notes {
-                max-width: 200px;
-                font-size: 0.875rem;
-            }
-        }
-        
-        /* ==================== BUTTONS ==================== */
-        .refresh-btn {
-            padding: 0.4rem 0.75rem;
-            background-color: var(--blue-500);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
             font-size: 0.75rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
             font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
-        
-        @media (min-width: 768px) {
-            .refresh-btn {
-                padding: 0.5rem 1.5rem;
-                font-size: 0.875rem;
-            }
+        .status-active {
+            background: rgba(34,211,238,0.15);
+            color: var(--brand);
+            border: 1px solid rgba(34,211,238,.25);
         }
-        
-        .refresh-btn:hover {
-            background-color: var(--blue-600);
+        .status-returned {
+            background: rgba(34,197,94,0.15);
+            color: var(--success);
+            border: 1px solid rgba(34,197,94,.25);
         }
-        
-        .refresh-btn i {
-            margin-right: 0.25rem;
+        .status-lost {
+            background: rgba(239,68,68,0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239,68,68,.25);
         }
-        
-        /* ==================== STATES ==================== */
-        .loading {
-            padding: 2rem 1rem;
+
+        /* states */
+        .loading, .empty-state, .error-state {
+            padding: 2.5rem 1rem;
             text-align: center;
-            color: var(--slate-500);
+            color: var(--text-muted);
         }
-        
-        @media (min-width: 768px) {
-            .loading {
-                padding: 4rem 1rem;
-            }
-        }
-        
         .loading-spinner {
             display: inline-block;
-            width: 1.5rem;
-            height: 1.5rem;
-            border: 3px solid var(--slate-200);
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--border);
             border-radius: 50%;
-            border-top-color: var(--blue-500);
+            border-top-color: var(--brand);
             animation: spin 1s linear infinite;
             margin-bottom: 0.75rem;
         }
-        
-        @media (min-width: 768px) {
-            .loading-spinner {
-                width: 2rem;
-                height: 2rem;
-                margin-bottom: 1rem;
-            }
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .empty-state {
-            padding: 2rem 1rem;
-            text-align: center;
-            color: var(--slate-500);
-        }
-        
-        @media (min-width: 768px) {
-            .empty-state {
-                padding: 4rem 1rem;
-            }
-        }
-        
+        @keyframes spin { to { transform: rotate(360deg); } }
         .empty-state-icon {
-            font-size: 2rem;
+            font-size: 2.5rem;
+            color: var(--text-muted);
             margin-bottom: 0.75rem;
-            color: var(--slate-300);
         }
-        
-        @media (min-width: 768px) {
-            .empty-state-icon {
-                font-size: 3rem;
-                margin-bottom: 1rem;
-            }
-        }
-        
         .empty-state h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--slate-700);
+            font-size: 1.1rem;
+            color: var(--text);
+            margin-bottom: 0.3rem;
         }
-        
-        @media (min-width: 768px) {
-            .empty-state h3 {
-                font-size: 1.25rem;
-            }
-        }
-        
-        .empty-state p {
-            color: var(--slate-500);
-            max-width: 400px;
-            margin: 0 auto 1rem;
-            font-size: 0.875rem;
-        }
-        
-        /* ==================== PAGINATION ==================== */
+        .empty-state p { font-size: 0.85rem; }
+        .error-state .empty-state-icon { color: var(--danger); }
+
+        /* pagination */
         .pagination {
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 0.3rem;
             margin-top: 1.5rem;
-            gap: 0.25rem;
             flex-wrap: wrap;
         }
-        
-        @media (min-width: 768px) {
-            .pagination {
-                gap: 0.5rem;
-                margin-top: 2rem;
-            }
-        }
-        
         .pagination-btn {
-            padding: 0.3rem 0.6rem;
-            background-color: white;
-            border: 1px solid var(--slate-300);
+            padding: 0.3rem 0.7rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
             border-radius: 0.375rem;
-            color: var(--slate-700);
-            font-size: 0.75rem;
+            color: var(--text);
+            font-size: 0.8rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: 0.2s;
             min-width: 2rem;
         }
-        
-        @media (min-width: 768px) {
-            .pagination-btn {
-                padding: 0.5rem 1rem;
-                font-size: 0.875rem;
-                min-width: 2.5rem;
-            }
-        }
-        
         .pagination-btn:hover:not(:disabled) {
-            background-color: var(--slate-50);
-            border-color: var(--slate-400);
+            border-color: var(--brand);
+            background: rgba(34,211,238,.08);
         }
-        
         .pagination-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
         }
-        
         .pagination-btn.active {
-            background-color: var(--blue-600);
-            color: white;
-            border-color: var(--blue-600);
+            background: var(--brand);
+            color: #07111f;
+            border-color: var(--brand);
+            font-weight: 600;
         }
-        
         .pagination-info {
-            font-size: 0.75rem;
-            color: var(--slate-500);
+            font-size: 0.8rem;
+            color: var(--text-muted);
             margin: 0 0.5rem;
         }
-        
-        @media (min-width: 768px) {
-            .pagination-info {
-                font-size: 0.875rem;
-                margin: 0 1rem;
-            }
-        }
-        
-        /* ==================== NOTIFICATION ==================== */
-        .notification {
+
+        /* toast notification */
+        .toast {
             position: fixed;
-            top: 1rem;
-            right: 1rem;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            z-index: 1000;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            top: 1.2rem;
+            right: 1.2rem;
+            padding: 0.9rem 1.5rem;
+            border-radius: 0.75rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            z-index: 9999;
+            box-shadow: 0 12px 30px rgba(0,0,0,.5);
             animation: slideIn 0.3s ease;
-            font-size: 0.875rem;
-            max-width: 90%;
-            min-width: 200px;
+            max-width: 380px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
         }
-        
-        @media (min-width: 768px) {
-            .notification {
-                padding: 1rem 1.5rem;
-                font-size: 14px;
-                min-width: 300px;
-                max-width: 400px;
-            }
-        }
-        
+        .toast.success { border-color: var(--success); color: #b7f7c9; background: var(--success-bg); }
+        .toast.error { border-color: var(--danger); color: #fecaca; background: var(--danger-bg); }
+        .toast.info { border-color: var(--brand); color: var(--text); background: var(--brand-soft); }
         @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
-        
         @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* responsive tweaks */
+        @media (max-width: 640px) {
+            td:nth-child(5), th:nth-child(5),
+            td:nth-child(6), th:nth-child(6) { display: none; }
+        }
+        @media (max-width: 480px) {
+            td:nth-child(4), th:nth-child(4),
+            td:nth-child(7), th:nth-child(7) { display: none; }
+            .page-header h1 { font-size: 1.4rem; }
+            .stat-value { font-size: 1.2rem; }
+            .card-body { padding: 1rem; }
         }
     </style>
 </head>
 <body>
     <div class="layout-container">
-        <!-- Mobile Sidebar Backdrop -->
+        <!-- mobile backdrop -->
         <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-        
-        <!-- Sidebar -->
+
+        <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <i class="fas fa-shield-alt logo-icon"></i>
+                <i class="fas fa-shield-halved logo-icon"></i>
                 <span class="logo-text">SeizeTrack</span>
             </div>
-            
             <nav class="sidebar-nav">
-                <a href="./index.html" class="nav-item">
-                    <i class="fas fa-tachometer-alt nav-icon"></i>
-                    Dashboard
-                </a>
-                <a href="./AddSeizure.html" class="nav-item">
-                    <i class="fas fa-plus-circle nav-icon"></i>
-                    Add Seizure
-                </a>
-                <a href="./History.html" class="nav-item active">
-                    <i class="fas fa-history nav-icon"></i>
-                    History
-                </a>
-                <a href="./Person.html" class="nav-item">
-                    <i class="fas fa-users nav-icon"></i>
-                    Persons
-                </a>
+                <a href="./index.html" class="nav-item"><i class="fas fa-tachometer-alt nav-icon"></i>Dashboard</a>
+                <a href="./AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle nav-icon"></i>Add Seizure</a>
+                <a href="./History.html" class="nav-item active"><i class="fas fa-history nav-icon"></i>History</a>
+                <a href="./Person.html" class="nav-item"><i class="fas fa-users nav-icon"></i>Persons</a>
             </nav>
-            
             <div class="sidebar-profile">
                 <div class="profile-container">
                     <div class="profile-avatar" id="profileAvatar">AD</div>
                     <div class="profile-info">
                         <div class="profile-name" id="profileName">Loading...</div>
-                        <div class="profile-role" id="profileRole">Loading...</div>
+                        <div class="profile-role" id="profileRole">Security</div>
                     </div>
-                    <button class="logout-btn" id="logoutBtn">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
+                    <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
             </div>
         </aside>
-        
-        <!-- Main Content -->
+
+        <!-- MAIN CONTENT -->
         <div class="main-content">
-            <!-- Mobile Header -->
             <header class="mobile-header">
                 <div class="mobile-logo">
-                    <i class="fas fa-shield-alt mobile-logo-icon"></i>
+                    <i class="fas fa-shield-halved mobile-logo-icon"></i>
                     <span class="mobile-logo-text">SeizeTrack</span>
                 </div>
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
             </header>
-            
-            <!-- Page Content -->
+
             <main class="page-content">
                 <div class="content-container">
-                    <!-- Header -->
+                    <!-- header -->
                     <div class="page-header">
                         <div>
                             <h1>Seizure History</h1>
                             <p>Complete log of all confiscated devices.</p>
                         </div>
-                        <div>
-                            <button id="refreshBtn" class="refresh-btn">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                        </div>
+                        <button id="refreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
                     </div>
-                    
-                    <!-- Stats -->
-                    <div class="stats-grid" id="statsContainer">
-                        <!-- Stats will be loaded dynamically -->
-                    </div>
-                    
-                    <!-- Main Card -->
+
+                    <!-- stats -->
+                    <div class="stats-grid" id="statsContainer"></div>
+
+                    <!-- main card -->
                     <div class="card">
                         <div class="card-body">
-                            <!-- Filter Section -->
+                            <!-- filters -->
                             <div class="filter-section">
                                 <div class="filter-main">
                                     <div class="input-container">
                                         <i class="fas fa-search input-icon"></i>
-                                        <input type="text" class="input-field" id="searchInput" placeholder="Search by name, matric, device..." value="">
+                                        <input type="text" class="input-field" id="searchInput" placeholder="Search by name, matric, device..." />
                                     </div>
                                 </div>
                                 <div class="filter-date">
                                     <div class="input-container">
                                         <i class="fas fa-calendar input-icon"></i>
-                                        <input type="date" class="input-field" id="dateFilter">
+                                        <input type="date" class="input-field" id="dateFilter" />
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Table -->
+
+                            <!-- table -->
                             <div class="table-container">
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Date & Time</th>
+                                            <th>Date &amp; Time</th>
                                             <th>Person</th>
                                             <th>Device</th>
                                             <th>Location</th>
@@ -1059,692 +694,423 @@
                                             <th>Seized By</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="seizureTable">
-                                        <!-- Table will be populated by JavaScript -->
-                                    </tbody>
+                                    <tbody id="seizureTable"></tbody>
                                 </table>
-                                
-                                <!-- Loading State -->
-                                <div id="loadingState" class="loading" style="display: none;">
+
+                                <!-- loading -->
+                                <div id="loadingState" class="loading" style="display:none;">
                                     <div class="loading-spinner"></div>
                                     <p>Loading seizure history...</p>
                                 </div>
-                                
-                                <!-- Empty State -->
-                                <div id="emptyState" class="empty-state" style="display: none;">
-                                    <div class="empty-state-icon">
-                                        <i class="fas fa-history"></i>
-                                    </div>
+
+                                <!-- empty -->
+                                <div id="emptyState" class="empty-state" style="display:none;">
+                                    <div class="empty-state-icon"><i class="fas fa-history"></i></div>
                                     <h3>No Seizure Records Found</h3>
                                     <p>No seizures have been recorded yet. Start by adding a seizure record.</p>
-                                    <a href="./AddSeizure.html" class="refresh-btn">
+                                    <a href="./AddSeizure.html" class="refresh-btn" style="display:inline-flex;margin-top:0.5rem;">
                                         <i class="fas fa-plus-circle"></i> Add First Seizure
                                     </a>
                                 </div>
-                                
-                                <!-- Error State -->
-                                <div id="errorState" class="empty-state" style="display: none;">
-                                    <div class="empty-state-icon" style="color: var(--red-600);">
-                                        <i class="fas fa-exclamation-circle"></i>
-                                    </div>
-                                    <h3>Error Loading Data</h3>
+
+                                <!-- error -->
+                                <div id="errorState" class="error-state" style="display:none;">
+                                    <div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div>
+                                    <h3 style="color:var(--danger);">Error Loading Data</h3>
                                     <p id="errorMessage">Failed to load seizure history. Please try again.</p>
-                                    <button id="retryBtn" class="refresh-btn">
+                                    <button id="retryBtn" class="refresh-btn" style="margin-top:0.5rem;">
                                         <i class="fas fa-redo"></i> Retry
                                     </button>
                                 </div>
                             </div>
-                            
-                            <!-- Pagination -->
-                            <div id="paginationContainer" class="pagination" style="display: none;">
-                                <!-- Pagination will be added dynamically -->
-                            </div>
+
+                            <!-- pagination -->
+                            <div id="paginationContainer" class="pagination" style="display:none;"></div>
                         </div>
                     </div>
                 </div>
             </main>
         </div>
     </div>
-    
+
     <script>
-    // ==================== CONFIGURATION ====================
-    const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
-    
-    // ==================== STATE MANAGEMENT ====================
-    let allSeizures = [];
-    let filteredSeizures = [];
-    let currentPage = 1;
-    let itemsPerPage = 10;
-    let debounceTimer;
-    let currentUser = null;
+        // ============================================================
+        //  CONFIG & STATE
+        // ============================================================
+        const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+        let allSeizures = [];
+        let filteredSeizures = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let debounceTimer = null;
+        let currentUser = null;
 
-    // ==================== AUTHENTICATION UTILITIES ====================
-    function getToken() {
-        return localStorage.getItem('token');
-    }
-
-    function getUser() {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-            try {
-                return JSON.parse(userStr);
-            } catch (e) {
-                console.error('Failed to parse user:', e);
-                return null;
-            }
+        // ============================================================
+        //  AUTH
+        // ============================================================
+        function getToken() { return localStorage.getItem('token'); }
+        function getUser() {
+            const u = localStorage.getItem('user');
+            try { return u ? JSON.parse(u) : null; } catch { return null; }
         }
-        return null;
-    }
-
-    function isLoggedIn() {
-        return !!getToken();
-    }
-
-    function redirectToLogin() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login.html';
-    }
-
-    function getAuthHeaders() {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        const token = getToken();
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+        function isLoggedIn() { return !!getToken(); }
+        function redirectToLogin() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
         }
-        return headers;
-    }
-
-    async function authFetch(url, options = {}) {
-        try {
-            const response = await fetch(`${API_BASE_URL}${url}`, {
-                ...options,
-                headers: {
-                    ...getAuthHeaders(),
-                    ...options.headers
-                }
+        function getAuthHeaders() {
+            const h = { 'Content-Type': 'application/json' };
+            const t = getToken();
+            if (t) h['Authorization'] = `Bearer ${t}`;
+            return h;
+        }
+        async function authFetch(url, opts = {}) {
+            const res = await fetch(`${API_BASE_URL}${url}`, {
+                ...opts,
+                headers: { ...getAuthHeaders(), ...(opts.headers || {}) }
             });
-
-            if (response.status === 401) {
-                console.error('Authentication failed - redirecting to login');
-                redirectToLogin();
-                throw new Error('Session expired. Please login again.');
-            }
-
-            return response;
-        } catch (error) {
-            console.error('Auth fetch error:', error);
-            throw error;
-        }
-    }
-
-    // ==================== AUTHENTICATION CHECK ====================
-    async function checkAuth() {
-        if (!isLoggedIn()) {
-            redirectToLogin();
-            return null;
+            if (res.status === 401) { redirectToLogin(); throw new Error('Session expired'); }
+            return res;
         }
 
-        try {
-            const token = getToken();
-            const response = await fetch(`${API_BASE_URL}/auth/check`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    currentUser = data.user;
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    updateUserProfile();
-                    return currentUser;
-                }
-            }
-            
-            redirectToLogin();
-            return null;
-            
-        } catch (error) {
-            console.error('Auth check failed:', error);
-            return null;
-        }
-    }
-
-    // ==================== PROFILE MANAGEMENT ====================
-    function updateUserProfile() {
-        const user = getUser();
-        if (!user) return;
-
-        const profileName = document.getElementById('profileName');
-        const profileRole = document.getElementById('profileRole');
-        const profileAvatar = document.getElementById('profileAvatar');
-        
-        if (profileName) {
-            profileName.textContent = user.name || user.email || 'User';
-        }
-        
-        if (profileRole) {
-            profileRole.textContent = user.department || user.role || 'Security Dept';
-        }
-
-        if (profileAvatar && (user.name || user.email)) {
-            profileAvatar.textContent = (user.name || user.email || 'U').charAt(0).toUpperCase();
-        }
-    }
-
-    // ==================== LOGOUT FUNCTION ====================
-    async function logout() {
-        try {
-            const token = getToken();
-            if (token) {
-                fetch(`${API_BASE_URL}/auth/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }).catch(err => console.warn('Logout notification failed:', err));
-            }
-        } catch (error) {
-            console.error('Logout error:', error);
-        } finally {
-            redirectToLogin();
-        }
-    }
-
-    // ==================== DATA LOADING FUNCTIONS ====================
-    async function loadDashboardStats() {
-        try {
-            const response = await authFetch('/stats/dashboard');
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    renderStats(data.data.stats || {});
-                } else {
-                    throw new Error(data.message || 'Failed to load stats');
-                }
-            } else {
-                throw new Error(`HTTP ${response.status}: Failed to load stats`);
-            }
-        } catch (error) {
-            console.error('Error loading dashboard stats:', error);
-            renderStats({
-                totalSeizures: 0,
-                todaySeizures: 0,
-                totalPersons: 0,
-                repeatOffenders: 0
-            });
-        }
-    }
-
-    async function loadSeizureHistory() {
-        showLoading();
-        hideError();
-        hideEmpty();
-        
-        try {
-            const response = await authFetch('/seizures');
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    allSeizures = (data.data || []).map(seizure => ({
-                        id: seizure.id,
-                        createdAt: seizure.created_at,
-                        personName: seizure.persons?.name || 'N/A',
-                        personMatric: seizure.persons?.matric_number || 'N/A',
-                        personDepartment: seizure.persons?.department || 'N/A',
-                        phoneModel: seizure.phone_model,
-                        deviceColor: seizure.device_color,
-                        location: seizure.location,
-                        seizedBy: seizure.seized_by,
-                        seizureReason: seizure.seizure_reason,
-                        notes: seizure.notes,
-                        status: seizure.status
-                    }));
-                    
-                    filteredSeizures = [...allSeizures];
-                    
-                    if (allSeizures.length === 0) {
-                        showEmpty();
-                    } else {
-                        renderTable();
-                        setupPagination();
-                    }
-                } else {
-                    throw new Error(data.message || 'Failed to load seizure history');
-                }
-            } else {
-                throw new Error(`HTTP ${response.status}: Failed to load seizure history`);
-            }
-        } catch (error) {
-            console.error('Error loading seizure history:', error);
-            showError(error.message);
-        } finally {
-            hideLoading();
-        }
-    }
-
-    // ==================== FILTERING FUNCTIONS ====================
-    function filterSeizures() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const dateFilter = document.getElementById('dateFilter').value;
-        
-        filteredSeizures = allSeizures.filter(seizure => {
-            if (searchTerm) {
-                const matchesSearch = 
-                    (seizure.personName && seizure.personName.toLowerCase().includes(searchTerm)) ||
-                    (seizure.personMatric && seizure.personMatric.toLowerCase().includes(searchTerm)) ||
-                    (seizure.phoneModel && seizure.phoneModel.toLowerCase().includes(searchTerm)) ||
-                    (seizure.location && seizure.location.toLowerCase().includes(searchTerm)) ||
-                    (seizure.seizureReason && seizure.seizureReason.toLowerCase().includes(searchTerm)) ||
-                    (seizure.notes && seizure.notes.toLowerCase().includes(searchTerm)) ||
-                    (seizure.seizedBy && seizure.seizedBy.toLowerCase().includes(searchTerm));
-                
-                if (!matchesSearch) return false;
-            }
-            
-            if (dateFilter) {
-                const seizureDate = new Date(seizure.createdAt);
-                const filterDate = new Date(dateFilter);
-                
-                if (seizureDate.toDateString() !== filterDate.toDateString()) {
-                    return false;
-                }
-            }
-            
-            return true;
-        });
-        
-        currentPage = 1;
-        renderTable();
-        setupPagination();
-        
-        if (filteredSeizures.length === 0) {
-            showEmpty();
-        } else {
-            hideEmpty();
-        }
-    }
-
-    // ==================== RENDERING FUNCTIONS ====================
-    function renderStats(stats) {
-        const statsContainer = document.getElementById('statsContainer');
-        if (!statsContainer) return;
-        
-        statsContainer.innerHTML = `
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Total Seizures</span>
-                    <div class="stat-icon blue">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
-                </div>
-                <div class="stat-value">${stats.totalSeizures || 0}</div>
-                <div class="stat-change">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>${stats.todaySeizures || 0} today</span>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Today's Seizures</span>
-                    <div class="stat-icon green">
-                        <i class="fas fa-calendar-day"></i>
-                    </div>
-                </div>
-                <div class="stat-value">${stats.todaySeizures || 0}</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Current day</span>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Persons</span>
-                    <div class="stat-icon red">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-                <div class="stat-value">${stats.totalPersons || 0}</div>
-                <div class="stat-change">
-                    <i class="fas fa-database"></i>
-                    <span>Total registered</span>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Repeat Offenders</span>
-                    <div class="stat-icon yellow">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <div class="stat-value">${stats.repeatOffenders || 0}</div>
-                <div class="stat-change negative">
-                    <i class="fas fa-user-slash"></i>
-                    <span>≥2 seizures</span>
-                </div>
-            </div>
-        `;
-    }
-
-    function renderTable() {
-        const seizureTable = document.getElementById('seizureTable');
-        if (!seizureTable) return;
-        
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const currentItems = filteredSeizures.slice(startIndex, endIndex);
-        
-        seizureTable.innerHTML = '';
-        
-        if (currentItems.length === 0) {
-            seizureTable.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--slate-500);">
-                        No seizures found matching your filters.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-        
-        currentItems.forEach(seizure => {
-            const seizureDate = new Date(seizure.createdAt);
-            const formattedDate = seizureDate.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            const formattedTime = seizureDate.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-            
-            let statusClass = 'status-active';
-            let statusText = 'Active';
-            
-            if (seizure.status) {
-                const statusLower = seizure.status.toLowerCase();
-                if (statusLower.includes('return')) {
-                    statusClass = 'status-returned';
-                    statusText = 'Returned';
-                } else if (statusLower.includes('lost')) {
-                    statusClass = 'status-lost';
-                    statusText = 'Lost';
-                }
-            }
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="date-cell">
-                    <div class="date-main">${formattedDate}</div>
-                    <div class="date-time">${formattedTime}</div>
-                </td>
-                <td>
-                    <div class="person-name">${seizure.personName}</div>
-                    <div class="matric-number">${seizure.personMatric}</div>
-                </td>
-                <td class="device-info">
-                    ${seizure.phoneModel}
-                    ${seizure.deviceColor ? `<br><small style="color: var(--slate-400); font-size: 0.6rem;">${seizure.deviceColor}</small>` : ''}
-                </td>
-                <td class="location">${seizure.location || 'N/A'}</td>
-                <td>
-                    <span class="status-badge ${statusClass}">${statusText}</span>
-                </td>
-                <td class="notes" title="${seizure.notes || ''}">
-                    ${seizure.notes || '-'}
-                </td>
-                <td>${seizure.seizedBy || 'N/A'}</td>
-            `;
-            
-            seizureTable.appendChild(row);
-        });
-    }
-
-    function setupPagination() {
-        const totalPages = Math.ceil(filteredSeizures.length / itemsPerPage);
-        const paginationContainer = document.getElementById('paginationContainer');
-        if (!paginationContainer) return;
-        
-        if (totalPages <= 1 || filteredSeizures.length === 0) {
-            paginationContainer.style.display = 'none';
-            return;
-        }
-        
-        paginationContainer.style.display = 'flex';
-        paginationContainer.innerHTML = '';
-        
-        const prevButton = document.createElement('button');
-        prevButton.className = 'pagination-btn';
-        prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
-        prevButton.disabled = currentPage === 1;
-        prevButton.addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                renderTable();
-                setupPagination();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        });
-        paginationContainer.appendChild(prevButton);
-        
-        const maxVisiblePages = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-        
-        if (endPage - startPage + 1 < maxVisiblePages) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1);
-        }
-        
-        for (let i = startPage; i <= endPage; i++) {
-            const pageButton = document.createElement('button');
-            pageButton.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
-            pageButton.textContent = i;
-            pageButton.addEventListener('click', () => {
-                currentPage = i;
-                renderTable();
-                setupPagination();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-            paginationContainer.appendChild(pageButton);
-        }
-        
-        const nextButton = document.createElement('button');
-        nextButton.className = 'pagination-btn';
-        nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
-        nextButton.disabled = currentPage === totalPages;
-        nextButton.addEventListener('click', () => {
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderTable();
-                setupPagination();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        });
-        paginationContainer.appendChild(nextButton);
-        
-        const pageInfo = document.createElement('span');
-        pageInfo.className = 'pagination-info';
-        pageInfo.textContent = `Page ${currentPage} of ${totalPages} • ${filteredSeizures.length} records`;
-        paginationContainer.appendChild(pageInfo);
-    }
-
-    // ==================== UI STATE MANAGEMENT ====================
-    function showLoading() {
-        document.getElementById('loadingState').style.display = 'block';
-        document.getElementById('seizureTable').style.display = 'none';
-        document.getElementById('emptyState').style.display = 'none';
-        document.getElementById('errorState').style.display = 'none';
-    }
-
-    function hideLoading() {
-        document.getElementById('loadingState').style.display = 'none';
-        document.getElementById('seizureTable').style.display = 'table-row-group';
-    }
-
-    function showEmpty() {
-        document.getElementById('emptyState').style.display = 'block';
-        document.getElementById('seizureTable').style.display = 'none';
-        document.getElementById('paginationContainer').style.display = 'none';
-    }
-
-    function hideEmpty() {
-        document.getElementById('emptyState').style.display = 'none';
-    }
-
-    function showError(message) {
-        document.getElementById('errorMessage').textContent = message;
-        document.getElementById('errorState').style.display = 'block';
-        document.getElementById('seizureTable').style.display = 'none';
-        document.getElementById('paginationContainer').style.display = 'none';
-        document.getElementById('loadingState').style.display = 'none';
-    }
-
-    function hideError() {
-        document.getElementById('errorState').style.display = 'none';
-    }
-
-    function showNotification(message, type = 'info') {
-        document.querySelectorAll('.notification').forEach(n => n.remove());
-        
-        const notification = document.createElement('div');
-        notification.className = 'notification';
-        
-        const bgColor = type === 'success' ? 'var(--green-100)' : 
-                    type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
-        const textColor = type === 'success' ? 'var(--green-800)' : 
-                        type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
-        const borderColor = type === 'success' ? 'var(--green-300)' : 
-                        type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
-        const icon = type === 'success' ? 'fa-check-circle' : 
-                    type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-        
-        notification.style.cssText = `
-            background-color: ${bgColor};
-            color: ${textColor};
-            border: 1px solid ${borderColor};
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        `;
-        
-        notification.innerHTML = `
-            <i class="fas ${icon}"></i>
-            <span>${message}</span>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
+        // ============================================================
+        //  UI HELPERS
+        // ============================================================
+        function toast(msg, type = 'info') {
+            document.querySelectorAll('.toast').forEach(t => t.remove());
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = msg;
+            document.body.appendChild(t);
             setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 5000);
-    }
+                t.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => t.remove(), 300);
+            }, 4000);
+        }
 
-    // ==================== EVENT LISTENERS ====================
-    function setupEventListeners() {
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-        
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', () => {
-                sidebar.classList.add('active');
-                sidebarBackdrop.classList.add('active');
-            });
+        function updateProfile() {
+            const u = getUser();
+            if (!u) return;
+            document.getElementById('profileName').textContent = u.name || u.email || 'User';
+            document.getElementById('profileRole').textContent = u.department || u.role || 'Security';
+            document.getElementById('profileAvatar').textContent = (u.name || 'U').charAt(0).toUpperCase();
         }
-        
-        if (sidebarBackdrop) {
-            sidebarBackdrop.addEventListener('click', () => {
-                sidebar.classList.remove('active');
-                sidebarBackdrop.classList.remove('active');
-            });
-        }
-        
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                if (confirm('Are you sure you want to logout?')) {
-                    await logout();
+
+        // ============================================================
+        //  AUTH CHECK
+        // ============================================================
+        async function checkAuth() {
+            if (!isLoggedIn()) { redirectToLogin(); return null; }
+            try {
+                const res = await fetch(`${API_BASE_URL}/auth/check`, {
+                    headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        currentUser = data.user;
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        updateProfile();
+                        return currentUser;
+                    }
                 }
-            });
+                redirectToLogin();
+                return null;
+            } catch { return null; }
         }
-        
-        const refreshBtn = document.getElementById('refreshBtn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', async () => {
-                try {
-                    await loadDashboardStats();
-                    await loadSeizureHistory();
-                    showNotification('Data refreshed successfully', 'success');
-                } catch (error) {
-                    showNotification('Failed to refresh data', 'error');
+
+        // ============================================================
+        //  DATA LOADING
+        // ============================================================
+        async function loadDashboardStats() {
+            try {
+                const res = await authFetch('/stats/dashboard');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        renderStats(data.data.stats || {});
+                        return;
+                    }
                 }
+                renderStats({});
+            } catch { renderStats({}); }
+        }
+
+        async function loadSeizureHistory() {
+            showLoading();
+            hideError();
+            hideEmpty();
+            try {
+                const res = await authFetch('/seizures');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        allSeizures = (data.data || []).map(s => ({
+                            id: s.id,
+                            createdAt: s.created_at,
+                            personName: s.persons?.name || 'N/A',
+                            personMatric: s.persons?.matric_number || 'N/A',
+                            personDepartment: s.persons?.department || 'N/A',
+                            phoneModel: s.phone_model,
+                            deviceColor: s.device_color,
+                            location: s.location,
+                            seizedBy: s.seized_by,
+                            seizureReason: s.seizure_reason,
+                            notes: s.notes,
+                            status: s.status
+                        }));
+                        filteredSeizures = [...allSeizures];
+                        if (allSeizures.length === 0) {
+                            showEmpty();
+                        } else {
+                            renderTable();
+                            setupPagination();
+                        }
+                        return;
+                    }
+                }
+                throw new Error('Failed to load seizure history');
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ============================================================
+        //  FILTER
+        // ============================================================
+        function filterSeizures() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const date = document.getElementById('dateFilter').value;
+            filteredSeizures = allSeizures.filter(s => {
+                if (search) {
+                    const match = (s.personName || '').toLowerCase().includes(search) ||
+                                  (s.personMatric || '').toLowerCase().includes(search) ||
+                                  (s.phoneModel || '').toLowerCase().includes(search) ||
+                                  (s.location || '').toLowerCase().includes(search) ||
+                                  (s.seizureReason || '').toLowerCase().includes(search) ||
+                                  (s.notes || '').toLowerCase().includes(search) ||
+                                  (s.seizedBy || '').toLowerCase().includes(search);
+                    if (!match) return false;
+                }
+                if (date) {
+                    const sd = new Date(s.createdAt);
+                    const fd = new Date(date);
+                    if (sd.toDateString() !== fd.toDateString()) return false;
+                }
+                return true;
+            });
+            currentPage = 1;
+            if (filteredSeizures.length === 0) {
+                showEmpty();
+                document.getElementById('paginationContainer').style.display = 'none';
+            } else {
+                hideEmpty();
+                renderTable();
+                setupPagination();
+            }
+        }
+
+        // ============================================================
+        //  RENDER
+        // ============================================================
+        function renderStats(stats) {
+            const container = document.getElementById('statsContainer');
+            if (!container) return;
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-title">Total Seizures</span><div class="stat-icon blue"><i class="fas fa-mobile-alt"></i></div></div>
+                    <div class="stat-value">${stats.totalSeizures || 0}</div>
+                    <div class="stat-change"><i class="fas fa-arrow-up"></i> ${stats.todaySeizures || 0} today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-title">Today's Seizures</span><div class="stat-icon green"><i class="fas fa-calendar-day"></i></div></div>
+                    <div class="stat-value">${stats.todaySeizures || 0}</div>
+                    <div class="stat-change positive"><i class="fas fa-chart-line"></i> Current day</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-title">Persons</span><div class="stat-icon red"><i class="fas fa-users"></i></div></div>
+                    <div class="stat-value">${stats.totalPersons || 0}</div>
+                    <div class="stat-change"><i class="fas fa-database"></i> Total registered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-title">Repeat Offenders</span><div class="stat-icon yellow"><i class="fas fa-exclamation-triangle"></i></div></div>
+                    <div class="stat-value">${stats.repeatOffenders || 0}</div>
+                    <div class="stat-change negative"><i class="fas fa-user-slash"></i> ≥2 seizures</div>
+                </div>
+            `;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('seizureTable');
+            if (!tbody) return;
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const items = filteredSeizures.slice(start, end);
+
+            tbody.innerHTML = '';
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No seizures found matching your filters.</td></tr>`;
+                return;
+            }
+            items.forEach(s => {
+                const d = new Date(s.createdAt);
+                const dateStr = d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+                const timeStr = d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+                let statusClass = 'status-active', statusText = 'Active';
+                if (s.status) {
+                    const st = s.status.toLowerCase();
+                    if (st.includes('return')) { statusClass = 'status-returned'; statusText = 'Returned'; }
+                    else if (st.includes('lost')) { statusClass = 'status-lost'; statusText = 'Lost'; }
+                }
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><div class="date-main">${dateStr}</div><div class="date-time">${timeStr}</div></td>
+                    <td><div class="person-name">${s.personName}</div><div class="matric-number">${s.personMatric}</div></td>
+                    <td class="device-info">${s.phoneModel}${s.deviceColor ? `<br><small>${s.deviceColor}</small>` : ''}</td>
+                    <td class="location">${s.location || 'N/A'}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td class="notes" title="${s.notes || ''}">${s.notes || '-'}</td>
+                    <td>${s.seizedBy || 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
             });
         }
-        
-        const retryBtn = document.getElementById('retryBtn');
-        if (retryBtn) {
-            retryBtn.addEventListener('click', async () => {
+
+        function setupPagination() {
+            const container = document.getElementById('paginationContainer');
+            if (!container) return;
+            const total = Math.ceil(filteredSeizures.length / itemsPerPage);
+            if (total <= 1 || filteredSeizures.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'flex';
+            container.innerHTML = '';
+
+            const prev = document.createElement('button');
+            prev.className = 'pagination-btn';
+            prev.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            prev.disabled = currentPage === 1;
+            prev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); setupPagination(); window.scrollTo({top:0,behavior:'smooth'}); } });
+            container.appendChild(prev);
+
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible/2));
+            let endPage = Math.min(total, startPage + maxVisible - 1);
+            if (endPage - startPage + 1 < maxVisible) startPage = Math.max(1, endPage - maxVisible + 1);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const btn = document.createElement('button');
+                btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+                btn.textContent = i;
+                btn.addEventListener('click', () => { currentPage = i; renderTable(); setupPagination(); window.scrollTo({top:0,behavior:'smooth'}); });
+                container.appendChild(btn);
+            }
+
+            const next = document.createElement('button');
+            next.className = 'pagination-btn';
+            next.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            next.disabled = currentPage === total;
+            next.addEventListener('click', () => { if (currentPage < total) { currentPage++; renderTable(); setupPagination(); window.scrollTo({top:0,behavior:'smooth'}); } });
+            container.appendChild(next);
+
+            const info = document.createElement('span');
+            info.className = 'pagination-info';
+            info.textContent = `Page ${currentPage} of ${total} • ${filteredSeizures.length} records`;
+            container.appendChild(info);
+        }
+
+        // ============================================================
+        //  UI STATE
+        // ============================================================
+        function showLoading() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('seizureTable').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+        }
+        function hideLoading() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('seizureTable').style.display = 'table-row-group';
+        }
+        function showEmpty() {
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('seizureTable').style.display = 'none';
+            document.getElementById('paginationContainer').style.display = 'none';
+        }
+        function hideEmpty() {
+            document.getElementById('emptyState').style.display = 'none';
+        }
+        function showError(msg) {
+            document.getElementById('errorMessage').textContent = msg;
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('seizureTable').style.display = 'none';
+            document.getElementById('paginationContainer').style.display = 'none';
+            document.getElementById('loadingState').style.display = 'none';
+        }
+        function hideError() {
+            document.getElementById('errorState').style.display = 'none';
+        }
+
+        // ============================================================
+        //  EVENT LISTENERS
+        // ============================================================
+        function init() {
+            // mobile menu
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.add('active');
+                document.getElementById('sidebarBackdrop').classList.add('active');
+            });
+            document.getElementById('sidebarBackdrop').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('sidebarBackdrop').classList.remove('active');
+            });
+
+            // logout
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                if (confirm('Logout?')) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login.html'; }
+            });
+
+            // refresh
+            document.getElementById('refreshBtn').addEventListener('click', async () => {
+                await loadDashboardStats();
+                await loadSeizureHistory();
+                toast('Data refreshed', 'success');
+            });
+
+            // retry
+            document.getElementById('retryBtn').addEventListener('click', async () => {
                 await loadDashboardStats();
                 await loadSeizureHistory();
             });
-        }
-        
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', () => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    filterSeizures();
-                }, 300);
-            });
-        }
-        
-        const dateFilter = document.getElementById('dateFilter');
-        if (dateFilter) {
-            dateFilter.addEventListener('change', () => {
-                filterSeizures();
-            });
-        }
-    }
 
-    // ==================== INITIALIZATION ====================
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            const user = await checkAuth();
-            if (!user) return;
-            
-            setupEventListeners();
-            
+            // search with debounce
+            document.getElementById('searchInput').addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(filterSeizures, 300);
+            });
+
+            // date filter
+            document.getElementById('dateFilter').addEventListener('change', filterSeizures);
+
+            // set today's date
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('dateFilter').value = today;
-            
+        }
+
+        // ============================================================
+        //  BOOT
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            const user = await checkAuth();
+            if (!user) return;
+            init();
             await loadDashboardStats();
             await loadSeizureHistory();
-            
-        } catch (error) {
-            console.error('Initialization error:', error);
-            showNotification('Failed to initialize history page', 'error');
-        }
-    });
+        });
     </script>
 </body>
 </html>

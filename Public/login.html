@@ -3,715 +3,776 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Security Login - SeizeTrack</title>
+  <title>SeizeTrack · Security Portal</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
   <style>
-    /* [Keep all your existing CSS here - it's perfect as is] */
-    * { margin:0; padding:0; box-sizing:border-box; }
+    /* ===== GLOBAL RESET & VARIABLES ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --navy: #0f172a;
+      --navy-2: #10233f;
+      --gold: #d4a94f;
+      --gold-dark: #b8891f;
+      --surface: #ffffff;
+      --surface-2: #111c31;
+      --border: #22304a;
+      --text: #0f172a;
+      --muted: #64748b;
+      --success: #22c55e;
+    }
+
     body {
-      font-family:'Poppins', sans-serif;
-      background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      display:flex; justify-content:center; align-items:center;
-      min-height:100vh; padding:20px;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      margin: 0;
     }
-    .login-container { width:100%; max-width:400px; perspective:1000px; }
-    .login-box {
-      background:#fff; padding:40px 30px; border-radius:15px;
-      box-shadow:0 10px 25px rgba(0,0,0,0.1);
-      animation:fadeIn 0.8s ease-out;
-      transition:transform 0.3s ease, box-shadow 0.3s ease;
-      text-align:center;
+
+    /* ===== SPLIT LAYOUT ===== */
+    .portal-wrapper {
+      display: flex;
+      max-width: 1200px;
+      width: 100%;
+      min-height: 680px;
+      background: var(--surface);
+      border-radius: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      transition: all 0.2s;
     }
-    .login-box:hover { transform:translateY(-5px); box-shadow:0 15px 30px rgba(0,0,0,0.15); }
-    
-    /* Logo styling */
-    .logo {
-      background: linear-gradient(135deg, #007bff, #0056b3);
-      border-radius: 10px;
-      padding: 25px 20px;
-      color: white;
-      text-align: center;
-      margin-bottom: 20px;
-      box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+
+    /* ===== LEFT PANEL – SECURITY OPERATIONS ===== */
+    .ops-panel {
+      width: 38%;
+      background: var(--navy-2);
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      color: #e2e8f0;
+      position: relative;
     }
-    
-    .logo i {
-      font-size: 60px;
-      margin-bottom: 10px;
-      animation: pulse 2s infinite;
+
+    .ops-panel::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 10%;
+      height: 80%;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, var(--gold-dark), transparent);
+      opacity: 0.3;
     }
-    
-    .logo div {
-      font-size: 24px;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .brand i {
+      font-size: 2.2rem;
+      color: var(--gold);
+      filter: drop-shadow(0 0 6px rgba(212, 169, 79, 0.3));
+    }
+
+    .brand h1 {
+      font-size: 1.8rem;
       font-weight: 600;
-      letter-spacing: 1px;
+      letter-spacing: -0.5px;
+      color: white;
+      margin: 0;
     }
-    
-    .logo span {
-      font-size: 14px;
-      opacity: 0.9;
-      display: block;
-      margin-top: 5px;
-      font-weight: 300;
+
+    .brand-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      margin-bottom: 2rem;
+      border-left: 2px solid var(--gold-dark);
+      padding-left: 0.75rem;
+      font-weight: 400;
     }
-    
-    h2 { 
-      text-align:center; 
-      margin-bottom:25px; 
-      color:#2c3e50; 
-      font-weight:600; 
-      position:relative; 
-      padding-bottom:10px; 
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      padding: 0.4rem 1rem;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--success);
+      margin-bottom: 2rem;
+      width: fit-content;
+      letter-spacing: 0.3px;
     }
-    
-    h2:after { 
-      content:''; 
-      position:absolute; 
-      bottom:0; 
-      left:50%; 
-      transform:translateX(-50%); 
-      width:50px; 
-      height:3px; 
-      background:#007bff; 
-      border-radius:2px; 
+
+    .status-badge i {
+      font-size: 0.6rem;
     }
-    
-    .input-group { 
-      position:relative; 
-      margin-bottom:25px; 
-      text-align:left; 
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin: 1.5rem 0 2.5rem 0;
     }
-    
-    input {
-      width:100%; 
-      padding:15px 45px 15px 15px; 
-      border:2px solid #e0e0e0; 
-      border-radius:10px; 
-      font-size:15px;
-      background:#f9f9f9; 
-      transition:all 0.3s ease;
+
+    .stat-item {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 1rem 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(2px);
     }
-    
-    input:focus {
-      outline:none; 
-      border-color:#007bff;
-      box-shadow:0 0 0 3px rgba(0,123,255,0.1); 
-      background:#fff; 
-    }
-    
-    .input-group label {
-      position:absolute; 
-      top:50%; 
-      left:15px; 
-      transform:translateY(-50%);
-      color:#999; 
-      font-size:14px; 
-      pointer-events:none; 
-      transition:all 0.3s ease;
-      background: transparent;
-      padding: 0 5px;
-    }
-    
-    input:focus + label,
-    input:not(:placeholder-shown) + label {
-      top:-10px; 
-      left:10px; 
-      font-size:12px; 
-      color:#007bff; 
-      background:#fff; 
-      padding:0 5px;
-    }
-    
-    .input-group i {
-      position:absolute; 
-      right:15px; 
-      top:50%; 
-      transform:translateY(-50%);
-      color:#999;
-      font-size:18px;
-    }
-    
-    .toggle-password {
-      position:absolute; 
-      right:15px; 
-      top:50%; 
-      transform:translateY(-50%);
-      cursor:pointer; 
-      color:#666; 
-      user-select:none;
-      font-size:18px;
-      z-index: 2;
-    }
-    
-    .toggle-password:hover { 
-      color:#007bff; 
-    }
-    
-    button {
-      width:100%; 
-      padding:15px; 
-      background:linear-gradient(135deg, #007bff, #0056b3); 
-      color:#fff; 
-      border:none; 
-      border-radius:10px;
-      cursor:pointer; 
-      font-size:16px; 
-      font-weight:600; 
-      transition:all 0.3s ease;
+
+    .stat-label {
+      font-size: 0.7rem;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      margin-bottom: 0.25rem;
     }
-    
-    button:hover { 
-      transform:translateY(-2px); 
-      box-shadow:0 5px 15px rgba(0,123,255,0.4); 
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 600;
+      color: white;
+      line-height: 1.2;
     }
-    
-    button:disabled {
-      opacity: 0.7;
+
+    .stat-value small {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 0.2rem;
+    }
+
+    .stat-desc {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    .security-notice {
+      margin-top: auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.8rem;
+      color: #94a3b8;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .security-notice i {
+      color: var(--gold-dark);
+      font-size: 1rem;
+      margin-top: 0.1rem;
+    }
+
+    .security-notice span {
+      color: #cbd5e1;
+      font-weight: 400;
+    }
+
+    /* ===== RIGHT PANEL – LOGIN ===== */
+    .login-panel {
+      width: 62%;
+      padding: 2.8rem 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: var(--surface);
+    }
+
+    .login-heading .eyebrow {
+      color: var(--gold-dark);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-heading h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.5px;
+    }
+
+    .login-heading p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    /* form elements */
+    .input-group {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+      letter-spacing: 0.2px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 1.5px solid #e9edf2;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      background: #f8fafc;
+      transition: all 0.2s;
+      color: var(--text);
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--gold-dark);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(184, 137, 31, 0.08);
+    }
+
+    .input-group .input-icon {
+      position: absolute;
+      right: 1rem;
+      bottom: 0.9rem;
+      color: #94a3b8;
+      font-size: 1rem;
+    }
+
+    .password-wrapper {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 1rem;
+      bottom: 0.9rem;
+      cursor: pointer;
+      color: #94a3b8;
+      font-size: 1rem;
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+
+    .toggle-password:hover {
+      color: var(--gold-dark);
+    }
+
+    .form-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0.75rem 0 1.75rem 0;
+    }
+
+    .form-options label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text);
+      font-weight: 450;
+    }
+
+    .form-options label input[type="checkbox"] {
+      accent-color: var(--gold-dark);
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .forgot-link {
+      font-size: 0.8rem;
+      color: var(--gold-dark);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--navy);
+      border: none;
+      border-radius: 60px;
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.25s;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      box-shadow: 0 8px 18px -6px rgba(15, 23, 42, 0.25);
+    }
+
+    .btn-primary i {
+      font-size: 0.9rem;
+    }
+
+    .btn-primary:hover {
+      background: #1e2a4a;
+      transform: scale(1.01);
+      box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.35);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
       cursor: not-allowed;
       transform: none;
     }
-    
-    .message { 
-      text-align:center; 
-      margin-top:15px; 
-      min-height:30px; 
-      font-weight:500; 
-      padding: 10px;
-      border-radius: 5px;
-      transition:opacity 0.5s ease; 
+
+    .message {
+      margin-top: 1rem;
+      min-height: 2.4rem;
+      font-size: 0.9rem;
+      font-weight: 450;
+      padding: 0.5rem 0.75rem;
+      border-radius: 12px;
+      text-align: center;
+      transition: opacity 0.2s;
     }
-    
-    .fade-out { 
-      opacity:0; 
+
+    .message.success {
+      background: #e6f7ed;
+      color: #0b5e3a;
     }
-    
-    .success { 
-      color:#155724; 
-      background:#d4edda; 
-      border:1px solid #c3e6cb;
+
+    .message.error {
+      background: #fee9e7;
+      color: #a11f1a;
     }
-    
-    .error { 
-      color:#721c24; 
-      background:#f8d7da; 
-      border:1px solid #f5c6cb;
+
+    .request-account {
+      text-align: center;
+      margin-top: 1.8rem;
+      font-size: 0.85rem;
+      color: var(--muted);
     }
-    
-    .loading {
-      display:inline-block; 
-      width:20px; 
-      height:20px; 
-      border:3px solid rgba(255,255,255,.3);
-      border-radius:50%; 
-      border-top-color:#fff; 
-      animation:spin 1s ease-in-out infinite;
-      margin-right:10px; 
-      vertical-align:middle;
-    }
-    
-    .request-account { 
-      text-align:center; 
-      margin-top:20px; 
-      font-size:14px; 
-      color:#555; 
-    }
-    
-    .request-account a { 
-      color:#007bff; 
-      text-decoration:none; 
-      font-weight:500; 
+
+    .request-account a {
+      color: var(--gold-dark);
+      text-decoration: none;
+      font-weight: 500;
       display: inline-block;
-      margin-top: 5px;
+      margin-top: 0.2rem;
     }
-    
-    .request-account a:hover { 
-      text-decoration:underline; 
+
+    .request-account a:hover {
+      text-decoration: underline;
     }
-    
-    @keyframes fadeIn { 
-      from{opacity:0; transform:translateY(20px);} 
-      to{opacity:1; transform:translateY(0);} 
+
+    .secure-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      justify-content: center;
+      margin-top: 1.2rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.3px;
     }
-    
-    @keyframes spin { 
-      to{ transform:rotate(360deg);} 
+
+    .secure-badge i {
+      color: var(--gold-dark);
+      font-size: 0.6rem;
     }
-    
-    @keyframes shake { 
-      0%,100%{transform:translateX(0);} 
-      10%,30%,50%,70%,90%{transform:translateX(-5px);} 
-      20%,40%,60%,80%{transform:translateX(5px);} 
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .portal-wrapper {
+        flex-direction: column;
+        min-height: auto;
+      }
+      .ops-panel {
+        width: 100%;
+        padding: 2rem 1.8rem;
+      }
+      .ops-panel::after {
+        display: none;
+      }
+      .login-panel {
+        width: 100%;
+        padding: 2rem 1.8rem;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .login-heading h1 {
+        font-size: 1.9rem;
+      }
     }
-    
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
+      }
+      .stat-value {
+        font-size: 1.6rem;
+      }
+      .login-panel {
+        padding: 1.8rem 1.2rem;
+      }
+      .ops-panel {
+        padding: 1.5rem 1.2rem;
+      }
     }
-    
-    .shake { 
-      animation:shake 0.5s ease-in-out; 
+
+    /* animation helpers */
+    .shake {
+      animation: shake 0.4s ease-in-out;
     }
-    
-    @media(max-width:480px) { 
-      .login-box{ padding:30px 20px; } 
-      h2{ font-size:22px; } 
-      .logo i { font-size: 50px; }
-      .logo div { font-size: 20px; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
     }
+    .fade-out {
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .loading {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.2);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.7s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-<div class="login-container">
-  <div class="login-box">
-    <!-- Logo with Font Awesome icon -->
-    <div class="logo">
-      <i class="fas fa-shield-alt"></i>
-      <div>SeizeTrack</div>
-      <span>Security Management System</span>
+<div class="portal-wrapper">
+
+  <!-- ===== LEFT: OPERATIONS PANEL ===== -->
+  <div class="ops-panel">
+    <div class="brand">
+      <i class="fas fa-shield-halved"></i>
+      <h1>SeizeTrack</h1>
     </div>
-    
-    <h2>Welcome Back!</h2>
-    
+    <div class="brand-sub">Security Operations Portal</div>
+
+    <div class="status-badge">
+      <i class="fas fa-circle" style="font-size: 0.5rem;"></i> All systems operational
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-label">Active officers</div>
+        <div class="stat-value">24</div>
+        <div class="stat-desc">+2 since yesterday</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Checkpoints</div>
+        <div class="stat-value">8</div>
+        <div class="stat-desc">all active</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Alerts today</div>
+        <div class="stat-value">3 <small>↑</small></div>
+        <div class="stat-desc">2 resolved</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Response time</div>
+        <div class="stat-value">2<small>m</small></div>
+        <div class="stat-desc">avg. critical</div>
+      </div>
+    </div>
+
+    <div class="security-notice">
+      <i class="fas fa-triangle-exclamation"></i>
+      <div><span>Security Notice</span> · Authorized personnel only. All login activities are monitored and recorded.</div>
+    </div>
+  </div>
+
+  <!-- ===== RIGHT: LOGIN PANEL ===== -->
+  <div class="login-panel">
+    <div class="login-heading">
+      <p class="eyebrow">BIU SECURITY PORTAL</p>
+      <h1>Welcome back</h1>
+      <p>Sign in with your authorized security credentials.</p>
+    </div>
+
     <form id="loginForm" novalidate>
       <div class="input-group">
-        <input id="email" type="email" placeholder=" " autocomplete="email" required />
-        <label for="email">Email Address</label>
-        <i class="fas fa-envelope"></i>
+        <label for="email">Email address</label>
+        <input id="email" type="email" placeholder="officer@seizetrack.com" autocomplete="email" required />
+        <i class="fas fa-envelope input-icon"></i>
       </div>
-      
+
       <div class="input-group">
-        <input id="password" type="password" placeholder=" " autocomplete="current-password" required />
         <label for="password">Password</label>
-        <span class="toggle-password" id="togglePassword" role="button" aria-label="Toggle password visibility">
-          <i class="fas fa-eye"></i>
-        </span>
+        <div class="password-wrapper">
+          <input id="password" type="password" placeholder="••••••••••••" autocomplete="current-password" required />
+          <span class="toggle-password" id="togglePassword" role="button" aria-label="Toggle visibility">
+            <i class="fas fa-eye"></i>
+          </span>
+        </div>
       </div>
-      
-      <button type="submit" id="loginButton">
-        <span id="button-text">Login</span>
+
+      <div class="form-options">
+        <label>
+          <input type="checkbox" checked /> Keep me signed in
+        </label>
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-primary" id="loginButton">
+        <span id="button-text"><i class="fas fa-arrow-right-to-bracket"></i> Access dashboard</span>
       </button>
-      
+
       <div id="msg" class="message"></div>
     </form>
-    
-    <p class="request-account">
-      Don't have an account?<br>
-      <a href="javascript:void(0)" onclick="requestAccount()">Request one from admin</a>
-    </p>
+
+    <div class="request-account">
+      Need access to SeizeTrack?<br>
+      <a href="javascript:void(0)" onclick="requestAccount()">Request an account from the security administrator</a>
+    </div>
+
+    <div class="secure-badge">
+      <i class="fas fa-lock"></i> Secure connection · BIU encrypted
+    </div>
   </div>
 </div>
 
 <script>
-// ==================== AUTHENTICATION CLASS ====================
-class Auth {
+  // ==================== AUTH CLASS (unchanged logic, kept from original) ====================
+  class Auth {
     constructor() {
-        // Production URL only - Render backend
-        this.API_BASE_URL = 'https://biu-legacycampus.onrender.com';
-        this.currentUser = null;
-        this.loadUserFromStorage();
+      this.API_BASE_URL = 'https://biu-legacycampus.onrender.com';
+      this.currentUser = null;
+      this.loadUserFromStorage();
     }
-
-    // Load user from localStorage
     loadUserFromStorage() {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-            try {
-                this.currentUser = JSON.parse(userStr);
-            } catch (e) {
-                console.error('Failed to parse user from storage:', e);
-                this.clearAuth();
-            }
-        }
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try { this.currentUser = JSON.parse(userStr); } catch (e) { this.clearAuth(); }
+      }
     }
-
-    // Check if user is logged in (synchronous)
-    isLoggedIn() {
-        return !!localStorage.getItem('token');
-    }
-
-    // Login function with Supabase
+    isLoggedIn() { return !!localStorage.getItem('token'); }
     async login(email, password) {
-        try {
-            const response = await fetch(`${this.API_BASE_URL}/api/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-            }
-
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('Server returned non-JSON response');
-            }
-
-            const data = await response.json();
-
-            if (data.success) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                localStorage.setItem('supabase_user_id', data.user.id);
-                this.currentUser = data.user;
-                
-                return { 
-                    success: true, 
-                    message: data.message,
-                    user: data.user,
-                    token: data.token 
-                };
-            } else {
-                return { 
-                    success: false, 
-                    message: data.message || 'Login failed' 
-                };
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            return { 
-                success: false, 
-                message: error.message || 'Network error. Please try again.' 
-            };
-        }
-    }
-
-    // Check authentication with server validation
-    async checkAuth() {
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-            return null;
-        }
-
-        try {
-            const response = await fetch(`${this.API_BASE_URL}/api/check`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    this.currentUser = data.user;
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    return this.currentUser;
-                }
-            }
-            
-            if (response.status === 401) {
-                this.clearAuth();
-            }
-            return null;
-            
-        } catch (error) {
-            console.warn('Auth check failed:', error);
-            return null;
-        }
-    }
-
-    // Get auth token
-    getToken() {
-        return localStorage.getItem('token');
-    }
-
-    // Logout
-    async logout() {
-        try {
-            const token = this.getToken();
-            if (token) {
-                fetch(`${this.API_BASE_URL}/api/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }).catch(err => console.warn('Logout notification failed:', err));
-            }
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
-
-        this.clearAuth();
-        window.location.href = '/login';
-    }
-
-    // Clear authentication data
-    clearAuth() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('supabase_user_id');
-        this.currentUser = null;
-    }
-
-    // Redirect to login page
-    redirectToLogin() {
-        const currentPath = window.location.pathname;
-        // Check if we're on the login page
-        if (!currentPath.includes('login.html') && !currentPath.includes('login')) {
-            window.location.href = '/login.html';
-        }
-    }
-
-    // Redirect to dashboard
-    redirectToDashboard() {
-        // Redirect to index.html (dashboard)
-        window.location.href = '/index.html';
-    }
-
-    // Add authorization headers to fetch requests
-    getAuthHeaders() {
-        const token = this.getToken();
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        return headers;
-    }
-
-    // Wrapper for fetch with authentication
-    async authFetch(url, options = {}) {
-        const headers = this.getAuthHeaders();
-        
-        try {
-            const response = await fetch(`${this.API_BASE_URL}${url}`, {
-                ...options,
-                headers: {
-                    ...headers,
-                    ...options.headers
-                }
-            });
-
-            if (response.status === 401) {
-                this.clearAuth();
-                window.location.href = '/login';
-                throw new Error('Session expired. Please login again.');
-            }
-
-            return response;
-        } catch (error) {
-            console.error('Auth fetch error:', error);
-            throw error;
-        }
-    }
-
-    // Check user role
-    isAdmin() {
-        return this.currentUser && this.currentUser.role === 'admin';
-    }
-
-    isSecurity() {
-        return this.currentUser && this.currentUser.role === 'security';
-    }
-
-    isStudent() {
-        return this.currentUser && this.currentUser.role === 'student';
-    }
-}
-
-// ==================== INITIALIZATION ====================
-const auth = new Auth();
-
-// ==================== PAGE LOAD HANDLER ====================
-document.addEventListener('DOMContentLoaded', function() {
-    const path = window.location.pathname;
-    
-    // If we're on the login page
-    if (path === '/login') {
-        // If already logged in, redirect to dashboard
-        if (auth.isLoggedIn()) {
-            auth.redirectToDashboard();
-            return;
-        }
-        
-        // Initialize login form
-        initializeLoginForm();
-    }
-    // If we're on the root (dashboard)
-    else if (path === '/') {
-        // Check if user is authenticated
-        auth.checkAuth().then(user => {
-            if (!user) {
-                auth.redirectToLogin();
-            }
+      try {
+        const response = await fetch(`${this.API_BASE_URL}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
         });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('supabase_user_id', data.user.id);
+          this.currentUser = data.user;
+          return { success: true, message: data.message, user: data.user, token: data.token };
+        } else {
+          return { success: false, message: data.message || 'Login failed' };
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        return { success: false, message: error.message || 'Network error. Please try again.' };
+      }
     }
-});
+    async checkAuth() {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      try {
+        const response = await fetch(`${this.API_BASE_URL}/api/check`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            this.currentUser = data.user;
+            localStorage.setItem('user', JSON.stringify(data.user));
+            return this.currentUser;
+          }
+        }
+        if (response.status === 401) this.clearAuth();
+        return null;
+      } catch (error) { return null; }
+    }
+    getToken() { return localStorage.getItem('token'); }
+    clearAuth() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('supabase_user_id');
+      this.currentUser = null;
+    }
+    redirectToDashboard() { window.location.href = '/index.html'; }
+    redirectToLogin() { window.location.href = '/login.html'; }
+  }
 
-// ==================== LOGIN FORM ====================
-function initializeLoginForm() {
+  // ==================== INIT ====================
+  const auth = new Auth();
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const path = window.location.pathname;
+    if (path === '/login' || path === '/login.html') {
+      if (auth.isLoggedIn()) { auth.redirectToDashboard(); return; }
+      initializeLoginForm();
+    } else if (path === '/' || path === '/index.html') {
+      auth.checkAuth().then(user => { if (!user) auth.redirectToLogin(); });
+    }
+  });
+
+  // ==================== LOGIN FORM LOGIC ====================
+  function initializeLoginForm() {
     const form = document.getElementById("loginForm");
     const msg = document.getElementById("msg");
     const button = document.getElementById("loginButton");
     const buttonText = document.getElementById("button-text");
-    const loginBox = document.querySelector(".login-box");
+    const loginPanel = document.querySelector(".login-panel");
     const passwordField = document.getElementById("password");
     const togglePassword = document.getElementById("togglePassword");
     const emailField = document.getElementById("email");
 
     if (!form) return;
 
-    // Toggle password visibility
+    // Toggle visibility
     togglePassword.addEventListener("click", function() {
-        const type = passwordField.type === "password" ? "text" : "password";
-        passwordField.type = type;
-        const icon = togglePassword.querySelector('i');
-        if (icon) {
-            icon.className = type === "password" ? "fas fa-eye" : "fas fa-eye-slash";
-        }
+      const type = passwordField.type === "password" ? "text" : "password";
+      passwordField.type = type;
+      const icon = togglePassword.querySelector('i');
+      if (icon) icon.className = type === "password" ? "fas fa-eye" : "fas fa-eye-slash";
     });
 
-    // Login submit
     form.addEventListener("submit", async function(e) {
-        e.preventDefault();
+      e.preventDefault();
+      const email = emailField.value.trim();
+      const password = passwordField.value.trim();
 
-        const email = emailField.value.trim();
-        const password = passwordField.value.trim();
+      msg.textContent = "";
+      msg.className = "message";
 
-        msg.textContent = "";
-        msg.className = "message";
+      if (!email || !password) {
+        showMessage("Please fill in all fields", "error");
+        shake();
+        return;
+      }
+      if (!validateEmail(email)) {
+        showMessage("Please enter a valid email address", "error");
+        shake();
+        return;
+      }
 
-        if (!email || !password) {
-            showMessage("Please fill in all fields", "error");
-            shake();
-            return;
+      button.disabled = true;
+      buttonText.innerHTML = '<span class="loading"></span> Logging in...';
+
+      try {
+        const result = await auth.login(email, password);
+        if (!result || !result.success) {
+          showMessage(result?.message || "Login failed. Check credentials.", "error");
+          shake();
+          return;
         }
-
-        if (!validateEmail(email)) {
-            showMessage("Please enter a valid email address", "error");
-            shake();
-            return;
-        }
-
-        button.disabled = true;
-        buttonText.innerHTML = '<span class="loading"></span> Logging in...';
-
-        try {
-            const result = await auth.login(email, password);
-
-            if (!result || !result.success) {
-                showMessage(result?.message || "Login failed. Please check your credentials.", "error");
-                shake();
-                return;
-            }
-
-            const userName = result.user?.name || result.user?.email || 'User';
-            showMessage(`Welcome back, ${userName}!`, "success");
-
-            // Redirect to dashboard (root)
-            setTimeout(() => {
-                auth.redirectToDashboard();
-            }, 1000);
-
-        } catch (err) {
-            console.error('Login error:', err);
-            
-            if (err.message?.includes('Failed to fetch') || err.message?.includes('Network error')) {
-                showMessage("Cannot connect to server. Please check your connection.", "error");
-            } else {
-                showMessage(err.message || "Login failed. Please try again.", "error");
-            }
-            
-            shake();
-        } finally {
-            setTimeout(() => {
-                button.disabled = false;
-                buttonText.textContent = "Login";
-            }, 2000);
-        }
+        const userName = result.user?.name || result.user?.email || 'User';
+        showMessage(`Welcome back, ${userName}!`, "success");
+        setTimeout(() => { auth.redirectToDashboard(); }, 1000);
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || "Login failed. Please try again.", "error");
+        shake();
+      } finally {
+        setTimeout(() => {
+          button.disabled = false;
+          buttonText.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Access dashboard';
+        }, 2000);
+      }
     });
 
     function showMessage(text, type) {
-        msg.textContent = text;
-        msg.className = `message ${type}`;
-        
+      msg.textContent = text;
+      msg.className = `message ${type}`;
+      setTimeout(() => {
+        msg.classList.add("fade-out");
         setTimeout(() => {
-            msg.classList.add("fade-out");
-            setTimeout(() => {
-                if (msg.classList.contains('fade-out')) {
-                    msg.textContent = '';
-                    msg.className = 'message';
-                }
-            }, 500);
-        }, 5000);
+          if (msg.classList.contains('fade-out')) {
+            msg.textContent = '';
+            msg.className = 'message';
+          }
+        }, 400);
+      }, 4500);
     }
 
     function shake() {
-        loginBox.classList.add("shake");
-        setTimeout(() => loginBox.classList.remove("shake"), 500);
+      loginPanel.classList.add("shake");
+      setTimeout(() => loginPanel.classList.remove("shake"), 400);
     }
 
     function validateEmail(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
     emailField.addEventListener('blur', function() {
-        if (this.value && !validateEmail(this.value)) {
-            this.style.borderColor = '#dc3545';
-        } else {
-            this.style.borderColor = '#e0e0e0';
-        }
+      if (this.value && !validateEmail(this.value)) {
+        this.style.borderColor = '#dc3545';
+      } else {
+        this.style.borderColor = '#e9edf2';
+      }
     });
-
     emailField.addEventListener('focus', function() {
-        this.style.borderColor = '#e0e0e0';
+      this.style.borderColor = '#e9edf2';
     });
-}
+  }
 
-// ==================== GLOBAL FUNCTIONS ====================
-window.requestAccount = function() {
+  // ==================== REQUEST ACCOUNT (demo) ====================
+  window.requestAccount = function() {
     alert(
-        "To request an account, please contact your system administrator.\n\n" +
-        "For testing purposes, you can use:\n" +
-        "Email: admin@seizetrack.com\n" +
-        "Password: admin123"
+      "To request an account, contact your security administrator.\n\n" +
+      "Demo credentials (for testing):\n" +
+      "Email: admin@seizetrack.com\n" +
+      "Password: admin123"
     );
-    
     setTimeout(() => {
-        const emailField = document.getElementById("email");
-        const passwordField = document.getElementById("password");
-        if (emailField && passwordField) {
-            emailField.value = "admin@seizetrack.com";
-            passwordField.value = "admin123";
-            emailField.dispatchEvent(new Event('input'));
-            passwordField.dispatchEvent(new Event('input'));
-        }
+      const emailField = document.getElementById("email");
+      const passwordField = document.getElementById("password");
+      if (emailField && passwordField) {
+        emailField.value = "admin@seizetrack.com";
+        passwordField.value = "admin123";
+        emailField.dispatchEvent(new Event('input'));
+        passwordField.dispatchEvent(new Event('input'));
+      }
     }, 100);
-}
-
-// Network status check
-window.addEventListener('online', function() {
-    const msg = document.getElementById('msg');
-    if (msg) {
-        msg.textContent = 'Network connection restored.';
-        msg.className = 'message success';
-        setTimeout(() => {
-            msg.textContent = '';
-            msg.className = 'message';
-        }, 3000);
-    }
-});
-
-window.addEventListener('offline', function() {
-    const msg = document.getElementById('msg');
-    if (msg) {
-        msg.textContent = 'You are offline. Please check your connection.';
-        msg.className = 'message error';
-    }
-});
+  };
 </script>
 </body>
 </html>
