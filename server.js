@@ -8,10 +8,10 @@ const { createClient } = require("@supabase/supabase-js");
 const bcrypt = require("bcrypt");
 
 // =============================================
-// SEIZETRACK API SERVER WITH SUPABASE - PRODUCTION
+// SEIZETRACK API SERVER - PRODUCTION
 // =============================================
 
-// Configuration with validation
+// Configuration
 const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
 for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
@@ -34,10 +34,9 @@ const config = {
     BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS) || 10
 };
 
-// Create Express app
 const app = express();
 
-// Initialize Supabase client
+// Initialize Supabase
 const supabase = createClient(
     config.SUPABASE_URL,
     config.SUPABASE_ANON_KEY,
@@ -49,19 +48,8 @@ const supabase = createClient(
     }
 );
 
-// Admin Supabase client (for operations that need to bypass RLS)
-const supabaseAdmin = config.SUPABASE_SERVICE_KEY 
-    ? createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_KEY, {
-        auth: {
-            persistSession: false,
-            autoRefreshToken: false
-        }
-    })
-    : supabase;
+// ========== MIDDLEWARE ==========
 
-// ========== PRODUCTION MIDDLEWARE ==========
-
-// Security headers with Helmet
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -77,10 +65,8 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Compression
 app.use(compression());
 
-// Rate limiting - only apply to API routes
 const limiter = rateLimit({
     windowMs: config.RATE_LIMIT_WINDOW,
     max: config.RATE_LIMIT_MAX,
@@ -93,7 +79,6 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// CORS configuration for production
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
@@ -110,7 +95,6 @@ const corsOptions = {
         if (allowedOrigins.indexOf(origin) !== -1 || config.NODE_ENV !== 'production') {
             callback(null, true);
         } else {
-            console.log('CORS blocked origin:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -121,25 +105,12 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Trust proxy (for Render)
 app.set('trust proxy', 1);
-
-// Request logging (only in production)
-if (config.NODE_ENV === 'production') {
-    app.use((req, res, next) => {
-        console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.get('origin') || 'unknown'}`);
-        next();
-    });
-}
 
 // ========== AUTHENTICATION UTILITIES ==========
 
-// Generate simple token (in production, use JWT)
 function generateToken(user) {
     const payload = {
         id: user.id,
@@ -150,11 +121,9 @@ function generateToken(user) {
     return Buffer.from(JSON.stringify(payload)).toString('base64');
 }
 
-// Verify token
 function verifyToken(token) {
     try {
         const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-        // Check if token is expired (24 hours)
         if (Date.now() - decoded.timestamp > 24 * 60 * 60 * 1000) {
             return null;
         }
@@ -164,7 +133,6 @@ function verifyToken(token) {
     }
 }
 
-// Authentication middleware
 async function authenticate(req, res, next) {
     const authHeader = req.headers.authorization;
     
@@ -186,7 +154,6 @@ async function authenticate(req, res, next) {
     }
 
     try {
-        // Verify user still exists
         const { data: user, error } = await supabase
             .from('users')
             .select('id, email, name, role, department')
@@ -210,7 +177,6 @@ async function authenticate(req, res, next) {
     }
 }
 
-// Role-based authorization middleware
 function authorize(...roles) {
     return (req, res, next) => {
         if (!req.user) {
@@ -231,37 +197,8 @@ function authorize(...roles) {
     };
 }
 
-// ========== DATABASE CONNECTION ==========
-
-async function checkDatabaseConnection() {
-    try {
-        console.log('\n🔍 Connecting to Supabase...');
-        
-        const { error } = await supabase
-            .from('users')
-            .select('count', { count: 'exact', head: true });
-        
-        if (error) {
-            console.error('❌ Supabase connection failed:', error.message);
-            return false;
-        }
-        
-        console.log('✅ Connected to Supabase successfully!');
-        console.log(`🌍 Environment: ${config.NODE_ENV}`);
-        console.log(`📍 API URL: ${config.API_URL}`);
-        console.log(`🖥️  Client URL: ${config.CLIENT_URL}`);
-        
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Database connection failed:', error.message);
-        return false;
-    }
-}
-
 // ========== AUTHENTICATION ROUTES ==========
 
-// Login endpoint
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -273,7 +210,6 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        // Get user from database
         const { data: user, error } = await supabase
             .from('users')
             .select('*')
@@ -287,7 +223,6 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        // Compare password
         const isPasswordValid = await bcrypt.compare(password, user.password);
         
         if (!isPasswordValid) {
@@ -297,13 +232,9 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        // Generate token
         const token = generateToken(user);
-
-        // Remove password from response
         delete user.password;
 
-        // Update last login
         await supabase
             .from('users')
             .update({ updated_at: new Date().toISOString() })
@@ -325,22 +256,13 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Check auth endpoint
 app.post('/api/check', authenticate, async (req, res) => {
-    try {
-        res.json({
-            success: true,
-            user: req.user
-        });
-    } catch (error) {
-        res.status(401).json({
-            success: false,
-            message: 'Invalid token'
-        });
-    }
+    res.json({
+        success: true,
+        user: req.user
+    });
 });
 
-// Logout endpoint
 app.post('/api/logout', authenticate, async (req, res) => {
     res.json({
         success: true,
@@ -348,7 +270,6 @@ app.post('/api/logout', authenticate, async (req, res) => {
     });
 });
 
-// Register new user (Admin only)
 app.post('/api/register', authenticate, authorize('admin'), async (req, res) => {
     try {
         const { email, password, name, role, department } = req.body;
@@ -360,7 +281,6 @@ app.post('/api/register', authenticate, authorize('admin'), async (req, res) => 
             });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, config.BCRYPT_ROUNDS);
         
         const { data, error } = await supabase
@@ -399,24 +319,15 @@ app.post('/api/register', authenticate, authorize('admin'), async (req, res) => 
     }
 });
 
-// Get current user profile
 app.get('/api/profile', authenticate, async (req, res) => {
-    try {
-        res.json({
-            success: true,
-            user: req.user
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Failed to get profile'
-        });
-    }
+    res.json({
+        success: true,
+        user: req.user
+    });
 });
 
-// ========== PROTECTED API ROUTES ==========
+// ========== API ROUTES ==========
 
-// Health check endpoint (public)
 app.get('/api/health', async (req, res) => {
     try {
         const startTime = Date.now();
@@ -447,7 +358,6 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-// Dashboard stats endpoint (authenticated)
 app.get('/api/stats/dashboard', authenticate, async (req, res) => {
     try {
         res.set('Cache-Control', 'public, max-age=60');
@@ -519,7 +429,7 @@ app.get('/api/stats/dashboard', authenticate, async (req, res) => {
     }
 });
 
-// ========== CRUD OPERATIONS FOR PERSONS (Protected) ==========
+// ========== PERSONS CRUD ==========
 
 app.get('/api/persons', authenticate, async (req, res) => {
     try {
@@ -675,7 +585,6 @@ app.delete('/api/persons/:id', authenticate, authorize('admin'), async (req, res
     try {
         const { id } = req.params;
         
-        // Check if person has seizures
         const { count } = await supabase
             .from('seizures')
             .select('*', { count: 'exact', head: true })
@@ -709,7 +618,7 @@ app.delete('/api/persons/:id', authenticate, authorize('admin'), async (req, res
     }
 });
 
-// ========== CRUD OPERATIONS FOR SEIZURES (Protected) ==========
+// ========== SEIZURES CRUD ==========
 
 app.get('/api/seizures', authenticate, async (req, res) => {
     try {
@@ -810,7 +719,6 @@ app.post('/api/seizures', authenticate, authorize('admin', 'security'), async (r
             });
         }
         
-        // Check if person exists
         const { data: person, error: personCheckError } = await supabase
             .from('persons')
             .select('id, total_seizures')
@@ -824,7 +732,6 @@ app.post('/api/seizures', authenticate, authorize('admin', 'security'), async (r
             });
         }
         
-        // Create seizure
         const { data: seizure, error: seizureError } = await supabase
             .from('seizures')
             .insert([
@@ -843,7 +750,6 @@ app.post('/api/seizures', authenticate, authorize('admin', 'security'), async (r
         
         if (seizureError) throw seizureError;
         
-        // Update person's total_seizures and last_seized (trigger will handle this, but we'll do it explicitly too)
         await supabase
             .from('persons')
             .update({
@@ -910,7 +816,6 @@ app.delete('/api/seizures/:id', authenticate, authorize('admin'), async (req, re
     try {
         const { id } = req.params;
         
-        // Get the seizure to know which person to update
         const { data: seizure, error: getError } = await supabase
             .from('seizures')
             .select('person_id')
@@ -924,18 +829,12 @@ app.delete('/api/seizures/:id', authenticate, authorize('admin'), async (req, re
             });
         }
         
-        // Delete the seizure
         const { error } = await supabase
             .from('seizures')
             .delete()
             .eq('id', id);
         
         if (error) throw error;
-        
-        // Update person's total_seizures (decrease by 1)
-        await supabase.rpc('decrease_person_seizure_stats', {
-            p_person_id: seizure.person_id
-        });
         
         res.json({
             success: true,
@@ -953,7 +852,6 @@ app.delete('/api/seizures/:id', authenticate, authorize('admin'), async (req, re
 
 // ========== ADMIN ROUTES ==========
 
-// Get all users (Admin only)
 app.get('/api/users', authenticate, authorize('admin'), async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -977,7 +875,6 @@ app.get('/api/users', authenticate, authorize('admin'), async (req, res) => {
     }
 });
 
-// Update user role (Admin only)
 app.put('/api/users/:id/role', authenticate, authorize('admin'), async (req, res) => {
     try {
         const { id } = req.params;
@@ -1022,7 +919,6 @@ app.put('/api/users/:id/role', authenticate, authorize('admin'), async (req, res
 
 // ========== ERROR HANDLERS ==========
 
-// 404 handler for API routes
 app.use('/api/*', (req, res) => {
     res.status(404).json({
         success: false,
@@ -1030,42 +926,16 @@ app.use('/api/*', (req, res) => {
     });
 });
 
-// Root route - return API info
 app.get('/', (req, res) => {
     res.json({
         name: 'SeizeTrack API',
         version: '2.0.0',
-        status: 'running',
-        message: 'SeizeTrack API Server - Production',
-        endpoints: {
-            auth: {
-                login: 'POST /api/login',
-                check: 'POST /api/check',
-                logout: 'POST /api/logout',
-                register: 'POST /api/register (Admin only)',
-                profile: 'GET /api/profile'
-            },
-            public: {
-                health: 'GET /api/health'
-            },
-            protected: {
-                dashboard: 'GET /api/stats/dashboard',
-                persons: 'GET /api/persons',
-                personsCRUD: 'POST/PUT/DELETE /api/persons',
-                seizures: 'GET /api/seizures',
-                seizuresCRUD: 'POST/PUT/DELETE /api/seizures',
-                users: 'GET /api/users (Admin only)'
-            }
-        },
-        frontend: config.CLIENT_URL,
-        documentation: 'Please use the frontend application at ' + config.CLIENT_URL
+        status: 'running'
     });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
     console.error('Server error:', err);
-    
     res.status(500).json({
         success: false,
         message: 'Internal server error'
@@ -1073,60 +943,39 @@ app.use((err, req, res, next) => {
 });
 
 // ========== SERVER STARTUP ==========
+
 async function startServer() {
     try {
-        console.log('🚀 Starting SeizeTrack API Server...\n');
-        console.log('='.repeat(60));
-        console.log('📋 PRODUCTION CONFIGURATION');
-        console.log('='.repeat(60));
         console.log(`🌍 Environment: ${config.NODE_ENV}`);
         console.log(`📍 Port: ${config.PORT}`);
         console.log(`🖥️  API URL: ${config.API_URL}`);
-        console.log(`🔗 Client URL: ${config.CLIENT_URL}`);
-        console.log('='.repeat(60));
         
-        const dbConnected = await checkDatabaseConnection();
+        // Check database connection
+        const { error } = await supabase
+            .from('users')
+            .select('count', { count: 'exact', head: true });
         
-        const server = app.listen(config.PORT, () => {
-            console.log('\n' + '='.repeat(60));
-            console.log('✅ SEIZETRACK API SERVER IS RUNNING');
-            console.log('='.repeat(60));
-            console.log(`📡 API: ${config.API_URL}`);
-            console.log(`💾 Database: ${dbConnected ? 'Connected' : 'Disconnected'}`);
-            console.log(`🚦 Status: Ready to accept API requests`);
-            console.log('='.repeat(60));
-            console.log('\n📝 Available endpoints:');
-            console.log('   🔓 PUBLIC:');
-            console.log(`   • GET  ${config.API_URL}/api/health`);
-            console.log(`   • POST ${config.API_URL}/api/login`);
-            console.log('   🔒 PROTECTED (Requires Authentication):');
-            console.log(`   • GET  ${config.API_URL}/api/stats/dashboard`);
-            console.log(`   • CRUD ${config.API_URL}/api/persons`);
-            console.log(`   • CRUD ${config.API_URL}/api/seizures`);
-            console.log(`   • GET  ${config.API_URL}/api/profile`);
-            console.log('   🔐 ADMIN ONLY:');
-            console.log(`   • POST ${config.API_URL}/api/register`);
-            console.log(`   • GET  ${config.API_URL}/api/users`);
-            console.log('='.repeat(60));
-            console.log(`🌐 Frontend: ${config.CLIENT_URL}`);
-            console.log('='.repeat(60));
+        if (error) {
+            console.error('❌ Database connection failed:', error.message);
+            process.exit(1);
+        }
+        
+        console.log('✅ Connected to Supabase successfully!');
+        
+        app.listen(config.PORT, () => {
+            console.log(`🚀 Server running on port ${config.PORT}`);
         });
         
-        const gracefulShutdown = async () => {
-            console.log('\n\n🛑 Shutting down gracefully...');
-            server.close(() => {
-                console.log('👋 Server closed');
-                process.exit(0);
-            });
-            
-            setTimeout(() => {
-                console.error('⚠️ Forcefully shutting down');
-                process.exit(1);
-            }, 10000);
-        };
+        // Graceful shutdown
+        process.on('SIGTERM', () => {
+            console.log('🛑 Shutting down...');
+            process.exit(0);
+        });
         
-        process.on('SIGTERM', gracefulShutdown);
-        process.on('SIGINT', gracefulShutdown);
+        process.on('SIGINT', () => {
+            console.log('🛑 Shutting down...');
+            process.exit(0);
+        });
         
     } catch (error) {
         console.error('❌ Failed to start server:', error.message);
@@ -1134,5 +983,4 @@ async function startServer() {
     }
 }
 
-// Start the server
 startServer();
