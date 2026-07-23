@@ -2,31 +2,31 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/Public/login.html"
+      "destination": "./login.html"
     },
     {
       "source": "/login",
-      "destination": "/Public/login.html"
+      "destination": "./login.html"
     },
     {
       "source": "/index",
-      "destination": "/Public/index.html"
+      "destination": "./index.html"
     },
     {
       "source": "/AddSeizure",
-      "destination": "/Public/AddSeizure.html"
+      "destination": "./AddSeizure.html"
     },
     {
       "source": "/History",
-      "destination": "/Public/History.html"
+      "destination": "./History.html"
     },
     {
       "source": "/Person",
-      "destination": "/Public/Person.html"
+      "destination": "./Person.html"
     },
     {
       "source": "/(.*)",
-      "destination": "/Public/login.html"
+      "destination": "./login.html"
     }
   ],
   "cleanUrls": true,
