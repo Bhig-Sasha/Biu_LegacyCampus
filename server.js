@@ -27,7 +27,7 @@ const config = {
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
     JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
     NODE_ENV: process.env.NODE_ENV || 'production',
-    CLIENT_URL: process.env.CLIENT_URL || 'https://biulegacycampus.vercel.app',
+    CLIENT_URL: process.env.CLIENT_URL || 'https://biulegacycampus.netlify.app',
     API_URL: process.env.API_URL || 'https://biu-legacycampus.onrender.com',
     RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW) || 15 * 60 * 1000,
     RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX) || 100,
@@ -79,35 +79,77 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// ========== FIXED CORS CONFIGURATION ==========
 const corsOptions = {
     origin: function (origin, callback) {
+        // Define allowed origins
         const allowedOrigins = [
-            config.CLIENT_URL,
-            'https://biulegacycampus.vercel.app',
-            'http://localhost:3000',
-            'http://localhost:5000',
+            'https://biulegacycampus.netlify.app',      // Your Netlify domain
+            'https://biulegacycampus.vercel.app',       // Your Vercel domain
+            'https://biu-legacycampus.onrender.com',    // Your Render domain
+            'http://localhost:3000',                    // Local development
+            'http://localhost:5000',                    // Local development
+            'http://localhost:5500',                    // Live Server
             'http://127.0.0.1:3000',
-            'http://127.0.0.1:5000'
-        ].filter(Boolean);
-        
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) !== -1 || config.NODE_ENV !== 'production') {
+            'http://127.0.0.1:5000',
+            'http://127.0.0.1:5500',
+            'https://localhost:3000',
+            'https://localhost:5000',
+        ];
+
+        // Add CLIENT_URL from env if set
+        if (config.CLIENT_URL) {
+            allowedOrigins.push(config.CLIENT_URL);
+        }
+
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        // Check if origin is allowed
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.log(`❌ CORS blocked request from: ${origin}`);
+            console.log(`✅ Allowed origins: ${allowedOrigins.join(', ')}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    optionsSuccessStatus: 200
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'X-Requested-With', 
+        'Accept',
+        'Origin',
+        'Access-Control-Request-Method',
+        'Access-Control-Request-Headers'
+    ],
+    exposedHeaders: ['Content-Length', 'X-Request-Id'],
+    optionsSuccessStatus: 200,
+    preflightContinue: false,
+    maxAge: 86400 // 24 hours
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.set('trust proxy', 1);
+
+// Log all requests (useful for debugging)
+if (config.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+        next();
+    });
+}
 
 // ========== AUTHENTICATION UTILITIES ==========
 
@@ -930,7 +972,19 @@ app.get('/', (req, res) => {
     res.json({
         name: 'SeizeTrack API',
         version: '2.0.0',
-        status: 'running'
+        status: 'running',
+        endpoints: {
+            health: '/api/health',
+            login: '/api/login',
+            check: '/api/check',
+            logout: '/api/logout',
+            register: '/api/register',
+            profile: '/api/profile',
+            dashboard: '/api/stats/dashboard',
+            persons: '/api/persons',
+            seizures: '/api/seizures',
+            users: '/api/users'
+        }
     });
 });
 
@@ -949,6 +1003,7 @@ async function startServer() {
         console.log(`🌍 Environment: ${config.NODE_ENV}`);
         console.log(`📍 Port: ${config.PORT}`);
         console.log(`🖥️  API URL: ${config.API_URL}`);
+        console.log(`🔗 Client URL: ${config.CLIENT_URL}`);
         
         // Check database connection
         const { error } = await supabase
@@ -961,6 +1016,10 @@ async function startServer() {
         }
         
         console.log('✅ Connected to Supabase successfully!');
+        console.log('🚀 CORS configured to accept requests from:');
+        console.log('   - https://biulegacycampus.netlify.app');
+        console.log('   - https://biulegacycampus.vercel.app');
+        console.log('   - http://localhost:* (development)');
         
         app.listen(config.PORT, () => {
             console.log(`🚀 Server running on port ${config.PORT}`);
