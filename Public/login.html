@@ -309,7 +309,7 @@
 class Auth {
     constructor() {
         // Production URL only - Render backend
-        this.API_BASE_URL = '';
+        this.API_BASE_URL = 'https://biu-legacycampus.onrender.com';
         this.currentUser = null;
         this.loadUserFromStorage();
     }
@@ -455,14 +455,16 @@ class Auth {
     // Redirect to login page
     redirectToLogin() {
         const currentPath = window.location.pathname;
-        if (currentPath !== '/login') {
-            window.location.href = '/login';
+        // Check if we're on the login page
+        if (!currentPath.includes('login.html') && !currentPath.includes('login')) {
+            window.location.href = '/login.html';
         }
     }
 
     // Redirect to dashboard
     redirectToDashboard() {
-        window.location.href = '/index';
+        // Redirect to index.html (dashboard)
+        window.location.href = '/index.html';
     }
 
     // Add authorization headers to fetch requests

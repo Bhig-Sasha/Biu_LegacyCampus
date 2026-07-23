@@ -832,515 +832,631 @@
     </div>
 
     <script>
-        // ==================== API CONFIGURATION ====================
-        const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
+    // ==================== API CONFIGURATION ====================
+    const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
 
-        // ==================== INITIALIZATION ====================
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('Dashboard initialization started...');
-            
-            // Show loading overlay
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const loadingMessage = document.getElementById('loadingMessage');
-            const dashboardContent = document.getElementById('dashboardContent');
-            
+    // ==================== AUTHENTICATION UTILITIES ====================
+    function getToken() {
+        return localStorage.getItem('token');
+    }
+
+    function getUser() {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
             try {
-                // Load dashboard data
-                loadingMessage.textContent = 'Loading dashboard data...';
-                
-                // Setup sidebar functionality
-                setupSidebar();
-                
-                // Load dashboard data
-                await loadDashboardData();
-                
-                // Hide loading overlay and show dashboard
-                setTimeout(() => {
-                    loadingOverlay.style.display = 'none';
-                    dashboardContent.style.display = 'block';
-                }, 500);
-                
-            } catch (error) {
-                console.error('Initialization error:', error);
-                loadingMessage.innerHTML = `
-                    <div class="loading-error">
-                        <p><strong>Error loading dashboard:</strong></p>
-                        <p>${error.message}</p>
-                        <p style="margin-top: 1rem;">
-                            <button onclick="location.reload()" style="padding: 0.5rem 1rem; background: var(--blue-600); color: white; border: none; border-radius: 0.375rem; cursor: pointer;">
-                                Retry
-                            </button>
-                        </p>
-                    </div>
-                `;
+                return JSON.parse(userStr);
+            } catch (e) {
+                return null;
             }
-        });
+        }
+        return null;
+    }
 
-        function setupSidebar() {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    function isLoggedIn() {
+        return !!getToken();
+    }
+
+    function redirectToLogin() {
+        window.location.href = '/login.html';
+    }
+
+    function logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+    }
+
+    function getAuthHeaders() {
+        const token = getToken();
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    // ==================== INITIALIZATION ====================
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log('Dashboard initialization started...');
+        
+        // Check if user is logged in
+        if (!isLoggedIn()) {
+            console.log('User not logged in, redirecting to login...');
+            redirectToLogin();
+            return;
+        }
+
+        // Show loading overlay
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const dashboardContent = document.getElementById('dashboardContent');
+        
+        try {
+            // Verify token with server
+            loadingMessage.textContent = 'Verifying authentication...';
             
-            // Mobile menu toggle
-            if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', function() {
-                    sidebar.classList.add('active');
-                    sidebarBackdrop.classList.add('active');
-                });
-            }
-            
-            // Sidebar backdrop click to close
-            if (sidebarBackdrop) {
-                sidebarBackdrop.addEventListener('click', function() {
-                    sidebar.classList.remove('active');
-                    sidebarBackdrop.classList.remove('active');
-                });
-            }
-            
-            // Navigation active state
-            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-            const navItems = document.querySelectorAll('.nav-item');
-            
-            navItems.forEach(item => {
-                item.classList.remove('active');
-                const href = item.getAttribute('href');
-                if (href && href.includes(currentPage)) {
-                    item.classList.add('active');
+            const token = getToken();
+            const authResponse = await fetch(`${API_BASE_URL}/api/check`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
             });
-        }
 
-        async function loadDashboardData() {
-            const connectionStatus = document.getElementById('connectionStatus');
+            if (!authResponse.ok) {
+                // Token invalid or expired
+                console.log('Authentication failed, redirecting to login...');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                redirectToLogin();
+                return;
+            }
+
+            const authData = await authResponse.json();
+            if (!authData.success) {
+                console.log('Authentication check failed, redirecting to login...');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                redirectToLogin();
+                return;
+            }
+
+            // User is authenticated
+            console.log('User authenticated:', authData.user);
             
-            try {
-                // Show loading state
-                connectionStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading dashboard data...</span>';
-                connectionStatus.style.backgroundColor = 'var(--blue-50)';
-                connectionStatus.style.borderColor = 'var(--blue-200)';
-                
-                // Show loading skeletons
-                renderLoadingStats();
-                renderLoadingSeizures();
-                renderLoadingOffenders();
-                
-                // Fetch dashboard data (no auth headers needed now)
-                const response = await fetch(`${API_BASE_URL}/api/stats/dashboard`);
-                
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                }
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Update connection status
-                    connectionStatus.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected to server</span>';
-                    connectionStatus.style.backgroundColor = 'var(--green-50)';
-                    connectionStatus.style.borderColor = 'var(--green-200)';
-                    
-                    // Render the data
-                    renderStatsCards(result.data.stats);
-                    renderRecentSeizures(result.data.recentSeizures);
-                    
-                    // Fetch repeat offenders separately
-                    await loadRepeatOffenders();
-                } else {
-                    throw new Error(result.message || 'Failed to load dashboard data');
-                }
-                
-            } catch (error) {
-                console.error('Error loading dashboard:', error);
-                
+            // Load dashboard data
+            loadingMessage.textContent = 'Loading dashboard data...';
+            
+            // Setup sidebar functionality
+            setupSidebar();
+            
+            // Load dashboard data
+            await loadDashboardData();
+            
+            // Hide loading overlay and show dashboard
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+                dashboardContent.style.display = 'block';
+            }, 500);
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            loadingMessage.innerHTML = `
+                <div class="loading-error">
+                    <p><strong>Error loading dashboard:</strong></p>
+                    <p>${error.message}</p>
+                    <p style="margin-top: 1rem;">
+                        <button onclick="location.reload()" style="padding: 0.5rem 1rem; background: var(--blue-600); color: white; border: none; border-radius: 0.375rem; cursor: pointer;">
+                            Retry
+                        </button>
+                    </p>
+                </div>
+            `;
+        }
+    });
+
+    function setupSidebar() {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        
+        // Add logout button to sidebar
+        const sidebarNav = document.querySelector('.sidebar-nav');
+        if (sidebarNav && !document.getElementById('sidebarLogout')) {
+            const logoutDiv = document.createElement('div');
+            logoutDiv.id = 'sidebarLogout';
+            logoutDiv.style.cssText = 'padding: 1rem; border-top: 1px solid var(--slate-800); margin-top: 1rem;';
+            logoutDiv.innerHTML = `
+                <button onclick="logout()" style="width: 100%; padding: 0.75rem; background: var(--slate-800); color: white; border: none; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            `;
+            sidebarNav.appendChild(logoutDiv);
+        }
+        
+        // Mobile menu toggle
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                sidebar.classList.add('active');
+                sidebarBackdrop.classList.add('active');
+            });
+        }
+        
+        // Sidebar backdrop click to close
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarBackdrop.classList.remove('active');
+            });
+        }
+        
+        // Navigation active state
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        navItems.forEach(item => {
+            item.classList.remove('active');
+            const href = item.getAttribute('href');
+            if (href && href.includes(currentPage)) {
+                item.classList.add('active');
+            }
+        });
+    }
+
+    async function loadDashboardData() {
+        const connectionStatus = document.getElementById('connectionStatus');
+        const token = getToken();
+        
+        try {
+            // Show loading state
+            connectionStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading dashboard data...</span>';
+            connectionStatus.style.backgroundColor = 'var(--blue-50)';
+            connectionStatus.style.borderColor = 'var(--blue-200)';
+            
+            // Show loading skeletons
+            renderLoadingStats();
+            renderLoadingSeizures();
+            renderLoadingOffenders();
+            
+            // Fetch dashboard data with authentication
+            const response = await fetch(`${API_BASE_URL}/api/stats/dashboard`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (response.status === 401) {
+                // Token expired, redirect to login
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                redirectToLogin();
+                return;
+            }
+            
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
                 // Update connection status
-                connectionStatus.innerHTML = `<i class="fas fa-exclamation-circle"></i><span>Error: ${error.message}</span>`;
-                connectionStatus.style.backgroundColor = 'var(--red-50)';
-                connectionStatus.style.borderColor = 'var(--red-200)';
+                connectionStatus.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected to server</span>';
+                connectionStatus.style.backgroundColor = 'var(--green-50)';
+                connectionStatus.style.borderColor = 'var(--green-200)';
                 
-                // Show error states
-                showErrorStates();
+                // Render the data
+                renderStatsCards(result.data.stats);
+                renderRecentSeizures(result.data.recentSeizures);
+                
+                // Fetch repeat offenders separately
+                await loadRepeatOffenders();
+            } else {
+                throw new Error(result.message || 'Failed to load dashboard data');
             }
+            
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+            
+            // Update connection status
+            connectionStatus.innerHTML = `<i class="fas fa-exclamation-circle"></i><span>Error: ${error.message}</span>`;
+            connectionStatus.style.backgroundColor = 'var(--red-50)';
+            connectionStatus.style.borderColor = 'var(--red-200)';
+            
+            // Show error states
+            showErrorStates();
         }
+    }
 
-        async function loadRepeatOffenders() {
-            try {
-                // Fetch all persons
-                const response = await fetch(`${API_BASE_URL}/api/persons`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch persons');
-                }
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Filter for repeat offenders (total_seizures >= 2)
-                    const repeatOffenders = (result.data || [])
-                        .filter(person => person.total_seizures >= 2)
-                        .sort((a, b) => b.total_seizures - a.total_seizures)
-                        .slice(0, 5); // Top 5
-                    
-                    renderRepeatOffenders(repeatOffenders);
-                }
-            } catch (error) {
-                console.error('Error loading repeat offenders:', error);
-                renderRepeatOffenders([]);
+    async function loadRepeatOffenders() {
+        const token = getToken();
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/persons`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                redirectToLogin();
+                return;
             }
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch persons');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Filter for repeat offenders (total_seizures >= 2)
+                const repeatOffenders = (result.data || [])
+                    .filter(person => person.total_seizures >= 2)
+                    .sort((a, b) => b.total_seizures - a.total_seizures)
+                    .slice(0, 5); // Top 5
+                
+                renderRepeatOffenders(repeatOffenders);
+            }
+        } catch (error) {
+            console.error('Error loading repeat offenders:', error);
+            renderRepeatOffenders([]);
         }
+    }
 
-        function renderLoadingStats() {
-            const statsGrid = document.getElementById('stats-grid');
-            if (!statsGrid) return;
-            
-            const loadingHTML = `
-                <div class="stats-card loading">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon blue">
-                            <i class="fas fa-mobile-alt"></i>
-                        </div>
-                        <div class="stats-content">
-                            <dl>
-                                <dt>Total Seizures</dt>
-                                <dd>
-                                    <div class="stats-value">Loading...</div>
-                                </dd>
-                            </dl>
-                            <div class="stats-description">All time records</div>
-                        </div>
+    function renderLoadingStats() {
+        const statsGrid = document.getElementById('stats-grid');
+        if (!statsGrid) return;
+        
+        const loadingHTML = `
+            <div class="stats-card loading">
+                <div class="stats-card-inner">
+                    <div class="stats-icon blue">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="stats-content">
+                        <dl>
+                            <dt>Total Seizures</dt>
+                            <dd>
+                                <div class="stats-value">Loading...</div>
+                            </dd>
+                        </dl>
+                        <div class="stats-description">All time records</div>
                     </div>
                 </div>
-                <div class="stats-card loading">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon blue">
-                            <i class="fas fa-calendar-day"></i>
-                        </div>
-                        <div class="stats-content">
-                            <dl>
-                                <dt>Today's Seizures</dt>
-                                <dd>
-                                    <div class="stats-value">Loading...</div>
-                                </dd>
-                            </dl>
-                            <div class="stats-description">Recorded today</div>
-                        </div>
+            </div>
+            <div class="stats-card loading">
+                <div class="stats-card-inner">
+                    <div class="stats-icon blue">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stats-content">
+                        <dl>
+                            <dt>Today's Seizures</dt>
+                            <dd>
+                                <div class="stats-value">Loading...</div>
+                            </dd>
+                        </dl>
+                        <div class="stats-description">Recorded today</div>
                     </div>
                 </div>
-                <div class="stats-card loading">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon blue">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stats-content">
-                            <dl>
-                                <dt>Total Persons</dt>
-                                <dd>
-                                    <div class="stats-value">Loading...</div>
-                                </dd>
-                            </dl>
-                            <div class="stats-description">Unique offenders</div>
-                        </div>
+            </div>
+            <div class="stats-card loading">
+                <div class="stats-card-inner">
+                    <div class="stats-icon blue">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stats-content">
+                        <dl>
+                            <dt>Total Persons</dt>
+                            <dd>
+                                <div class="stats-value">Loading...</div>
+                            </dd>
+                        </dl>
+                        <div class="stats-description">Unique offenders</div>
                     </div>
                 </div>
-                <div class="stats-card loading">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon red">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="stats-content">
-                            <dl>
-                                <dt>Repeat Offenders</dt>
-                                <dd>
-                                    <div class="stats-value">Loading...</div>
-                                </dd>
-                            </dl>
-                            <div class="stats-description">2+ seizures recorded</div>
-                        </div>
+            </div>
+            <div class="stats-card loading">
+                <div class="stats-card-inner">
+                    <div class="stats-icon red">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stats-content">
+                        <dl>
+                            <dt>Repeat Offenders</dt>
+                            <dd>
+                                <div class="stats-value">Loading...</div>
+                            </dd>
+                        </dl>
+                        <div class="stats-description">2+ seizures recorded</div>
                     </div>
                 </div>
-            `;
-            
-            statsGrid.innerHTML = loadingHTML;
-        }
+            </div>
+        `;
+        
+        statsGrid.innerHTML = loadingHTML;
+    }
 
-        function renderStatsCards(stats) {
-            const statsGrid = document.getElementById('stats-grid');
-            if (!statsGrid || !stats) return;
-            
-            const statsHTML = `
-                <div class="stats-card">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon blue">
-                            <i class="fas fa-mobile-alt"></i>
-                        </div>
-                        <div class="stats-content">
-                            <dl>
-                                <dt>Total Seizures</dt>
-                                <dd>
-                                    <div class="stats-value">${stats.totalSeizures || 0}</div>
-                                </dd>
-                            </dl>
-                            <div class="stats-description">All time records</div>
-                        </div>
+    function renderStatsCards(stats) {
+        const statsGrid = document.getElementById('stats-grid');
+        if (!statsGrid || !stats) return;
+        
+        const statsHTML = `
+            <div class="stats-card">
+                <div class="stats-card-inner">
+                    <div class="stats-icon blue">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="stats-content">
+                        <dl>
+                            <dt>Total Seizures</dt>
+                            <dd>
+                                <div class="stats-value">${stats.totalSeizures || 0}</div>
+                            </dd>
+                        </dl>
+                        <div class="stats-description">All time records</div>
                     </div>
                 </div>
-                <div class="stats-card">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon blue">
-                            <i class="fas fa-calendar-day"></i>
-                        </div>
-                        <div class="stats-content">
-                            <dl>
-                                <dt>Today's Seizures</dt>
-                                <dd>
-                                    <div class="stats-value">${stats.todaySeizures || 0}</div>
-                                </dd>
-                            </dl>
-                            <div class="stats-description">Recorded today</div>
-                        </div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-card-inner">
+                    <div class="stats-icon blue">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stats-content">
+                        <dl>
+                            <dt>Today's Seizures</dt>
+                            <dd>
+                                <div class="stats-value">${stats.todaySeizures || 0}</div>
+                            </dd>
+                        </dl>
+                        <div class="stats-description">Recorded today</div>
                     </div>
                 </div>
-                <div class="stats-card">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon blue">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stats-content">
-                            <dl>
-                                <dt>Total Persons</dt>
-                                <dd>
-                                    <div class="stats-value">${stats.totalPersons || 0}</div>
-                                </dd>
-                            </dl>
-                            <div class="stats-description">Unique offenders</div>
-                        </div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-card-inner">
+                    <div class="stats-icon blue">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stats-content">
+                        <dl>
+                            <dt>Total Persons</dt>
+                            <dd>
+                                <div class="stats-value">${stats.totalPersons || 0}</div>
+                            </dd>
+                        </dl>
+                        <div class="stats-description">Unique offenders</div>
                     </div>
                 </div>
-                <div class="stats-card">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon red">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="stats-content">
-                            <dl>
-                                <dt>Repeat Offenders</dt>
-                                <dd>
-                                    <div class="stats-value">${stats.repeatOffenders || 0}</div>
-                                </dd>
-                            </dl>
-                            <div class="stats-description">2+ seizures recorded</div>
-                        </div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-card-inner">
+                    <div class="stats-icon red">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stats-content">
+                        <dl>
+                            <dt>Repeat Offenders</dt>
+                            <dd>
+                                <div class="stats-value">${stats.repeatOffenders || 0}</div>
+                            </dd>
+                        </dl>
+                        <div class="stats-description">2+ seizures recorded</div>
                     </div>
                 </div>
-            `;
-            
-            statsGrid.innerHTML = statsHTML;
-        }
+            </div>
+        `;
+        
+        statsGrid.innerHTML = statsHTML;
+    }
 
-        function renderLoadingSeizures() {
-            const tbody = document.getElementById('recent-seizures');
-            if (!tbody) return;
-            
+    function renderLoadingSeizures() {
+        const tbody = document.getElementById('recent-seizures');
+        if (!tbody) return;
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 3rem 1rem;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--slate-600);">Loading recent seizures...</p>
+                </td>
+            </tr>
+        `;
+    }
+
+    function renderRecentSeizures(seizures) {
+        const tbody = document.getElementById('recent-seizures');
+        if (!tbody) return;
+        
+        if (!seizures || seizures.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="4" style="text-align: center; padding: 3rem 1rem;">
-                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
-                        <p style="color: var(--slate-600);">Loading recent seizures...</p>
+                        <i class="fas fa-clock" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                        <p style="color: var(--slate-600);">No recent seizures found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        let html = '';
+        seizures.forEach(seizure => {
+            const date = new Date(seizure.createdAt);
+            const timeString = date.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            html += `
+                <tr>
+                    <td>${timeString}</td>
+                    <td>
+                        <div class="person-name">${seizure.person?.name || 'Unknown'}</div>
+                        <div class="matric-number">${seizure.person?.matricNumber || ''}</div>
+                    </td>
+                    <td>${seizure.phoneModel || 'Unknown'}</td>
+                    <td>${seizure.location || 'Unknown'}</td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+    }
+
+    function renderLoadingOffenders() {
+        const offendersList = document.getElementById('offenders-list');
+        if (!offendersList) return;
+        
+        offendersList.innerHTML = `
+            <div style="text-align: center; padding: 2rem 1rem;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                <p style="color: var(--slate-600);">Loading repeat offenders...</p>
+            </div>
+        `;
+    }
+
+    function renderRepeatOffenders(offenders) {
+        const offendersList = document.getElementById('offenders-list');
+        if (!offendersList) return;
+        
+        if (!offenders || offenders.length === 0) {
+            offendersList.innerHTML = `
+                <div style="text-align: center; padding: 2rem 1rem;">
+                    <i class="fas fa-user-shield" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--slate-600);">No repeat offenders found</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        offenders.forEach(offender => {
+            const seizureCount = offender.total_seizures || 0;
+            const badgeClass = seizureCount >= 3 ? 'badge danger' : 'badge';
+            const badgeText = seizureCount >= 3 ? 'Frequent' : 'Repeat';
+            
+            html += `
+                <li>
+                    <div class="person-info">
+                        <div class="person-count">${seizureCount}</div>
+                        <div class="person-details">
+                            <div class="name">${offender.name || 'Unknown'}</div>
+                            <div class="matric">${offender.matric_number || ''} • ${offender.department || ''}</div>
+                        </div>
+                    </div>
+                    <span class="${badgeClass}">${badgeText}</span>
+                </li>
+            `;
+        });
+        
+        offendersList.innerHTML = html;
+    }
+
+    function showErrorStates() {
+        const statsGrid = document.getElementById('stats-grid');
+        const tbody = document.getElementById('recent-seizures');
+        const offendersList = document.getElementById('offenders-list');
+        
+        if (statsGrid) {
+            statsGrid.innerHTML = `
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Total Seizures</dt>
+                                <dd>
+                                    <div class="stats-value">N/A</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Failed to load</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Today's Seizures</dt>
+                                <dd>
+                                    <div class="stats-value">N/A</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Failed to load</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Total Persons</dt>
+                                <dd>
+                                    <div class="stats-value">N/A</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Failed to load</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-card-inner">
+                        <div class="stats-icon red">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stats-content">
+                            <dl>
+                                <dt>Repeat Offenders</dt>
+                                <dd>
+                                    <div class="stats-value">N/A</div>
+                                </dd>
+                            </dl>
+                            <div class="stats-description">Failed to load</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 3rem 1rem;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--red-400); margin-bottom: 1rem;"></i>
+                        <p style="color: var(--slate-600);">Failed to load recent seizures</p>
                     </td>
                 </tr>
             `;
         }
-
-        function renderRecentSeizures(seizures) {
-            const tbody = document.getElementById('recent-seizures');
-            if (!tbody) return;
-            
-            if (!seizures || seizures.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 3rem 1rem;">
-                            <i class="fas fa-clock" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
-                            <p style="color: var(--slate-600);">No recent seizures found</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            let html = '';
-            seizures.forEach(seizure => {
-                const date = new Date(seizure.createdAt);
-                const timeString = date.toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-                
-                html += `
-                    <tr>
-                        <td>${timeString}</td>
-                        <td>
-                            <div class="person-name">${seizure.person?.name || 'Unknown'}</div>
-                            <div class="matric-number">${seizure.person?.matricNumber || ''}</div>
-                        </td>
-                        <td>${seizure.phoneModel || 'Unknown'}</td>
-                        <td>${seizure.location || 'Unknown'}</td>
-                    </tr>
-                `;
-            });
-            
-            tbody.innerHTML = html;
-        }
-
-        function renderLoadingOffenders() {
-            const offendersList = document.getElementById('offenders-list');
-            if (!offendersList) return;
-            
+        
+        if (offendersList) {
             offendersList.innerHTML = `
                 <div style="text-align: center; padding: 2rem 1rem;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
-                    <p style="color: var(--slate-600);">Loading repeat offenders...</p>
+                    <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--red-400); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--slate-600);">Failed to load repeat offenders</p>
                 </div>
             `;
         }
+    }
 
-        function renderRepeatOffenders(offenders) {
-            const offendersList = document.getElementById('offenders-list');
-            if (!offendersList) return;
-            
-            if (!offenders || offenders.length === 0) {
-                offendersList.innerHTML = `
-                    <div style="text-align: center; padding: 2rem 1rem;">
-                        <i class="fas fa-user-shield" style="font-size: 2rem; color: var(--slate-400); margin-bottom: 1rem;"></i>
-                        <p style="color: var(--slate-600);">No repeat offenders found</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = '';
-            offenders.forEach(offender => {
-                const seizureCount = offender.total_seizures || 0;
-                const badgeClass = seizureCount >= 3 ? 'badge danger' : 'badge';
-                const badgeText = seizureCount >= 3 ? 'Frequent' : 'Repeat';
-                
-                html += `
-                    <li>
-                        <div class="person-info">
-                            <div class="person-count">${seizureCount}</div>
-                            <div class="person-details">
-                                <div class="name">${offender.name || 'Unknown'}</div>
-                                <div class="matric">${offender.matric_number || ''} • ${offender.department || ''}</div>
-                            </div>
-                        </div>
-                        <span class="${badgeClass}">${badgeText}</span>
-                    </li>
-                `;
-            });
-            
-            offendersList.innerHTML = html;
+    // Auto-refresh every 30 seconds (only if authenticated)
+    setInterval(() => {
+        const dashboardContent = document.getElementById('dashboardContent');
+        if (dashboardContent && dashboardContent.style.display === 'block' && isLoggedIn()) {
+            loadDashboardData();
         }
+    }, 30000);
+</script>
 
-        function showErrorStates() {
-            const statsGrid = document.getElementById('stats-grid');
-            const tbody = document.getElementById('recent-seizures');
-            const offendersList = document.getElementById('offenders-list');
-            
-            if (statsGrid) {
-                statsGrid.innerHTML = `
-                    <div class="stats-card">
-                        <div class="stats-card-inner">
-                            <div class="stats-icon blue">
-                                <i class="fas fa-mobile-alt"></i>
-                            </div>
-                            <div class="stats-content">
-                                <dl>
-                                    <dt>Total Seizures</dt>
-                                    <dd>
-                                        <div class="stats-value">N/A</div>
-                                    </dd>
-                                </dl>
-                                <div class="stats-description">Failed to load</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stats-card">
-                        <div class="stats-card-inner">
-                            <div class="stats-icon blue">
-                                <i class="fas fa-calendar-day"></i>
-                            </div>
-                            <div class="stats-content">
-                                <dl>
-                                    <dt>Today's Seizures</dt>
-                                    <dd>
-                                        <div class="stats-value">N/A</div>
-                                    </dd>
-                                </dl>
-                                <div class="stats-description">Failed to load</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stats-card">
-                        <div class="stats-card-inner">
-                            <div class="stats-icon blue">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="stats-content">
-                                <dl>
-                                    <dt>Total Persons</dt>
-                                    <dd>
-                                        <div class="stats-value">N/A</div>
-                                    </dd>
-                                </dl>
-                                <div class="stats-description">Failed to load</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stats-card">
-                        <div class="stats-card-inner">
-                            <div class="stats-icon red">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div class="stats-content">
-                                <dl>
-                                    <dt>Repeat Offenders</dt>
-                                    <dd>
-                                        <div class="stats-value">N/A</div>
-                                    </dd>
-                                </dl>
-                                <div class="stats-description">Failed to load</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            if (tbody) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 3rem 1rem;">
-                            <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--red-400); margin-bottom: 1rem;"></i>
-                            <p style="color: var(--slate-600);">Failed to load recent seizures</p>
-                        </td>
-                    </tr>
-                `;
-            }
-            
-            if (offendersList) {
-                offendersList.innerHTML = `
-                    <div style="text-align: center; padding: 2rem 1rem;">
-                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--red-400); margin-bottom: 1rem;"></i>
-                        <p style="color: var(--slate-600);">Failed to load repeat offenders</p>
-                    </div>
-                `;
-            }
-        }
-
-        // Auto-refresh every 30 seconds
-        setInterval(() => {
-            const dashboardContent = document.getElementById('dashboardContent');
-            if (dashboardContent && dashboardContent.style.display === 'block') {
-                loadDashboardData();
-            }
-        }, 30000);
-    </script>
 </body>
 </html>

@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Remove auth.js script -->
     <title>SeizeTrack - Persons Registry</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* [Keep all your existing styles exactly as they are] */
+        /* ==================== ROOT VARIABLES ==================== */
         :root {
             --blue-50: #eff6ff;
             --blue-100: #dbeafe;
@@ -42,6 +41,7 @@
             --gray-800: #1f2937;
         }
         
+        /* ==================== RESET & BASE ==================== */
         * {
             margin: 0;
             padding: 0;
@@ -56,14 +56,14 @@
             overflow-x: hidden;
         }
         
-        /* Layout Container */
+        /* ==================== LAYOUT ==================== */
         .layout-container {
             min-height: 100vh;
             background-color: var(--slate-50);
             display: flex;
         }
         
-        /* Mobile Sidebar Backdrop */
+        /* ==================== SIDEBAR ==================== */
         .sidebar-backdrop {
             position: fixed;
             inset: 0;
@@ -76,7 +76,6 @@
             display: block;
         }
         
-        /* Sidebar */
         .sidebar {
             position: fixed;
             top: 0;
@@ -104,13 +103,13 @@
             transform: translateX(0);
         }
         
-        /* Logo */
         .sidebar-logo {
             height: 4rem;
             display: flex;
             align-items: center;
             padding: 0 1.5rem;
             border-bottom: 1px solid var(--slate-800);
+            flex-shrink: 0;
         }
         
         .logo-icon {
@@ -125,7 +124,6 @@
             letter-spacing: -0.025em;
         }
         
-        /* Navigation */
         .sidebar-nav {
             flex: 1;
             padding: 0.75rem;
@@ -134,7 +132,8 @@
         }
         
         .nav-item {
-            display: block;
+            display: flex;
+            align-items: center;
             padding: 0.625rem 0.75rem;
             font-size: 0.875rem;
             font-weight: 500;
@@ -143,8 +142,6 @@
             margin-bottom: 0.25rem;
             text-decoration: none;
             color: var(--slate-300);
-            display: flex;
-            align-items: center;
         }
         
         .nav-item:hover {
@@ -161,24 +158,13 @@
             margin-right: 0.75rem;
             font-size: 1.25rem;
             width: 1.25rem;
-            height: 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            text-align: center;
         }
         
-        .nav-item.active .nav-icon {
-            color: white;
-        }
-        
-        .nav-item:not(.active) .nav-icon {
-            color: var(--slate-400);
-        }
-        
-        /* User Profile */
         .sidebar-profile {
             padding: 1rem;
             border-top: 1px solid var(--slate-800);
+            flex-shrink: 0;
         }
         
         .profile-container {
@@ -202,12 +188,17 @@
         
         .profile-info {
             margin-left: 0.75rem;
+            flex: 1;
+            min-width: 0;
         }
         
         .profile-name {
             font-size: 0.875rem;
             font-weight: 500;
             color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .profile-role {
@@ -216,20 +207,20 @@
         }
         
         .logout-btn {
-            margin-left: auto;
             color: var(--slate-400);
             background: none;
             border: none;
             cursor: pointer;
             padding: 0.25rem;
             border-radius: 0.25rem;
+            flex-shrink: 0;
         }
         
         .logout-btn:hover {
             color: white;
         }
         
-        /* Main Content */
+        /* ==================== MAIN CONTENT ==================== */
         .main-content {
             flex: 1;
             display: flex;
@@ -238,7 +229,7 @@
             overflow: hidden;
         }
         
-        /* Mobile Header */
+        /* ==================== MOBILE HEADER ==================== */
         .mobile-header {
             background-color: white;
             border-bottom: 1px solid var(--slate-200);
@@ -247,6 +238,7 @@
             align-items: center;
             padding: 0 1rem;
             justify-content: space-between;
+            flex-shrink: 0;
         }
         
         @media (min-width: 1024px) {
@@ -284,7 +276,7 @@
             background-color: var(--slate-100);
         }
         
-        /* Page Content */
+        /* ==================== PAGE CONTENT ==================== */
         .page-content {
             flex: 1;
             overflow-y: auto;
@@ -302,49 +294,26 @@
             margin: 0 auto;
         }
         
-        /* Common Components */
-        .space-y-6 > * + * {
-            margin-top: 1.5rem;
-        }
-        
-        .mb-6 {
-            margin-bottom: 1.5rem;
-        }
-        
-        .mt-8 {
-            margin-top: 2rem;
-        }
-        
-        .text-lg {
-            font-size: 1.125rem;
-        }
-        
-        .font-semibold {
-            font-weight: 600;
-        }
-        
-        .mb-4 {
-            margin-bottom: 1rem;
-        }
-        
-        .text-sm {
-            font-size: 0.875rem;
-        }
-        
-        /* Header */
+        /* ==================== HEADER ==================== */
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
             gap: 1rem;
         }
         
         .page-header h1 {
-            font-size: 1.875rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--slate-900);
+        }
+        
+        @media (min-width: 768px) {
+            .page-header h1 {
+                font-size: 1.875rem;
+            }
         }
         
         .page-header p {
@@ -353,7 +322,7 @@
             color: var(--slate-500);
         }
         
-        /* Card */
+        /* ==================== CARDS ==================== */
         .card {
             background-color: white;
             border-radius: 0.75rem;
@@ -363,14 +332,158 @@
         }
         
         .card-body {
-            padding: 1.5rem;
+            padding: 1rem;
         }
         
-        /* Input */
+        @media (min-width: 768px) {
+            .card-body {
+                padding: 1.5rem;
+            }
+        }
+        
+        /* ==================== STATS ==================== */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (min-width: 640px) {
+            .stats-container {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1rem;
+            }
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            padding: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (min-width: 768px) {
+            .stat-card {
+                padding: 1.5rem;
+            }
+        }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-title {
+                font-size: 0.875rem;
+            }
+        }
+        
+        .stat-icon {
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.875rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-icon {
+                width: 2rem;
+                height: 2rem;
+                font-size: 1rem;
+            }
+        }
+        
+        .stat-icon.blue { background-color: var(--blue-500); }
+        .stat-icon.red { background-color: var(--red-600); }
+        .stat-icon.green { background-color: var(--green-600); }
+        .stat-icon.yellow { background-color: var(--yellow-800); }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        @media (min-width: 768px) {
+            .stat-value {
+                font-size: 1.875rem;
+            }
+        }
+        
+        /* ==================== BUTTONS ==================== */
+        .btn {
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        @media (min-width: 768px) {
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+        
+        .btn-primary {
+            background-color: var(--blue-600);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--blue-700);
+        }
+        
+        .btn-outline {
+            background-color: white;
+            color: var(--slate-700);
+            border: 1px solid var(--slate-300);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--slate-50);
+            border-color: var(--slate-400);
+        }
+        
+        /* ==================== INPUT ==================== */
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+        
         .input-container {
             position: relative;
             width: 100%;
-            max-width: 28rem;
+            max-width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .input-container {
+                max-width: 28rem;
+            }
         }
         
         .input-icon {
@@ -384,13 +497,18 @@
         
         .input-field {
             width: 100%;
-            padding: 0.625rem;
-            padding-left: 2.5rem;
+            padding: 0.5rem 0.75rem 0.5rem 2.25rem;
             border-radius: 0.5rem;
             border: 1px solid var(--slate-300);
             font-size: 0.875rem;
             transition: all 0.2s ease;
             background-color: white;
+        }
+        
+        @media (min-width: 768px) {
+            .input-field {
+                padding: 0.625rem 0.75rem 0.625rem 2.5rem;
+            }
         }
         
         .input-field:focus {
@@ -399,18 +517,25 @@
             box-shadow: 0 0 0 1px var(--slate-900);
         }
         
-        /* Table */
+        /* ==================== TABLE ==================== */
         .table-container {
             overflow-x: auto;
             border-radius: 0.5rem;
             border: 1px solid var(--slate-200);
             background-color: white;
+            -webkit-overflow-scrolling: touch;
         }
         
         table {
             width: 100%;
-            min-width: 100%;
             border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        
+        @media (min-width: 768px) {
+            table {
+                font-size: 0.875rem;
+            }
         }
         
         thead {
@@ -422,9 +547,9 @@
         }
         
         th {
-            padding: 0.75rem 1.5rem;
+            padding: 0.5rem 0.75rem;
             text-align: left;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 500;
             color: var(--slate-500);
             text-transform: uppercase;
@@ -432,9 +557,17 @@
             white-space: nowrap;
         }
         
+        @media (min-width: 768px) {
+            th {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.75rem;
+            }
+        }
+        
         tbody tr {
             border-bottom: 1px solid var(--slate-200);
             transition: background-color 0.2s ease;
+            cursor: pointer;
         }
         
         tbody tr:hover {
@@ -442,72 +575,150 @@
         }
         
         td {
-            padding: 1rem 1.5rem;
+            padding: 0.5rem 0.75rem;
             white-space: nowrap;
-            font-size: 0.875rem;
+        }
+        
+        @media (min-width: 768px) {
+            td {
+                padding: 1rem 1.5rem;
+            }
+        }
+        
+        /* Hide less important columns on mobile */
+        @media (max-width: 640px) {
+            td:nth-child(3),
+            th:nth-child(3),
+            td:nth-child(5),
+            th:nth-child(5) {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            td:nth-child(4),
+            th:nth-child(4) {
+                display: none;
+            }
         }
         
         /* Student Info */
         .student-info {
             display: flex;
             align-items: center;
+            min-width: 120px;
         }
         
         .student-avatar {
-            width: 2rem;
-            height: 2rem;
+            width: 1.75rem;
+            height: 1.75rem;
             border-radius: 9999px;
             background-color: var(--slate-100);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: bold;
             color: var(--slate-500);
-            margin-right: 0.75rem;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+        
+        @media (min-width: 768px) {
+            .student-avatar {
+                width: 2rem;
+                height: 2rem;
+                font-size: 0.75rem;
+                margin-right: 0.75rem;
+            }
         }
         
         .student-name {
             font-weight: 500;
             color: var(--slate-900);
+            font-size: 0.7rem;
+        }
+        
+        @media (min-width: 768px) {
+            .student-name {
+                font-size: 0.875rem;
+            }
         }
         
         .student-matric {
-            font-size: 0.75rem;
+            font-size: 0.6rem;
             color: var(--slate-500);
             margin-top: 0.125rem;
         }
         
-        /* Department */
-        .department {
-            color: var(--slate-500);
+        @media (min-width: 768px) {
+            .student-matric {
+                font-size: 0.75rem;
+            }
         }
         
-        /* Level */
+        .department {
+            color: var(--slate-500);
+            font-size: 0.7rem;
+        }
+        
+        @media (min-width: 768px) {
+            .department {
+                font-size: 0.875rem;
+            }
+        }
+        
         .level {
             font-weight: 500;
             color: var(--slate-700);
+            font-size: 0.7rem;
         }
         
-        /* Total Seizures */
+        @media (min-width: 768px) {
+            .level {
+                font-size: 0.875rem;
+            }
+        }
+        
         .seizure-count {
             font-weight: bold;
             color: var(--slate-900);
+            font-size: 0.7rem;
         }
         
-        /* Last Incident */
+        @media (min-width: 768px) {
+            .seizure-count {
+                font-size: 0.875rem;
+            }
+        }
+        
         .last-incident {
             color: var(--slate-500);
+            font-size: 0.7rem;
+        }
+        
+        @media (min-width: 768px) {
+            .last-incident {
+                font-size: 0.875rem;
+            }
         }
         
         /* Badge */
         .badge {
             display: inline-flex;
             align-items: center;
-            padding: 0.25rem 0.625rem;
+            padding: 0.15rem 0.5rem;
             border-radius: 9999px;
-            font-size: 0.75rem;
+            font-size: 0.6rem;
             font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        @media (min-width: 768px) {
+            .badge {
+                padding: 0.25rem 0.625rem;
+                font-size: 0.75rem;
+            }
         }
         
         .badge.danger {
@@ -536,59 +747,45 @@
         
         .badge-icon {
             margin-right: 0.25rem;
-            font-size: 0.75rem;
+            font-size: 0.6rem;
         }
         
-        /* Buttons */
-        .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+        @media (min-width: 768px) {
+            .badge-icon {
+                font-size: 0.75rem;
+            }
         }
         
-        .btn-primary {
-            background-color: var(--blue-600);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--blue-700);
-        }
-        
-        .btn-outline {
-            background-color: white;
-            color: var(--slate-700);
-            border: 1px solid var(--slate-300);
-        }
-        
-        .btn-outline:hover {
-            background-color: var(--slate-50);
-            border-color: var(--slate-400);
-        }
-        
-        /* Loading State */
+        /* ==================== STATES ==================== */
         .loading {
-            padding: 4rem 1rem;
+            padding: 2rem 1rem;
             text-align: center;
             color: var(--slate-500);
         }
         
+        @media (min-width: 768px) {
+            .loading {
+                padding: 4rem 1rem;
+            }
+        }
+        
         .loading-spinner {
             display: inline-block;
-            width: 2rem;
-            height: 2rem;
+            width: 1.5rem;
+            height: 1.5rem;
             border: 3px solid var(--slate-200);
             border-radius: 50%;
             border-top-color: var(--blue-500);
             animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        @media (min-width: 768px) {
+            .loading-spinner {
+                width: 2rem;
+                height: 2rem;
+                margin-bottom: 1rem;
+            }
         }
         
         @keyframes spin {
@@ -596,115 +793,62 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Empty State */
         .empty-state {
-            padding: 4rem 1rem;
+            padding: 2rem 1rem;
             text-align: center;
             color: var(--slate-500);
         }
         
+        @media (min-width: 768px) {
+            .empty-state {
+                padding: 4rem 1rem;
+            }
+        }
+        
         .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
             color: var(--slate-300);
         }
         
+        @media (min-width: 768px) {
+            .empty-state-icon {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+            }
+        }
+        
         .empty-state h3 {
-            font-size: 1.25rem;
+            font-size: 1rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
             color: var(--slate-700);
         }
         
-        .empty-state p {
-            color: var(--slate-500);
-            max-width: 400px;
-            margin: 0 auto 1.5rem;
-        }
-        
-        /* Error State */
-        .error-state {
-            padding: 4rem 1rem;
-            text-align: center;
-            color: var(--slate-500);
-        }
-        
-        .error-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--red-600);
-        }
-        
-        /* Stats */
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
         @media (min-width: 768px) {
-            .stats-container {
-                grid-template-columns: repeat(4, 1fr);
+            .empty-state h3 {
+                font-size: 1.25rem;
             }
         }
         
-        .stat-card {
-            background-color: white;
-            border-radius: 0.75rem;
-            border: 1px solid var(--slate-200);
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-title {
-            font-size: 0.875rem;
-            font-weight: 500;
+        .empty-state p {
             color: var(--slate-500);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            max-width: 400px;
+            margin: 0 auto 1rem;
+            font-size: 0.875rem;
         }
         
-        .stat-icon {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
+        .text-sm {
+            font-size: 0.75rem;
         }
         
-        .stat-icon.blue {
-            background-color: var(--blue-500);
+        @media (min-width: 768px) {
+            .text-sm {
+                font-size: 0.875rem;
+            }
         }
         
-        .stat-icon.red {
-            background-color: var(--red-600);
-        }
-        
-        .stat-icon.green {
-            background-color: var(--green-600);
-        }
-        
-        .stat-icon.yellow {
-            background-color: var(--yellow-800);
-        }
-        
-        .stat-value {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: var(--slate-900);
-        }
-        
-        /* Person Details Modal */
+        /* ==================== MODAL ==================== */
         .modal {
             display: none;
             position: fixed;
@@ -712,6 +856,7 @@
             z-index: 100;
             background-color: rgba(0, 0, 0, 0.5);
             overflow-y: auto;
+            padding: 1rem;
         }
         
         .modal.active {
@@ -723,25 +868,49 @@
         .modal-content {
             background-color: white;
             border-radius: 0.75rem;
-            width: 90%;
+            width: 95%;
             max-width: 800px;
-            max-height: 90vh;
+            max-height: 95vh;
             overflow-y: auto;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            margin: auto;
+        }
+        
+        @media (min-width: 768px) {
+            .modal-content {
+                width: 90%;
+                max-height: 90vh;
+            }
         }
         
         .modal-header {
-            padding: 1.5rem;
+            padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--slate-200);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        
+        @media (min-width: 768px) {
+            .modal-header {
+                padding: 1.5rem;
+            }
         }
         
         .modal-title {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             font-weight: 600;
             color: var(--slate-900);
+        }
+        
+        @media (min-width: 768px) {
+            .modal-title {
+                font-size: 1.25rem;
+            }
         }
         
         .modal-close {
@@ -751,6 +920,7 @@
             cursor: pointer;
             padding: 0.25rem;
             border-radius: 0.25rem;
+            font-size: 1.25rem;
         }
         
         .modal-close:hover {
@@ -759,31 +929,132 @@
         }
         
         .modal-body {
-            padding: 1.5rem;
+            padding: 1rem 1.25rem;
+        }
+        
+        @media (min-width: 768px) {
+            .modal-body {
+                padding: 1.5rem;
+            }
         }
         
         .person-details-grid {
             display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
         
         @media (min-width: 768px) {
             .person-details-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+                margin-bottom: 2rem;
             }
         }
         
         .detail-item h4 {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 500;
             color: var(--slate-500);
             margin-bottom: 0.25rem;
         }
         
+        @media (min-width: 768px) {
+            .detail-item h4 {
+                font-size: 0.875rem;
+            }
+        }
+        
         .detail-item p {
             color: var(--slate-900);
+            font-size: 0.875rem;
+        }
+        
+        @media (min-width: 768px) {
+            .detail-item p {
+                font-size: 1rem;
+            }
+        }
+        
+        .mt-8 {
+            margin-top: 1.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .mt-8 {
+                margin-top: 2rem;
+            }
+        }
+        
+        .text-lg {
+            font-size: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .text-lg {
+                font-size: 1.125rem;
+            }
+        }
+        
+        .font-semibold {
+            font-weight: 600;
+        }
+        
+        .mb-4 {
+            margin-bottom: 0.75rem;
+        }
+        
+        @media (min-width: 768px) {
+            .mb-4 {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        /* ==================== NOTIFICATION ==================== */
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            font-size: 0.875rem;
+            max-width: 90%;
+            min-width: 200px;
+        }
+        
+        @media (min-width: 768px) {
+            .notification {
+                padding: 1rem 1.5rem;
+                font-size: 14px;
+                min-width: 300px;
+                max-width: 400px;
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -794,13 +1065,11 @@
         
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <!-- Logo -->
             <div class="sidebar-logo">
                 <i class="fas fa-shield-alt logo-icon"></i>
                 <span class="logo-text">SeizeTrack</span>
             </div>
             
-            <!-- Navigation -->
             <nav class="sidebar-nav">
                 <a href="./index.html" class="nav-item">
                     <i class="fas fa-tachometer-alt nav-icon"></i>
@@ -820,7 +1089,6 @@
                 </a>
             </nav>
             
-            <!-- User Profile -->
             <div class="sidebar-profile">
                 <div class="profile-container">
                     <div class="profile-avatar" id="profileAvatar">AD</div>
@@ -851,81 +1119,79 @@
             <!-- Page Content -->
             <main class="page-content">
                 <div class="content-container">
-                    <div class="space-y-6">
-                        <!-- Header -->
-                        <div class="page-header">
-                            <div>
-                                <h1>Persons Registry</h1>
-                                <p>List of all individuals with recorded seizures.</p>
-                            </div>
-                            <div>
-                                <button id="refreshBtn" class="btn btn-primary">
-                                    <i class="fas fa-sync-alt"></i> Refresh
-                                </button>
-                            </div>
+                    <!-- Header -->
+                    <div class="page-header">
+                        <div>
+                            <h1>Persons Registry</h1>
+                            <p>List of all individuals with recorded seizures.</p>
                         </div>
-                        
-                        <!-- Statistics -->
-                        <div class="stats-container" id="statsContainer">
-                            <!-- Stats will be loaded dynamically -->
+                        <div>
+                            <button id="refreshBtn" class="btn btn-primary">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
                         </div>
-                        
-                        <!-- Main Card -->
-                        <div class="card">
-                            <div class="card-body">
-                                <!-- Search -->
-                                <div class="mb-6">
-                                    <div class="input-container">
-                                        <i class="fas fa-search input-icon"></i>
-                                        <input type="text" class="input-field" id="searchInput" placeholder="Search persons by name, matric number, or department...">
-                                    </div>
+                    </div>
+                    
+                    <!-- Statistics -->
+                    <div class="stats-container" id="statsContainer">
+                        <!-- Stats will be loaded dynamically -->
+                    </div>
+                    
+                    <!-- Main Card -->
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- Search -->
+                            <div class="mb-6">
+                                <div class="input-container">
+                                    <i class="fas fa-search input-icon"></i>
+                                    <input type="text" class="input-field" id="searchInput" placeholder="Search by name, matric, or department...">
+                                </div>
+                            </div>
+                            
+                            <!-- Table -->
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Department</th>
+                                            <th>Level</th>
+                                            <th>Seizures</th>
+                                            <th>Last Incident</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="personsTable">
+                                        <!-- Table rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                                
+                                <!-- Loading State -->
+                                <div id="loadingState" class="loading" style="display: none;">
+                                    <div class="loading-spinner"></div>
+                                    <p>Loading persons data...</p>
                                 </div>
                                 
-                                <!-- Table -->
-                                <div class="table-container">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Student</th>
-                                                <th>Department</th>
-                                                <th>Level</th>
-                                                <th>Total Seizures</th>
-                                                <th>Last Incident</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="personsTable">
-                                            <!-- Table rows will be populated by JavaScript -->
-                                        </tbody>
-                                    </table>
-                                    
-                                    <!-- Loading State -->
-                                    <div id="loadingState" class="loading" style="display: none;">
-                                        <div class="loading-spinner"></div>
-                                        <p>Loading persons data...</p>
+                                <!-- Empty State -->
+                                <div id="emptyState" class="empty-state" style="display: none;">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-users"></i>
                                     </div>
-                                    
-                                    <!-- Empty State -->
-                                    <div id="emptyState" class="empty-state" style="display: none;">
-                                        <div class="empty-state-icon">
-                                            <i class="fas fa-users"></i>
-                                        </div>
-                                        <h3>No Persons Found</h3>
-                                        <p>No persons have been registered yet.</p>
-                                        <p class="text-sm">Start by adding a seizure to automatically register a person.</p>
+                                    <h3>No Persons Found</h3>
+                                    <p>No persons have been registered yet.</p>
+                                    <p class="text-sm">Start by adding a seizure to automatically register a person.</p>
+                                </div>
+                                
+                                <!-- Error State -->
+                                <div id="errorState" class="empty-state" style="display: none;">
+                                    <div class="empty-state-icon" style="color: var(--red-600);">
+                                        <i class="fas fa-exclamation-circle"></i>
                                     </div>
-                                    
-                                    <!-- Error State -->
-                                    <div id="errorState" class="empty-state" style="display: none;">
-                                        <div class="empty-state-icon" style="color: var(--red-600);">
-                                            <i class="fas fa-exclamation-circle"></i>
-                                        </div>
-                                        <h3>Error Loading Data</h3>
-                                        <p id="errorMessage">Failed to load persons data. Please try again.</p>
-                                        <button id="retryBtn" class="btn btn-primary">
-                                            <i class="fas fa-redo"></i> Retry
-                                        </button>
-                                    </div>
+                                    <h3>Error Loading Data</h3>
+                                    <p id="errorMessage">Failed to load persons data. Please try again.</p>
+                                    <button id="retryBtn" class="btn btn-primary">
+                                        <i class="fas fa-redo"></i> Retry
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -956,7 +1222,7 @@
                                 <thead>
                                     <tr>
                                         <th>Date & Time</th>
-                                        <th>Device Model</th>
+                                        <th>Device</th>
                                         <th>Location</th>
                                         <th>Reason</th>
                                         <th>Status</th>
@@ -973,776 +1239,717 @@
         </div>
     </div>
     
-<script>
-// ==================== CONFIGURATION ====================
-const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+    <script>
+    // ==================== CONFIGURATION ====================
+    const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
 
-// ==================== STATE MANAGEMENT ====================
-let allPersons = [];
-let filteredPersons = [];
-let debounceTimer;
-let currentUser = null;
+    // ==================== STATE MANAGEMENT ====================
+    let allPersons = [];
+    let filteredPersons = [];
+    let debounceTimer;
+    let currentUser = null;
 
-// ==================== AUTHENTICATION UTILITIES ====================
-function getToken() {
-    return localStorage.getItem('token');
-}
-
-function getUser() {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-        try {
-            return JSON.parse(userStr);
-        } catch (e) {
-            console.error('Failed to parse user:', e);
-            return null;
-        }
+    // ==================== AUTHENTICATION UTILITIES ====================
+    function getToken() {
+        return localStorage.getItem('token');
     }
-    return null;
-}
 
-function isLoggedIn() {
-    return !!getToken();
-}
-
-function clearAuth() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/';
-}
-
-function getAuthHeaders() {
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    const token = getToken();
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-}
-
-async function authFetch(url, options = {}) {
-    try {
-        const response = await fetch(`${API_BASE_URL}${url}`, {
-            ...options,
-            headers: {
-                ...getAuthHeaders(),
-                ...options.headers
+    function getUser() {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                return JSON.parse(userStr);
+            } catch (e) {
+                console.error('Failed to parse user:', e);
+                return null;
             }
-        });
-
-        if (response.status === 401) {
-            console.error('Authentication failed - redirecting to login');
-            clearAuth();
-            throw new Error('Session expired. Please login again.');
         }
-
-        return response;
-    } catch (error) {
-        console.error('Auth fetch error:', error);
-        throw error;
-    }
-}
-
-// ==================== AUTHENTICATION CHECK ====================
-async function checkAuth() {
-    if (!isLoggedIn()) {
-        window.location.href = '/';
         return null;
     }
 
-    try {
-        const token = getToken();
-        const response = await fetch(`${API_BASE_URL}/auth/check`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                currentUser = data.user;
-                localStorage.setItem('user', JSON.stringify(data.user));
-                updateUserProfile();
-                return currentUser;
-            }
-        }
-        
-        // If response is not ok, clear auth
-        clearAuth();
-        return null;
-        
-    } catch (error) {
-        console.error('Auth check failed:', error);
-        // Don't clear auth on network errors, just return null
-        return null;
-    }
-}
-
-// ==================== PROFILE MANAGEMENT ====================
-function updateUserProfile() {
-    const user = getUser();
-    if (!user) return;
-
-    const profileName = document.getElementById('profileName');
-    const profileRole = document.getElementById('profileRole');
-    const profileAvatar = document.getElementById('profileAvatar');
-    
-    if (profileName) {
-        profileName.textContent = user.name || user.email || 'User';
-    }
-    
-    if (profileRole) {
-        profileRole.textContent = user.department || user.role || 'Security Dept';
+    function isLoggedIn() {
+        return !!getToken();
     }
 
-    if (profileAvatar && (user.name || user.email)) {
-        profileAvatar.textContent = (user.name || user.email || 'U').charAt(0).toUpperCase();
+    function redirectToLogin() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
     }
-}
 
-// ==================== LOGOUT FUNCTION ====================
-async function logout() {
-    try {
+    function getAuthHeaders() {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
         const token = getToken();
         if (token) {
-            // Attempt to notify server, but don't wait for response
-            fetch(`${API_BASE_URL}/auth/logout`, {
-                method: 'POST',
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        return headers;
+    }
+
+    async function authFetch(url, options = {}) {
+        try {
+            const response = await fetch(`${API_BASE_URL}${url}`, {
+                ...options,
+                headers: {
+                    ...getAuthHeaders(),
+                    ...options.headers
+                }
+            });
+
+            if (response.status === 401) {
+                console.error('Authentication failed - redirecting to login');
+                redirectToLogin();
+                throw new Error('Session expired. Please login again.');
+            }
+
+            return response;
+        } catch (error) {
+            console.error('Auth fetch error:', error);
+            throw error;
+        }
+    }
+
+    // ==================== AUTHENTICATION CHECK ====================
+    async function checkAuth() {
+        if (!isLoggedIn()) {
+            redirectToLogin();
+            return null;
+        }
+
+        try {
+            const token = getToken();
+            const response = await fetch(`${API_BASE_URL}/auth/check`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
-            }).catch(err => console.warn('Logout notification failed:', err));
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        clearAuth();
-    }
-}
+            });
 
-// ==================== DATA LOADING FUNCTIONS ====================
-async function loadPersons() {
-    showLoading();
-    hideError();
-    hideEmpty();
-    
-    try {
-        // Use authFetch for API calls
-        const response = await authFetch('/persons');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    updateUserProfile();
+                    return currentUser;
+                }
+            }
+            
+            redirectToLogin();
+            return null;
+            
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            return null;
+        }
+    }
+
+    // ==================== PROFILE MANAGEMENT ====================
+    function updateUserProfile() {
+        const user = getUser();
+        if (!user) return;
+
+        const profileName = document.getElementById('profileName');
+        const profileRole = document.getElementById('profileRole');
+        const profileAvatar = document.getElementById('profileAvatar');
         
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                // Transform the data to match our expected format
-                allPersons = (data.data || []).map(person => ({
-                    id: person.id,
-                    name: person.name,
-                    matric_number: person.matric_number,
-                    department: person.department,
-                    level: person.level,
-                    total_seizures: person.total_seizures || 0,
-                    last_seized: person.last_seized,
-                    created_at: person.created_at,
-                    // Also keep camelCase versions for compatibility
-                    matricNumber: person.matric_number,
-                    totalSeizures: person.total_seizures || 0,
-                    lastSeized: person.last_seized,
-                    createdAt: person.created_at
-                }));
-                
-                filteredPersons = [...allPersons];
-                
-                // Calculate statistics
-                const stats = calculateStatistics(allPersons);
-                renderStats(stats);
-                
-                if (allPersons.length === 0) {
-                    showEmpty();
+        if (profileName) {
+            profileName.textContent = user.name || user.email || 'User';
+        }
+        
+        if (profileRole) {
+            profileRole.textContent = user.department || user.role || 'Security Dept';
+        }
+
+        if (profileAvatar && (user.name || user.email)) {
+            profileAvatar.textContent = (user.name || user.email || 'U').charAt(0).toUpperCase();
+        }
+    }
+
+    // ==================== LOGOUT FUNCTION ====================
+    async function logout() {
+        try {
+            const token = getToken();
+            if (token) {
+                fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }).catch(err => console.warn('Logout notification failed:', err));
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            redirectToLogin();
+        }
+    }
+
+    // ==================== DATA LOADING FUNCTIONS ====================
+    async function loadPersons() {
+        showLoading();
+        hideError();
+        hideEmpty();
+        
+        try {
+            const response = await authFetch('/persons');
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    allPersons = (data.data || []).map(person => ({
+                        id: person.id,
+                        name: person.name,
+                        matric_number: person.matric_number,
+                        department: person.department,
+                        level: person.level,
+                        total_seizures: person.total_seizures || 0,
+                        last_seized: person.last_seized,
+                        created_at: person.created_at,
+                        matricNumber: person.matric_number,
+                        totalSeizures: person.total_seizures || 0,
+                        lastSeized: person.last_seized,
+                        createdAt: person.created_at
+                    }));
+                    
+                    filteredPersons = [...allPersons];
+                    
+                    const stats = calculateStatistics(allPersons);
+                    renderStats(stats);
+                    
+                    if (allPersons.length === 0) {
+                        showEmpty();
+                    } else {
+                        renderTable();
+                    }
                 } else {
-                    renderTable();
+                    throw new Error(data.message || 'Failed to load persons');
                 }
             } else {
-                throw new Error(data.message || 'Failed to load persons');
+                throw new Error(`HTTP ${response.status}: Failed to load persons`);
             }
-        } else {
-            throw new Error(`HTTP ${response.status}: Failed to load persons`);
+        } catch (error) {
+            console.error('Error loading persons:', error);
+            showError(error.message);
+        } finally {
+            hideLoading();
         }
-    } catch (error) {
-        console.error('Error loading persons:', error);
-        showError(error.message);
-    } finally {
-        hideLoading();
     }
-}
 
-function calculateStatistics(persons) {
-    const totalPersons = persons.length;
-    const totalSeizures = persons.reduce((sum, person) => 
-        sum + (parseInt(person.total_seizures) || 0), 0);
-    const repeatOffenders = persons.filter(person => 
-        (parseInt(person.total_seizures) || 0) >= 2).length;
-    const avgSeizures = totalPersons > 0 ? (totalSeizures / totalPersons).toFixed(1) : 0;
-    
-    return {
-        totalPersons,
-        totalSeizures,
-        repeatOffenders,
-        avgSeizures
-    };
-}
-
-function filterPersons() {
-    const searchInput = document.getElementById('searchInput');
-    if (!searchInput) return;
-    
-    const searchTerm = searchInput.value.toLowerCase();
-    
-    filteredPersons = allPersons.filter(person => {
-        if (!searchTerm) return true;
+    function calculateStatistics(persons) {
+        const totalPersons = persons.length;
+        const totalSeizures = persons.reduce((sum, person) => 
+            sum + (parseInt(person.total_seizures) || 0), 0);
+        const repeatOffenders = persons.filter(person => 
+            (parseInt(person.total_seizures) || 0) >= 2).length;
+        const avgSeizures = totalPersons > 0 ? (totalSeizures / totalPersons).toFixed(1) : 0;
         
-        return (
-            (person.name && person.name.toLowerCase().includes(searchTerm)) ||
-            (person.matric_number && person.matric_number.toLowerCase().includes(searchTerm)) ||
-            (person.department && person.department.toLowerCase().includes(searchTerm))
-        );
-    });
-    
-    renderTable();
-    
-    // Show empty state if no results
-    if (filteredPersons.length === 0) {
-        showEmpty();
-    } else {
-        hideEmpty();
+        return {
+            totalPersons,
+            totalSeizures,
+            repeatOffenders,
+            avgSeizures
+        };
     }
-}
 
-// ==================== RENDERING FUNCTIONS ====================
-function renderStats(stats) {
-    const statsContainer = document.getElementById('statsContainer');
-    if (!statsContainer) return;
-    
-    statsContainer.innerHTML = `
-        <div class="stat-card">
-            <div class="stat-header">
-                <span class="stat-title">Total Persons</span>
-                <div class="stat-icon blue">
-                    <i class="fas fa-users"></i>
-                </div>
-            </div>
-            <div class="stat-value">${stats.totalPersons}</div>
-        </div>
+    function filterPersons() {
+        const searchInput = document.getElementById('searchInput');
+        if (!searchInput) return;
         
-        <div class="stat-card">
-            <div class="stat-header">
-                <span class="stat-title">Total Seizures</span>
-                <div class="stat-icon red">
-                    <i class="fas fa-mobile-alt"></i>
-                </div>
-            </div>
-            <div class="stat-value">${stats.totalSeizures}</div>
-        </div>
+        const searchTerm = searchInput.value.toLowerCase();
         
-        <div class="stat-card">
-            <div class="stat-header">
-                <span class="stat-title">Repeat Offenders</span>
-                <div class="stat-icon yellow">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-            </div>
-            <div class="stat-value">${stats.repeatOffenders}</div>
-        </div>
+        filteredPersons = allPersons.filter(person => {
+            if (!searchTerm) return true;
+            
+            return (
+                (person.name && person.name.toLowerCase().includes(searchTerm)) ||
+                (person.matric_number && person.matric_number.toLowerCase().includes(searchTerm)) ||
+                (person.department && person.department.toLowerCase().includes(searchTerm))
+            );
+        });
         
-        <div class="stat-card">
-            <div class="stat-header">
-                <span class="stat-title">Avg. per Person</span>
-                <div class="stat-icon green">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-            </div>
-            <div class="stat-value">${stats.avgSeizures}</div>
-        </div>
-    `;
-}
-
-function renderTable() {
-    const personsTable = document.getElementById('personsTable');
-    if (!personsTable) return;
-    
-    // Sort by most seizures
-    const sortedPersons = [...filteredPersons].sort((a, b) => 
-        (parseInt(b.total_seizures) || 0) - (parseInt(a.total_seizures) || 0)
-    );
-    
-    // Clear table
-    personsTable.innerHTML = '';
-    
-    // Add rows
-    sortedPersons.forEach(person => {
-        const totalSeizures = parseInt(person.total_seizures) || 0;
-        const lastSeized = person.last_seized;
-        const formattedLastSeized = lastSeized ? 
-            new Date(lastSeized).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            }) : 
-            'No seizures';
+        renderTable();
         
-        let statusBadge = '';
-        if (totalSeizures >= 3) {
-            statusBadge = `
-                <span class="badge danger">
-                    <i class="fas fa-exclamation-triangle badge-icon"></i>
-                    Frequent Offender
-                </span>
-            `;
-        } else if (totalSeizures === 2) {
-            statusBadge = `
-                <span class="badge warning">
-                    <i class="fas fa-exclamation-circle badge-icon"></i>
-                    Repeat Offender
-                </span>
-            `;
-        } else if (totalSeizures === 1) {
-            statusBadge = `
-                <span class="badge info">
-                    <i class="fas fa-user badge-icon"></i>
-                    First Offense
-                </span>
-            `;
+        if (filteredPersons.length === 0) {
+            showEmpty();
         } else {
-            statusBadge = `
-                <span class="badge neutral">
-                    <i class="fas fa-check badge-icon"></i>
-                    No Record
-                </span>
-            `;
+            hideEmpty();
         }
+    }
+
+    // ==================== RENDERING FUNCTIONS ====================
+    function renderStats(stats) {
+        const statsContainer = document.getElementById('statsContainer');
+        if (!statsContainer) return;
         
-        const row = document.createElement('tr');
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', () => showPersonDetails(person));
-        
-        row.innerHTML = `
-            <td>
-                <div class="student-info">
-                    <div class="student-avatar">${person.name ? person.name.charAt(0).toUpperCase() : '?'}</div>
-                    <div>
-                        <div class="student-name">${person.name || 'Unknown'}</div>
-                        <div class="student-matric">${person.matric_number || 'No matric'}</div>
+        statsContainer.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total Persons</span>
+                    <div class="stat-icon blue">
+                        <i class="fas fa-users"></i>
                     </div>
                 </div>
-            </td>
-            <td class="department">${person.department || 'Not specified'}</td>
-            <td class="level">${person.level || 'Not specified'}</td>
-            <td>
-                <div class="seizure-count">${totalSeizures}</div>
-            </td>
-            <td class="last-incident">${formattedLastSeized}</td>
-            <td>${statusBadge}</td>
+                <div class="stat-value">${stats.totalPersons}</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total Seizures</span>
+                    <div class="stat-icon red">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.totalSeizures}</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Repeat Offenders</span>
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.repeatOffenders}</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Avg. per Person</span>
+                    <div class="stat-icon green">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="stat-value">${stats.avgSeizures}</div>
+            </div>
+        `;
+    }
+
+    function renderTable() {
+        const personsTable = document.getElementById('personsTable');
+        if (!personsTable) return;
+        
+        const sortedPersons = [...filteredPersons].sort((a, b) => 
+            (parseInt(b.total_seizures) || 0) - (parseInt(a.total_seizures) || 0)
+        );
+        
+        personsTable.innerHTML = '';
+        
+        if (sortedPersons.length === 0) {
+            personsTable.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem; color: var(--slate-500);">
+                        No persons found matching your search.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        sortedPersons.forEach(person => {
+            const totalSeizures = parseInt(person.total_seizures) || 0;
+            const lastSeized = person.last_seized;
+            const formattedLastSeized = lastSeized ? 
+                new Date(lastSeized).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                }) : 
+                'No seizures';
+            
+            let statusBadge = '';
+            if (totalSeizures >= 3) {
+                statusBadge = `
+                    <span class="badge danger">
+                        <i class="fas fa-exclamation-triangle badge-icon"></i>
+                        Frequent
+                    </span>
+                `;
+            } else if (totalSeizures === 2) {
+                statusBadge = `
+                    <span class="badge warning">
+                        <i class="fas fa-exclamation-circle badge-icon"></i>
+                        Repeat
+                    </span>
+                `;
+            } else if (totalSeizures === 1) {
+                statusBadge = `
+                    <span class="badge info">
+                        <i class="fas fa-user badge-icon"></i>
+                        First
+                    </span>
+                `;
+            } else {
+                statusBadge = `
+                    <span class="badge neutral">
+                        <i class="fas fa-check badge-icon"></i>
+                        Clean
+                    </span>
+                `;
+            }
+            
+            const row = document.createElement('tr');
+            row.addEventListener('click', () => showPersonDetails(person));
+            
+            row.innerHTML = `
+                <td>
+                    <div class="student-info">
+                        <div class="student-avatar">${person.name ? person.name.charAt(0).toUpperCase() : '?'}</div>
+                        <div>
+                            <div class="student-name">${person.name || 'Unknown'}</div>
+                            <div class="student-matric">${person.matric_number || 'No matric'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="department">${person.department || 'Not specified'}</td>
+                <td class="level">${person.level || 'Not specified'}</td>
+                <td>
+                    <div class="seizure-count">${totalSeizures}</div>
+                </td>
+                <td class="last-incident">${formattedLastSeized}</td>
+                <td>${statusBadge}</td>
+            `;
+            
+            personsTable.appendChild(row);
+        });
+    }
+
+    async function showPersonDetails(person) {
+        try {
+            const response = await authFetch(`/persons/${person.id}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    const personData = data.data;
+                    
+                    const seizuresResponse = await authFetch(`/seizures?person_id=${person.id}`);
+                    let seizures = [];
+                    
+                    if (seizuresResponse.ok) {
+                        const seizuresData = await seizuresResponse.json();
+                        if (seizuresData.success) {
+                            seizures = seizuresData.data || [];
+                        }
+                    }
+                    
+                    renderPersonDetails(personData, seizures);
+                    
+                    const personModal = document.getElementById('personModal');
+                    if (personModal) personModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    throw new Error(data.message || 'Failed to load person details');
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}: Failed to load person details`);
+            }
+        } catch (error) {
+            console.error('Error loading person details:', error);
+            showNotification('Failed to load person details: ' + error.message, 'error');
+        }
+    }
+
+    function renderPersonDetails(personData, seizures) {
+        const personDetails = document.getElementById('personDetails');
+        const personSeizuresTable = document.getElementById('personSeizuresTable');
+        
+        if (!personDetails || !personSeizuresTable) return;
+        
+        const lastSeized = personData.last_seized;
+        const createdAt = personData.created_at;
+        
+        personDetails.innerHTML = `
+            <div class="detail-item">
+                <h4>Full Name</h4>
+                <p>${personData.name || 'Not specified'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Matric Number</h4>
+                <p>${personData.matric_number || 'Not specified'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Department</h4>
+                <p>${personData.department || 'Not specified'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Level</h4>
+                <p>${personData.level || 'Not specified'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Total Seizures</h4>
+                <p>${personData.total_seizures || 0}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Last Seized</h4>
+                <p>${lastSeized ? 
+                    new Date(lastSeized).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 
+                    'Never'}</p>
+            </div>
+            <div class="detail-item">
+                <h4>Registered Since</h4>
+                <p>${createdAt ? 
+                    new Date(createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : 
+                    'Unknown'}</p>
+            </div>
         `;
         
-        personsTable.appendChild(row);
-    });
-}
-
-async function showPersonDetails(person) {
-    try {
-        // Load person details with seizures using authFetch
-        const response = await authFetch(`/persons/${person.id}`);
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                const personData = data.data;
+        if (seizures && Array.isArray(seizures) && seizures.length > 0) {
+            personSeizuresTable.innerHTML = '';
+            
+            seizures.forEach(seizure => {
+                const seizureDate = new Date(seizure.created_at);
+                const row = document.createElement('tr');
                 
-                // Load seizures for this person
-                const seizuresResponse = await authFetch(`/seizures?person_id=${person.id}`);
-                let seizures = [];
+                let statusClass = 'badge info';
+                let statusText = 'Active';
                 
-                if (seizuresResponse.ok) {
-                    const seizuresData = await seizuresResponse.json();
-                    if (seizuresData.success) {
-                        seizures = seizuresData.data || [];
+                if (seizure.status) {
+                    const statusLower = seizure.status.toLowerCase();
+                    if (statusLower.includes('return')) {
+                        statusClass = 'badge';
+                        statusText = 'Returned';
+                    } else if (statusLower.includes('lost')) {
+                        statusClass = 'badge danger';
+                        statusText = 'Lost';
                     }
                 }
                 
-                renderPersonDetails(personData, seizures);
-                
-                // Show modal
-                const personModal = document.getElementById('personModal');
-                if (personModal) personModal.classList.add('active');
-            } else {
-                throw new Error(data.message || 'Failed to load person details');
-            }
+                row.innerHTML = `
+                    <td>${seizureDate.toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}</td>
+                    <td>${seizure.phone_model || 'N/A'}</td>
+                    <td>${seizure.location || 'N/A'}</td>
+                    <td>${seizure.seizure_reason || 'N/A'}</td>
+                    <td>
+                        <span class="${statusClass}">${statusText}</span>
+                    </td>
+                `;
+                personSeizuresTable.appendChild(row);
+            });
         } else {
-            throw new Error(`HTTP ${response.status}: Failed to load person details`);
-        }
-    } catch (error) {
-        console.error('Error loading person details:', error);
-        showNotification('Failed to load person details: ' + error.message, 'error');
-    }
-}
-
-function renderPersonDetails(personData, seizures) {
-    const personDetails = document.getElementById('personDetails');
-    const personSeizuresTable = document.getElementById('personSeizuresTable');
-    
-    if (!personDetails || !personSeizuresTable) return;
-    
-    // Render person details
-    const lastSeized = personData.last_seized;
-    const createdAt = personData.created_at;
-    
-    personDetails.innerHTML = `
-        <div class="detail-item">
-            <h4>Full Name</h4>
-            <p>${personData.name || 'Not specified'}</p>
-        </div>
-        <div class="detail-item">
-            <h4>Matric Number</h4>
-            <p>${personData.matric_number || 'Not specified'}</p>
-        </div>
-        <div class="detail-item">
-            <h4>Department</h4>
-            <p>${personData.department || 'Not specified'}</p>
-        </div>
-        <div class="detail-item">
-            <h4>Level</h4>
-            <p>${personData.level || 'Not specified'}</p>
-        </div>
-        <div class="detail-item">
-            <h4>Total Seizures</h4>
-            <p>${personData.total_seizures || 0}</p>
-        </div>
-        <div class="detail-item">
-            <h4>Last Seized</h4>
-            <p>${lastSeized ? 
-                new Date(lastSeized).toLocaleString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) : 
-                'Never'}</p>
-        </div>
-        <div class="detail-item">
-            <h4>Registered Since</h4>
-            <p>${createdAt ? 
-                new Date(createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                }) : 
-                'Unknown'}</p>
-        </div>
-    `;
-    
-    // Render seizures history
-    if (seizures && Array.isArray(seizures) && seizures.length > 0) {
-        personSeizuresTable.innerHTML = '';
-        
-        seizures.forEach(seizure => {
-            const seizureDate = new Date(seizure.created_at);
-            const row = document.createElement('tr');
-            
-            // Determine status badge class
-            let statusClass = 'badge info';
-            let statusText = 'Active';
-            
-            if (seizure.status) {
-                const statusLower = seizure.status.toLowerCase();
-                if (statusLower.includes('return')) {
-                    statusClass = 'badge';
-                    statusText = 'Returned';
-                } else if (statusLower.includes('lost')) {
-                    statusClass = 'badge danger';
-                    statusText = 'Lost';
-                }
-            }
-            
-            row.innerHTML = `
-                <td>${seizureDate.toLocaleString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })}</td>
-                <td>${seizure.phone_model || 'N/A'}</td>
-                <td>${seizure.location || 'N/A'}</td>
-                <td>${seizure.seizure_reason || 'N/A'}</td>
-                <td>
-                    <span class="${statusClass}">${statusText}</span>
-                </td>
+            personSeizuresTable.innerHTML = `
+                <tr>
+                    <td colspan="5" style="padding: 2rem; text-align: center; color: var(--slate-500);">
+                        No seizure records found for this person.
+                    </td>
+                </tr>
             `;
-            personSeizuresTable.appendChild(row);
-        });
-    } else {
-        personSeizuresTable.innerHTML = `
-            <tr>
-                <td colspan="5" style="padding: 2rem; text-align: center; color: var(--slate-500);">
-                    No seizure records found for this person.
-                </td>
-            </tr>
-        `;
+        }
     }
-}
 
-// ==================== UI STATE MANAGEMENT ====================
-function showLoading() {
-    const loadingState = document.getElementById('loadingState');
-    const personsTable = document.getElementById('personsTable');
-    const statsContainer = document.getElementById('statsContainer');
-    
-    if (loadingState) loadingState.style.display = 'block';
-    if (personsTable) personsTable.style.display = 'none';
-    if (statsContainer) statsContainer.style.display = 'none';
-}
+    // ==================== UI STATE MANAGEMENT ====================
+    function showLoading() {
+        const loadingState = document.getElementById('loadingState');
+        const personsTable = document.getElementById('personsTable');
+        const statsContainer = document.getElementById('statsContainer');
+        
+        if (loadingState) loadingState.style.display = 'block';
+        if (personsTable) personsTable.style.display = 'none';
+        if (statsContainer) statsContainer.style.display = 'none';
+    }
 
-function hideLoading() {
-    const loadingState = document.getElementById('loadingState');
-    const personsTable = document.getElementById('personsTable');
-    const statsContainer = document.getElementById('statsContainer');
-    
-    if (loadingState) loadingState.style.display = 'none';
-    if (personsTable) personsTable.style.display = 'table-row-group';
-    if (statsContainer) statsContainer.style.display = 'grid';
-}
+    function hideLoading() {
+        const loadingState = document.getElementById('loadingState');
+        const personsTable = document.getElementById('personsTable');
+        const statsContainer = document.getElementById('statsContainer');
+        
+        if (loadingState) loadingState.style.display = 'none';
+        if (personsTable) personsTable.style.display = 'table-row-group';
+        if (statsContainer) statsContainer.style.display = 'grid';
+    }
 
-function showEmpty() {
-    const emptyState = document.getElementById('emptyState');
-    const personsTable = document.getElementById('personsTable');
-    
-    if (emptyState) emptyState.style.display = 'block';
-    if (personsTable) personsTable.style.display = 'none';
-}
+    function showEmpty() {
+        const emptyState = document.getElementById('emptyState');
+        const personsTable = document.getElementById('personsTable');
+        
+        if (emptyState) emptyState.style.display = 'block';
+        if (personsTable) personsTable.style.display = 'none';
+    }
 
-function hideEmpty() {
-    const emptyState = document.getElementById('emptyState');
-    
-    if (emptyState) emptyState.style.display = 'none';
-}
+    function hideEmpty() {
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.style.display = 'none';
+    }
 
-function showError(message) {
-    const errorMessage = document.getElementById('errorMessage');
-    const errorState = document.getElementById('errorState');
-    const personsTable = document.getElementById('personsTable');
-    const statsContainer = document.getElementById('statsContainer');
-    
-    if (errorMessage) errorMessage.textContent = message;
-    if (errorState) errorState.style.display = 'block';
-    if (personsTable) personsTable.style.display = 'none';
-    if (statsContainer) statsContainer.style.display = 'none';
-}
+    function showError(message) {
+        const errorMessage = document.getElementById('errorMessage');
+        const errorState = document.getElementById('errorState');
+        const personsTable = document.getElementById('personsTable');
+        const statsContainer = document.getElementById('statsContainer');
+        
+        if (errorMessage) errorMessage.textContent = message;
+        if (errorState) errorState.style.display = 'block';
+        if (personsTable) personsTable.style.display = 'none';
+        if (statsContainer) statsContainer.style.display = 'none';
+    }
 
-function hideError() {
-    const errorState = document.getElementById('errorState');
-    
-    if (errorState) errorState.style.display = 'none';
-}
+    function hideError() {
+        const errorState = document.getElementById('errorState');
+        if (errorState) errorState.style.display = 'none';
+    }
 
-function showNotification(message, type = 'info') {
-    // Remove existing notifications
-    document.querySelectorAll('.notification').forEach(n => n.remove());
-    
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    
-    const bgColor = type === 'success' ? 'var(--green-100)' : 
-                type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
-    const textColor = type === 'success' ? 'var(--green-800)' : 
-                    type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
-    const borderColor = type === 'success' ? 'var(--green-300)' : 
-                    type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
-    const icon = type === 'success' ? 'fa-check-circle' : 
-                type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-    
-    notification.style.cssText = `
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        padding: 1rem 1.5rem;
-        border-radius: 0.5rem;
-        background-color: ${bgColor};
-        color: ${textColor};
-        border: 1px solid ${borderColor};
-        z-index: 1000;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        animation: slideIn 0.3s ease;
-        font-family: inherit;
-        font-size: 14px;
-        min-width: 300px;
-        max-width: 400px;
-    `;
-    
-    notification.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+    function showNotification(message, type = 'info') {
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        
+        const bgColor = type === 'success' ? 'var(--green-100)' : 
+                    type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
+        const textColor = type === 'success' ? 'var(--green-800)' : 
+                        type === 'error' ? 'var(--red-800)' : 'var(--blue-800)';
+        const borderColor = type === 'success' ? 'var(--green-300)' : 
+                        type === 'error' ? 'var(--red-300)' : 'var(--blue-300)';
+        const icon = type === 'success' ? 'fa-check-circle' : 
+                    type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        
+        notification.style.cssText = `
+            background-color: ${bgColor};
+            color: ${textColor};
+            border: 1px solid ${borderColor};
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        `;
+        
+        notification.innerHTML = `
             <i class="fas ${icon}"></i>
             <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Add keyframes for animation if not already present
-    if (!document.querySelector('#notification-styles')) {
-        const style = document.createElement('style');
-        style.id = 'notification-styles';
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-            }
         `;
-        document.head.appendChild(style);
-    }
-    
-    // Remove notification after 5 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
+        
+        document.body.appendChild(notification);
+        
         setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 5000);
-}
-
-// ==================== EVENT LISTENERS ====================
-function setupEventListeners() {
-    // Mobile menu
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-    
-    if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.add('active');
-            sidebarBackdrop.classList.add('active');
-        });
-    }
-    
-    if (sidebarBackdrop) {
-        sidebarBackdrop.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            sidebarBackdrop.classList.remove('active');
-        });
-    }
-    
-    // Logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            if (confirm('Are you sure you want to logout?')) {
-                await logout();
-            }
-        });
-    }
-    
-    // Refresh button
-    const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', async () => {
-            try {
-                await loadPersons();
-                showNotification('Persons data refreshed successfully', 'success');
-            } catch (error) {
-                showNotification('Failed to refresh data', 'error');
-            }
-        });
-    }
-    
-    // Retry button
-    const retryBtn = document.getElementById('retryBtn');
-    if (retryBtn) {
-        retryBtn.addEventListener('click', async () => {
-            await loadPersons();
-        });
-    }
-    
-    // Search input with debounce
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                filterPersons();
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
             }, 300);
-        });
+        }, 5000);
     }
-    
-    // Modal close button
-    const modalClose = document.getElementById('modalClose');
-    if (modalClose) {
-        modalClose.addEventListener('click', () => {
-            const personModal = document.getElementById('personModal');
-            if (personModal) personModal.classList.remove('active');
-        });
-    }
-    
-    // Close modal when clicking outside
-    const personModal = document.getElementById('personModal');
-    if (personModal) {
-        personModal.addEventListener('click', (e) => {
-            if (e.target === personModal) {
-                personModal.classList.remove('active');
-            }
-        });
-    }
-}
 
-// ==================== INITIALIZATION ====================
-document.addEventListener('DOMContentLoaded', async function() {
-    try {
-        // Check authentication
-        const user = await checkAuth();
-        if (!user) return;
+    // ==================== EVENT LISTENERS ====================
+    function setupEventListeners() {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
         
-        // Setup event listeners
-        setupEventListeners();
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                sidebarBackdrop.classList.add('active');
+            });
+        }
         
-        // Load data
-        await loadPersons();
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                sidebarBackdrop.classList.remove('active');
+            });
+        }
         
-    } catch (error) {
-        console.error('Initialization error:', error);
-        showNotification('Failed to initialize persons page', 'error');
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    await logout();
+                }
+            });
+        }
+        
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                try {
+                    await loadPersons();
+                    showNotification('Persons data refreshed successfully', 'success');
+                } catch (error) {
+                    showNotification('Failed to refresh data', 'error');
+                }
+            });
+        }
+        
+        const retryBtn = document.getElementById('retryBtn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', async () => {
+                await loadPersons();
+            });
+        }
+        
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterPersons();
+                }, 300);
+            });
+        }
+        
+        const modalClose = document.getElementById('modalClose');
+        if (modalClose) {
+            modalClose.addEventListener('click', () => {
+                const personModal = document.getElementById('personModal');
+                if (personModal) {
+                    personModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+        
+        const personModal = document.getElementById('personModal');
+        if (personModal) {
+            personModal.addEventListener('click', (e) => {
+                if (e.target === personModal) {
+                    personModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
     }
-});
 
-// Export functions for debugging
-window.personsPage = {
-    loadPersons,
-    filterPersons,
-    showPersonDetails,
-    renderTable
-};
-</script>
+    // ==================== INITIALIZATION ====================
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            const user = await checkAuth();
+            if (!user) return;
+            
+            setupEventListeners();
+            await loadPersons();
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            showNotification('Failed to initialize persons page', 'error');
+        }
+    });
+
+    window.personsPage = {
+        loadPersons,
+        filterPersons,
+        showPersonDetails,
+        renderTable
+    };
+    </script>
 </body>
 </html>

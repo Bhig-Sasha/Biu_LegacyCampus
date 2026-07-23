@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Remove auth.js script -->
     <title>SeizeTrack - Seizure History</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* [Keep all your existing styles exactly as they are] */
+        /* ==================== ROOT VARIABLES ==================== */
         :root {
             --blue-50: #eff6ff;
             --blue-100: #dbeafe;
@@ -36,6 +35,7 @@
             --yellow-600: #ca8a04;
         }
         
+        /* ==================== RESET & BASE ==================== */
         * {
             margin: 0;
             padding: 0;
@@ -50,14 +50,14 @@
             overflow-x: hidden;
         }
         
-        /* Layout Container */
+        /* ==================== LAYOUT ==================== */
         .layout-container {
             min-height: 100vh;
             background-color: var(--slate-50);
             display: flex;
         }
         
-        /* Mobile Sidebar Backdrop */
+        /* ==================== SIDEBAR ==================== */
         .sidebar-backdrop {
             position: fixed;
             inset: 0;
@@ -70,7 +70,6 @@
             display: block;
         }
         
-        /* Sidebar */
         .sidebar {
             position: fixed;
             top: 0;
@@ -98,13 +97,13 @@
             transform: translateX(0);
         }
         
-        /* Logo */
         .sidebar-logo {
             height: 4rem;
             display: flex;
             align-items: center;
             padding: 0 1.5rem;
             border-bottom: 1px solid var(--slate-800);
+            flex-shrink: 0;
         }
         
         .logo-icon {
@@ -119,7 +118,6 @@
             letter-spacing: -0.025em;
         }
         
-        /* Navigation */
         .sidebar-nav {
             flex: 1;
             padding: 0.75rem;
@@ -128,7 +126,8 @@
         }
         
         .nav-item {
-            display: block;
+            display: flex;
+            align-items: center;
             padding: 0.625rem 0.75rem;
             font-size: 0.875rem;
             font-weight: 500;
@@ -137,8 +136,6 @@
             margin-bottom: 0.25rem;
             text-decoration: none;
             color: var(--slate-300);
-            display: flex;
-            align-items: center;
         }
         
         .nav-item:hover {
@@ -155,24 +152,13 @@
             margin-right: 0.75rem;
             font-size: 1.25rem;
             width: 1.25rem;
-            height: 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            text-align: center;
         }
         
-        .nav-item.active .nav-icon {
-            color: white;
-        }
-        
-        .nav-item:not(.active) .nav-icon {
-            color: var(--slate-400);
-        }
-        
-        /* User Profile */
         .sidebar-profile {
             padding: 1rem;
             border-top: 1px solid var(--slate-800);
+            flex-shrink: 0;
         }
         
         .profile-container {
@@ -196,12 +182,17 @@
         
         .profile-info {
             margin-left: 0.75rem;
+            flex: 1;
+            min-width: 0;
         }
         
         .profile-name {
             font-size: 0.875rem;
             font-weight: 500;
             color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .profile-role {
@@ -210,20 +201,20 @@
         }
         
         .logout-btn {
-            margin-left: auto;
             color: var(--slate-400);
             background: none;
             border: none;
             cursor: pointer;
             padding: 0.25rem;
             border-radius: 0.25rem;
+            flex-shrink: 0;
         }
         
         .logout-btn:hover {
             color: white;
         }
         
-        /* Main Content */
+        /* ==================== MAIN CONTENT ==================== */
         .main-content {
             flex: 1;
             display: flex;
@@ -232,7 +223,7 @@
             overflow: hidden;
         }
         
-        /* Mobile Header */
+        /* ==================== MOBILE HEADER ==================== */
         .mobile-header {
             background-color: white;
             border-bottom: 1px solid var(--slate-200);
@@ -241,6 +232,7 @@
             align-items: center;
             padding: 0 1rem;
             justify-content: space-between;
+            flex-shrink: 0;
         }
         
         @media (min-width: 1024px) {
@@ -278,7 +270,7 @@
             background-color: var(--slate-100);
         }
         
-        /* Page Content */
+        /* ==================== PAGE CONTENT ==================== */
         .page-content {
             flex: 1;
             overflow-y: auto;
@@ -296,20 +288,26 @@
             margin: 0 auto;
         }
         
-        /* Header */
+        /* ==================== HEADER ==================== */
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
             gap: 1rem;
         }
         
         .page-header h1 {
-            font-size: 1.875rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--slate-900);
+        }
+        
+        @media (min-width: 768px) {
+            .page-header h1 {
+                font-size: 1.875rem;
+            }
         }
         
         .page-header p {
@@ -318,7 +316,7 @@
             color: var(--slate-500);
         }
         
-        /* Card */
+        /* ==================== CARDS ==================== */
         .card {
             background-color: white;
             border-radius: 0.75rem;
@@ -328,10 +326,148 @@
         }
         
         .card-body {
-            padding: 1.5rem;
+            padding: 1rem;
         }
         
-        /* Input */
+        @media (min-width: 768px) {
+            .card-body {
+                padding: 1.5rem;
+            }
+        }
+        
+        /* ==================== STATS GRID ==================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (min-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1rem;
+            }
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid var(--slate-200);
+            padding: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (min-width: 768px) {
+            .stat-card {
+                padding: 1.5rem;
+            }
+        }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-title {
+                font-size: 0.875rem;
+            }
+        }
+        
+        .stat-icon {
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.875rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-icon {
+                width: 2rem;
+                height: 2rem;
+                font-size: 1rem;
+            }
+        }
+        
+        .stat-icon.blue { background-color: var(--blue-500); }
+        .stat-icon.green { background-color: var(--green-600); }
+        .stat-icon.red { background-color: var(--red-600); }
+        .stat-icon.yellow { background-color: var(--yellow-600); }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        @media (min-width: 768px) {
+            .stat-value {
+                font-size: 1.875rem;
+            }
+        }
+        
+        .stat-change {
+            display: flex;
+            align-items: center;
+            font-size: 0.65rem;
+            margin-top: 0.25rem;
+            color: var(--slate-500);
+        }
+        
+        @media (min-width: 768px) {
+            .stat-change {
+                font-size: 0.75rem;
+            }
+        }
+        
+        .stat-change.positive { color: var(--green-600); }
+        .stat-change.negative { color: var(--red-600); }
+        
+        /* ==================== FILTERS ==================== */
+        .filter-section {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        @media (min-width: 640px) {
+            .filter-section {
+                flex-direction: row;
+                gap: 1rem;
+            }
+        }
+        
+        .filter-main {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .filter-date {
+            width: 100%;
+        }
+        
+        @media (min-width: 640px) {
+            .filter-date {
+                width: 12rem;
+            }
+        }
+        
         .input-container {
             position: relative;
             width: 100%;
@@ -348,13 +484,18 @@
         
         .input-field {
             width: 100%;
-            padding: 0.625rem;
-            padding-left: 2.5rem;
+            padding: 0.5rem 0.75rem 0.5rem 2.25rem;
             border-radius: 0.5rem;
             border: 1px solid var(--slate-300);
             font-size: 0.875rem;
             transition: all 0.2s ease;
             background-color: white;
+        }
+        
+        @media (min-width: 768px) {
+            .input-field {
+                padding: 0.625rem 0.75rem 0.625rem 2.5rem;
+            }
         }
         
         .input-field:focus {
@@ -363,130 +504,25 @@
             box-shadow: 0 0 0 3px var(--blue-100);
         }
         
-        /* Filter Section */
-        .filter-section {
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        @media (min-width: 640px) {
-            .filter-section {
-                flex-direction: row;
-            }
-        }
-        
-        .filter-main {
-            flex: 1;
-        }
-        
-        .filter-date {
-            width: 100%;
-        }
-        
-        @media (min-width: 640px) {
-            .filter-date {
-                width: 12rem;
-            }
-        }
-        
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        @media (min-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-        
-        .stat-card {
-            background-color: white;
-            border-radius: 0.75rem;
-            border: 1px solid var(--slate-200);
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-title {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--slate-500);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .stat-icon {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-        
-        .stat-icon.blue {
-            background-color: var(--blue-500);
-        }
-        
-        .stat-icon.green {
-            background-color: var(--green-600);
-        }
-        
-        .stat-icon.red {
-            background-color: var(--red-600);
-        }
-        
-        .stat-icon.yellow {
-            background-color: var(--yellow-600);
-        }
-        
-        .stat-value {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: var(--slate-900);
-        }
-        
-        .stat-change {
-            display: flex;
-            align-items: center;
-            font-size: 0.75rem;
-            margin-top: 0.25rem;
-        }
-        
-        .stat-change.positive {
-            color: var(--green-600);
-        }
-        
-        .stat-change.negative {
-            color: var(--red-600);
-        }
-        
-        /* Table */
+        /* ==================== TABLE ==================== */
         .table-container {
             overflow-x: auto;
             border-radius: 0.5rem;
             border: 1px solid var(--slate-200);
             background-color: white;
+            -webkit-overflow-scrolling: touch;
         }
         
         table {
             width: 100%;
-            min-width: 100%;
             border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        
+        @media (min-width: 768px) {
+            table {
+                font-size: 0.875rem;
+            }
         }
         
         thead {
@@ -498,14 +534,21 @@
         }
         
         th {
-            padding: 0.75rem 1.5rem;
+            padding: 0.5rem 0.75rem;
             text-align: left;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 500;
             color: var(--slate-500);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             white-space: nowrap;
+        }
+        
+        @media (min-width: 768px) {
+            th {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.75rem;
+            }
         }
         
         tbody tr {
@@ -518,56 +561,132 @@
         }
         
         td {
-            padding: 1rem 1.5rem;
+            padding: 0.5rem 0.75rem;
             white-space: nowrap;
-            font-size: 0.875rem;
+        }
+        
+        @media (min-width: 768px) {
+            td {
+                padding: 1rem 1.5rem;
+            }
+        }
+        
+        /* Hide less important columns on mobile */
+        @media (max-width: 640px) {
+            td:nth-child(5),
+            th:nth-child(5),
+            td:nth-child(6),
+            th:nth-child(6) {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            td:nth-child(4),
+            th:nth-child(4),
+            td:nth-child(7),
+            th:nth-child(7) {
+                display: none;
+            }
         }
         
         .date-cell {
             color: var(--slate-500);
-            min-width: 120px;
+            min-width: 80px;
+        }
+        
+        @media (min-width: 768px) {
+            .date-cell {
+                min-width: 120px;
+            }
         }
         
         .date-main {
             font-weight: 500;
             color: var(--slate-900);
+            font-size: 0.7rem;
+        }
+        
+        @media (min-width: 768px) {
+            .date-main {
+                font-size: 0.875rem;
+            }
         }
         
         .date-time {
-            font-size: 0.75rem;
+            font-size: 0.6rem;
             margin-top: 0.125rem;
+            color: var(--slate-400);
+        }
+        
+        @media (min-width: 768px) {
+            .date-time {
+                font-size: 0.75rem;
+            }
         }
         
         .person-name {
             font-weight: 500;
             color: var(--slate-900);
-            min-width: 150px;
+            font-size: 0.7rem;
+        }
+        
+        @media (min-width: 768px) {
+            .person-name {
+                font-size: 0.875rem;
+            }
         }
         
         .matric-number {
-            font-size: 0.75rem;
+            font-size: 0.6rem;
             color: var(--slate-500);
             margin-top: 0.125rem;
         }
         
+        @media (min-width: 768px) {
+            .matric-number {
+                font-size: 0.75rem;
+            }
+        }
+        
         .device-info {
             color: var(--slate-700);
-            min-width: 120px;
+            font-size: 0.7rem;
+        }
+        
+        @media (min-width: 768px) {
+            .device-info {
+                font-size: 0.875rem;
+            }
         }
         
         .location {
             color: var(--slate-500);
-            min-width: 100px;
+            font-size: 0.7rem;
+        }
+        
+        @media (min-width: 768px) {
+            .location {
+                font-size: 0.875rem;
+            }
         }
         
         .status-badge {
             display: inline-block;
-            padding: 0.25rem 0.75rem;
-            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.6rem;
             font-weight: 500;
             border-radius: 9999px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        
+        @media (min-width: 768px) {
+            .status-badge {
+                padding: 0.25rem 0.75rem;
+                font-size: 0.75rem;
+            }
         }
         
         .status-active {
@@ -590,70 +709,79 @@
         
         .notes {
             color: var(--slate-500);
-            max-width: 200px;
+            max-width: 100px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-size: 0.7rem;
         }
         
-        /* Empty State */
-        .empty-state {
-            padding: 4rem 1rem;
-            text-align: center;
-            color: var(--slate-500);
+        @media (min-width: 768px) {
+            .notes {
+                max-width: 200px;
+                font-size: 0.875rem;
+            }
         }
         
-        .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--slate-300);
-        }
-        
-        .empty-state h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--slate-700);
-        }
-        
-        .empty-state p {
-            color: var(--slate-500);
-            max-width: 400px;
-            margin: 0 auto 1.5rem;
-        }
-        
+        /* ==================== BUTTONS ==================== */
         .refresh-btn {
-            padding: 0.5rem 1.5rem;
+            padding: 0.4rem 0.75rem;
             background-color: var(--blue-500);
             color: white;
             border: none;
             border-radius: 0.5rem;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 500;
             cursor: pointer;
             transition: background-color 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        @media (min-width: 768px) {
+            .refresh-btn {
+                padding: 0.5rem 1.5rem;
+                font-size: 0.875rem;
+            }
         }
         
         .refresh-btn:hover {
             background-color: var(--blue-600);
         }
         
-        /* Loading State */
+        .refresh-btn i {
+            margin-right: 0.25rem;
+        }
+        
+        /* ==================== STATES ==================== */
         .loading {
-            padding: 4rem 1rem;
+            padding: 2rem 1rem;
             text-align: center;
             color: var(--slate-500);
         }
         
+        @media (min-width: 768px) {
+            .loading {
+                padding: 4rem 1rem;
+            }
+        }
+        
         .loading-spinner {
             display: inline-block;
-            width: 2rem;
-            height: 2rem;
+            width: 1.5rem;
+            height: 1.5rem;
             border: 3px solid var(--slate-200);
             border-radius: 50%;
             border-top-color: var(--blue-500);
             animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        @media (min-width: 768px) {
+            .loading-spinner {
+                width: 2rem;
+                height: 2rem;
+                margin-bottom: 1rem;
+            }
         }
         
         @keyframes spin {
@@ -661,24 +789,86 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Pagination */
+        .empty-state {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--slate-500);
+        }
+        
+        @media (min-width: 768px) {
+            .empty-state {
+                padding: 4rem 1rem;
+            }
+        }
+        
+        .empty-state-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            color: var(--slate-300);
+        }
+        
+        @media (min-width: 768px) {
+            .empty-state-icon {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+            }
+        }
+        
+        .empty-state h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--slate-700);
+        }
+        
+        @media (min-width: 768px) {
+            .empty-state h3 {
+                font-size: 1.25rem;
+            }
+        }
+        
+        .empty-state p {
+            color: var(--slate-500);
+            max-width: 400px;
+            margin: 0 auto 1rem;
+            font-size: 0.875rem;
+        }
+        
+        /* ==================== PAGINATION ==================== */
         .pagination {
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-top: 2rem;
-            gap: 0.5rem;
+            margin-top: 1.5rem;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+        
+        @media (min-width: 768px) {
+            .pagination {
+                gap: 0.5rem;
+                margin-top: 2rem;
+            }
         }
         
         .pagination-btn {
-            padding: 0.5rem 1rem;
+            padding: 0.3rem 0.6rem;
             background-color: white;
             border: 1px solid var(--slate-300);
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             color: var(--slate-700);
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
+            min-width: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+            .pagination-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+                min-width: 2.5rem;
+            }
         }
         
         .pagination-btn:hover:not(:disabled) {
@@ -698,9 +888,62 @@
         }
         
         .pagination-info {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             color: var(--slate-500);
-            margin: 0 1rem;
+            margin: 0 0.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .pagination-info {
+                font-size: 0.875rem;
+                margin: 0 1rem;
+            }
+        }
+        
+        /* ==================== NOTIFICATION ==================== */
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            font-size: 0.875rem;
+            max-width: 90%;
+            min-width: 200px;
+        }
+        
+        @media (min-width: 768px) {
+            .notification {
+                padding: 1rem 1.5rem;
+                font-size: 14px;
+                min-width: 300px;
+                max-width: 400px;
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -711,13 +954,11 @@
         
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <!-- Logo -->
             <div class="sidebar-logo">
                 <i class="fas fa-shield-alt logo-icon"></i>
                 <span class="logo-text">SeizeTrack</span>
             </div>
             
-            <!-- Navigation -->
             <nav class="sidebar-nav">
                 <a href="./index.html" class="nav-item">
                     <i class="fas fa-tachometer-alt nav-icon"></i>
@@ -737,7 +978,6 @@
                 </a>
             </nav>
             
-            <!-- User Profile -->
             <div class="sidebar-profile">
                 <div class="profile-container">
                     <div class="profile-avatar" id="profileAvatar">AD</div>
@@ -794,7 +1034,7 @@
                                 <div class="filter-main">
                                     <div class="input-container">
                                         <i class="fas fa-search input-icon"></i>
-                                        <input type="text" class="input-field" id="searchInput" placeholder="Search by name, matric, device, or location...">
+                                        <input type="text" class="input-field" id="searchInput" placeholder="Search by name, matric, device..." value="">
                                     </div>
                                 </div>
                                 <div class="filter-date">
@@ -812,7 +1052,7 @@
                                         <tr>
                                             <th>Date & Time</th>
                                             <th>Person</th>
-                                            <th>Device Info</th>
+                                            <th>Device</th>
                                             <th>Location</th>
                                             <th>Status</th>
                                             <th>Notes</th>
@@ -866,7 +1106,7 @@
         </div>
     </div>
     
-<script>
+    <script>
     // ==================== CONFIGURATION ====================
     const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
     
@@ -900,10 +1140,10 @@
         return !!getToken();
     }
 
-    function clearAuth() {
+    function redirectToLogin() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/';
+        window.location.href = '/login.html';
     }
 
     function getAuthHeaders() {
@@ -929,7 +1169,7 @@
 
             if (response.status === 401) {
                 console.error('Authentication failed - redirecting to login');
-                clearAuth();
+                redirectToLogin();
                 throw new Error('Session expired. Please login again.');
             }
 
@@ -943,7 +1183,7 @@
     // ==================== AUTHENTICATION CHECK ====================
     async function checkAuth() {
         if (!isLoggedIn()) {
-            window.location.href = '/';
+            redirectToLogin();
             return null;
         }
 
@@ -966,13 +1206,11 @@
                 }
             }
             
-            // If response is not ok, clear auth
-            clearAuth();
+            redirectToLogin();
             return null;
             
         } catch (error) {
             console.error('Auth check failed:', error);
-            // Don't clear auth on network errors, just return null
             return null;
         }
     }
@@ -1004,7 +1242,6 @@
         try {
             const token = getToken();
             if (token) {
-                // Attempt to notify server, but don't wait for response
                 fetch(`${API_BASE_URL}/auth/logout`, {
                     method: 'POST',
                     headers: {
@@ -1016,7 +1253,7 @@
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            clearAuth();
+            redirectToLogin();
         }
     }
 
@@ -1057,7 +1294,6 @@
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    // Transform the data to match our expected format
                     allSeizures = (data.data || []).map(seizure => ({
                         id: seizure.id,
                         createdAt: seizure.created_at,
@@ -1101,7 +1337,6 @@
         const dateFilter = document.getElementById('dateFilter').value;
         
         filteredSeizures = allSeizures.filter(seizure => {
-            // Search filter
             if (searchTerm) {
                 const matchesSearch = 
                     (seizure.personName && seizure.personName.toLowerCase().includes(searchTerm)) ||
@@ -1115,12 +1350,10 @@
                 if (!matchesSearch) return false;
             }
             
-            // Date filter
             if (dateFilter) {
                 const seizureDate = new Date(seizure.createdAt);
                 const filterDate = new Date(dateFilter);
                 
-                // Check if dates are the same day
                 if (seizureDate.toDateString() !== filterDate.toDateString()) {
                     return false;
                 }
@@ -1133,7 +1366,6 @@
         renderTable();
         setupPagination();
         
-        // Show empty state if no results
         if (filteredSeizures.length === 0) {
             showEmpty();
         } else {
@@ -1213,10 +1445,19 @@
         const endIndex = startIndex + itemsPerPage;
         const currentItems = filteredSeizures.slice(startIndex, endIndex);
         
-        // Clear table
         seizureTable.innerHTML = '';
         
-        // Add rows
+        if (currentItems.length === 0) {
+            seizureTable.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--slate-500);">
+                        No seizures found matching your filters.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
         currentItems.forEach(seizure => {
             const seizureDate = new Date(seizure.createdAt);
             const formattedDate = seizureDate.toLocaleDateString('en-US', {
@@ -1230,7 +1471,6 @@
                 hour12: true
             });
             
-            // Get status badge class
             let statusClass = 'status-active';
             let statusText = 'Active';
             
@@ -1257,7 +1497,7 @@
                 </td>
                 <td class="device-info">
                     ${seizure.phoneModel}
-                    ${seizure.deviceColor ? `<br><small style="color: var(--slate-400);">${seizure.deviceColor}</small>` : ''}
+                    ${seizure.deviceColor ? `<br><small style="color: var(--slate-400); font-size: 0.6rem;">${seizure.deviceColor}</small>` : ''}
                 </td>
                 <td class="location">${seizure.location || 'N/A'}</td>
                 <td>
@@ -1278,17 +1518,14 @@
         const paginationContainer = document.getElementById('paginationContainer');
         if (!paginationContainer) return;
         
-        if (totalPages <= 1) {
+        if (totalPages <= 1 || filteredSeizures.length === 0) {
             paginationContainer.style.display = 'none';
             return;
         }
         
         paginationContainer.style.display = 'flex';
-        
-        // Clear existing pagination
         paginationContainer.innerHTML = '';
         
-        // Previous button
         const prevButton = document.createElement('button');
         prevButton.className = 'pagination-btn';
         prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
@@ -1298,11 +1535,11 @@
                 currentPage--;
                 renderTable();
                 setupPagination();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
         paginationContainer.appendChild(prevButton);
         
-        // Page numbers
         const maxVisiblePages = 5;
         let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
         let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
@@ -1319,11 +1556,11 @@
                 currentPage = i;
                 renderTable();
                 setupPagination();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             });
             paginationContainer.appendChild(pageButton);
         }
         
-        // Next button
         const nextButton = document.createElement('button');
         nextButton.className = 'pagination-btn';
         nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
@@ -1333,11 +1570,11 @@
                 currentPage++;
                 renderTable();
                 setupPagination();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
         paginationContainer.appendChild(nextButton);
         
-        // Page info
         const pageInfo = document.createElement('span');
         pageInfo.className = 'pagination-info';
         pageInfo.textContent = `Page ${currentPage} of ${totalPages} • ${filteredSeizures.length} records`;
@@ -1380,12 +1617,10 @@
     }
 
     function showNotification(message, type = 'info') {
-        // Remove existing notifications
         document.querySelectorAll('.notification').forEach(n => n.remove());
         
-        // Create notification element
         const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
+        notification.className = 'notification';
         
         const bgColor = type === 'success' ? 'var(--green-100)' : 
                     type === 'error' ? 'var(--red-100)' : 'var(--blue-100)';
@@ -1397,62 +1632,21 @@
                     type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
         
         notification.style.cssText = `
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
             background-color: ${bgColor};
             color: ${textColor};
             border: 1px solid ${borderColor};
-            z-index: 1000;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            animation: slideIn 0.3s ease;
-            font-family: inherit;
-            font-size: 14px;
-            min-width: 300px;
-            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         `;
         
         notification.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas ${icon}"></i>
-                <span>${message}</span>
-            </div>
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
         `;
         
         document.body.appendChild(notification);
         
-        // Add keyframes for animation if not already present
-        if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                @keyframes slideOut {
-                    from {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                    to {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        // Remove notification after 5 seconds
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => {
@@ -1465,7 +1659,6 @@
 
     // ==================== EVENT LISTENERS ====================
     function setupEventListeners() {
-        // Mobile menu
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const sidebar = document.getElementById('sidebar');
         const sidebarBackdrop = document.getElementById('sidebarBackdrop');
@@ -1484,7 +1677,6 @@
             });
         }
         
-        // Logout button
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async (e) => {
@@ -1495,7 +1687,6 @@
             });
         }
         
-        // Refresh button
         const refreshBtn = document.getElementById('refreshBtn');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', async () => {
@@ -1509,7 +1700,6 @@
             });
         }
         
-        // Retry button
         const retryBtn = document.getElementById('retryBtn');
         if (retryBtn) {
             retryBtn.addEventListener('click', async () => {
@@ -1518,10 +1708,9 @@
             });
         }
         
-        // Search input with debounce
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
+            searchInput.addEventListener('input', () => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
                     filterSeizures();
@@ -1529,7 +1718,6 @@
             });
         }
         
-        // Date filter
         const dateFilter = document.getElementById('dateFilter');
         if (dateFilter) {
             dateFilter.addEventListener('change', () => {
@@ -1541,18 +1729,14 @@
     // ==================== INITIALIZATION ====================
     document.addEventListener('DOMContentLoaded', async function() {
         try {
-            // Check authentication
             const user = await checkAuth();
             if (!user) return;
             
-            // Setup event listeners
             setupEventListeners();
             
-            // Set today's date as default for date filter
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('dateFilter').value = today;
             
-            // Load data
             await loadDashboardStats();
             await loadSeizureHistory();
             
@@ -1561,6 +1745,6 @@
             showNotification('Failed to initialize history page', 'error');
         }
     });
-</script>
+    </script>
 </body>
 </html>
