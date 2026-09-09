@@ -179,7 +179,7 @@
             font-style: italic;
         }
 
-        /* Password Change Modal */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -198,7 +198,7 @@
             border: 1px solid #ded6c9;
             border-radius: 0.75rem;
             width: 95%;
-            max-width: 500px;
+            max-width: 600px;
             max-height: 95vh;
             overflow-y: auto;
             box-shadow: 0 25px 50px rgba(0,0,0,0.15);
@@ -349,6 +349,7 @@
                         <p class="desc">Manage your personal information and account settings.</p>
                     </div>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        <button class="btn-secondary" id="editProfileBtn"><i class="fas fa-edit"></i> Edit Profile</button>
                         <button class="btn-secondary" id="changePasswordBtn"><i class="fas fa-key"></i> Change Password</button>
                         <button class="btn-gold" id="refreshProfile"><i class="fas fa-sync-alt"></i> Refresh</button>
                     </div>
@@ -390,6 +391,60 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal" id="editProfileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-edit" style="color:#d6ad4b;"></i> Edit Profile</h3>
+                <button class="modal-close" id="closeEditModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="form-group">
+                        <label class="form-label" for="editSurname">Surname</label>
+                        <div class="input-container">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="editSurname" class="input-field" placeholder="Enter surname" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editFirstName">First Name</label>
+                        <div class="input-container">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="editFirstName" class="input-field" placeholder="Enter first name" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editMiddleName">Middle Name</label>
+                        <div class="input-container">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="editMiddleName" class="input-field" placeholder="Enter middle name" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editPhone">Phone Number</label>
+                        <div class="input-container">
+                            <i class="fas fa-phone input-icon"></i>
+                            <input type="text" id="editPhone" class="input-field" placeholder="Enter phone number" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editAddress">Address</label>
+                        <div class="input-container">
+                            <i class="fas fa-home input-icon"></i>
+                            <input type="text" id="editAddress" class="input-field" placeholder="Enter address" />
+                        </div>
+                    </div>
+                    <div id="editProfileMessage" style="margin-bottom:0.75rem;font-size:0.85rem;"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelEdit">Cancel</button>
+                        <button type="submit" class="btn-gold" id="saveProfileBtn">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Change Password Modal -->
@@ -495,6 +550,12 @@
             return value || 'Not specified';
         }
 
+        function getInitials(firstName, surname) {
+            const first = firstName ? firstName.charAt(0).toUpperCase() : '';
+            const last = surname ? surname.charAt(0).toUpperCase() : '';
+            return first + last || 'U';
+        }
+
         function getRoleBadgeClass(role) {
             const r = (role || 'student').toLowerCase();
             if (r === 'admin') return 'admin';
@@ -538,9 +599,8 @@
             `).join('');
 
             // Update header
-            const nameParts = [user.first_name, user.middle_name, user.surname].filter(Boolean);
-            const fullName = nameParts.length > 0 ? nameParts.join(' ') : user.name || 'User';
-            const initials = fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+            const fullName = [user.first_name, user.middle_name, user.surname].filter(Boolean).join(' ') || user.name || 'User';
+            const initials = getInitials(user.first_name, user.surname);
             const roleDisplay = getRoleDisplay(user.role);
             const roleClass = getRoleBadgeClass(user.role);
 
@@ -602,6 +662,29 @@
                         </button>
                     </div>
                 `;
+            }
+        }
+
+        // ============================================================
+        //  UPDATE PROFILE
+        // ============================================================
+        async function updateProfile(profileData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/profile`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(profileData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update profile');
+                }
+
+                const data = await response.json();
+                return { success: true, user: data.user, message: data.message || 'Profile updated successfully' };
+            } catch (error) {
+                return { success: false, message: error.message };
             }
         }
 
@@ -688,28 +771,108 @@
                 loadProfile();
             });
 
-            // Change Password Modal
-            const modal = document.getElementById('passwordModal');
+            // ============================================================
+            //  EDIT PROFILE MODAL
+            // ============================================================
+            const editModal = document.getElementById('editProfileModal');
+            document.getElementById('editProfileBtn').addEventListener('click', () => {
+                // Populate form with current data
+                document.getElementById('editSurname').value = currentUser?.surname || '';
+                document.getElementById('editFirstName').value = currentUser?.first_name || '';
+                document.getElementById('editMiddleName').value = currentUser?.middle_name || '';
+                document.getElementById('editPhone').value = currentUser?.phone || '';
+                document.getElementById('editAddress').value = currentUser?.address || '';
+                document.getElementById('editProfileMessage').textContent = '';
+                editModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+
+            document.getElementById('closeEditModal').addEventListener('click', () => {
+                editModal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+
+            document.getElementById('cancelEdit').addEventListener('click', () => {
+                editModal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+
+            editModal.addEventListener('click', (e) => {
+                if (e.target === editModal) {
+                    editModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // Edit Profile Form Submit
+            document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const profileData = {
+                    surname: document.getElementById('editSurname').value.trim(),
+                    first_name: document.getElementById('editFirstName').value.trim(),
+                    middle_name: document.getElementById('editMiddleName').value.trim(),
+                    phone: document.getElementById('editPhone').value.trim(),
+                    address: document.getElementById('editAddress').value.trim()
+                };
+
+                const messageEl = document.getElementById('editProfileMessage');
+                messageEl.innerHTML = '<span style="color:#68768a;"><i class="fas fa-spinner fa-spin"></i> Saving changes...</span>';
+                
+                const btn = document.getElementById('saveProfileBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+                try {
+                    const result = await updateProfile(profileData);
+                    
+                    if (result.success) {
+                        messageEl.innerHTML = `<span style="color:#2d6545;">✅ ${result.message}</span>`;
+                        // Update local storage and profile
+                        localStorage.setItem('user', JSON.stringify(result.user));
+                        currentUser = result.user;
+                        renderProfile(result.user);
+                        toast('Profile updated successfully!', 'success');
+                        setTimeout(() => {
+                            editModal.classList.remove('active');
+                            document.body.style.overflow = '';
+                            messageEl.textContent = '';
+                        }, 1500);
+                    } else {
+                        messageEl.innerHTML = `<span style="color:#9c3e32;">❌ ${result.message}</span>`;
+                    }
+                } catch (error) {
+                    messageEl.innerHTML = `<span style="color:#9c3e32;">❌ Error: ${error.message}</span>`;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Save Changes';
+                }
+            });
+
+            // ============================================================
+            //  CHANGE PASSWORD MODAL
+            // ============================================================
+            const passwordModal = document.getElementById('passwordModal');
             document.getElementById('changePasswordBtn').addEventListener('click', () => {
-                modal.classList.add('active');
+                passwordModal.classList.add('active');
                 document.getElementById('passwordForm').reset();
                 document.getElementById('passwordMessage').textContent = '';
                 document.body.style.overflow = 'hidden';
             });
 
             document.getElementById('closePasswordModal').addEventListener('click', () => {
-                modal.classList.remove('active');
+                passwordModal.classList.remove('active');
                 document.body.style.overflow = '';
             });
 
             document.getElementById('cancelPassword').addEventListener('click', () => {
-                modal.classList.remove('active');
+                passwordModal.classList.remove('active');
                 document.body.style.overflow = '';
             });
 
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('active');
+            passwordModal.addEventListener('click', (e) => {
+                if (e.target === passwordModal) {
+                    passwordModal.classList.remove('active');
                     document.body.style.overflow = '';
                 }
             });
@@ -745,13 +908,13 @@
                     
                     if (result.success) {
                         messageEl.innerHTML = `<span style="color:#2d6545;">✅ ${result.message}</span>`;
+                        toast('Password changed successfully!', 'success');
                         setTimeout(() => {
-                            document.getElementById('passwordModal').classList.remove('active');
+                            passwordModal.classList.remove('active');
                             document.body.style.overflow = '';
                             document.getElementById('passwordForm').reset();
                             messageEl.textContent = '';
                         }, 1500);
-                        toast('Password changed successfully!', 'success');
                     } else {
                         messageEl.innerHTML = `<span style="color:#9c3e32;">❌ ${result.message}</span>`;
                     }
