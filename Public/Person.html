@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SeizeTrack · Command Center</title>
+    <title>SeizeTrack · Persons Registry</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         /* ============================================================
-           SEIZETRACK
+           SEIZETRACK · BEDCHECK THEME
            ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f1e8; color: #17233c; min-height: 100vh; }
@@ -85,109 +85,132 @@
         @media (min-width: 640px) { .page-heading h1 { font-size: 2.25rem; } }
         @media (max-width: 480px) { .page-heading h1 { font-size: 1.4rem; } }
         .page-heading .desc { margin-top: 0.25rem; font-size: 0.9rem; color: #5c6a7d; }
-        .page-heading .action-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
         .btn-gold { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border: none; border-radius: 0.5rem; background: #d6ad4b; color: #10233f; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; text-decoration: none; justify-content: center; }
         .btn-gold:hover { background: #c49a2a; }
-
-        /* Metric Grid */
-        .metric-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
-        @media (min-width: 480px) { .metric-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 768px) { .metric-grid { grid-template-columns: repeat(4, 1fr); } }
-
-        .metric-card { padding: 0.75rem 1rem; border: 1px solid #ded6c9; border-radius: 0.75rem; background: #fffcf6; }
-        .metric-card .metric-icon { display: inline-flex; padding: 0.35rem; border-radius: 0.5rem; font-size: 0.75rem; }
-        .metric-card .metric-icon.navy { background: #e7edf5; color: #24466f; }
-        .metric-card .metric-icon.gold { background: #fff1c9; color: #8b6513; }
-        .metric-card .metric-icon.red { background: #f9e2de; color: #9c3e32; }
-        .metric-card .metric-icon.green { background: #e1f0e5; color: #2d6545; }
-        .metric-card .metric-icon.purple { background: #e8e0f5; color: #6b4c8a; }
-        .metric-card .metric-value { margin-top: 0.3rem; font-size: 1.3rem; font-weight: 700; color: #10233f; }
-        @media (min-width: 768px) { .metric-card .metric-value { font-size: 1.5rem; } }
-        .metric-card .metric-title { font-weight: 600; font-size: 0.75rem; color: #17233c; }
-        .metric-card .metric-detail { font-size: 0.6rem; color: #6b778b; }
-
-        .card { border: 1px solid #ded6c9; border-radius: 0.75rem; background: #fffcf6; padding: 1rem; }
-        @media (max-width: 480px) { .card { padding: 0.75rem; } }
-        .card-title { font-family: 'Merriweather',serif; font-size: 1rem; font-weight: 700; color: #10233f; }
-
-        .badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 9999px; font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-        .badge-success { background: #e1f0e5; color: #2d6545; }
-        .badge-warning { background: #fff0cb; color: #8a6413; }
-        .badge-danger { background: #f8e1dc; color: #9b3c31; }
-        .badge-info { background: #e7edf5; color: #24466f; }
-        .badge-live { background: #d6ad4b; color: #10233f; animation: pulse-badge 2s infinite; }
-
-        @keyframes pulse-badge { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-
-        .grid-2 { display: grid; gap: 0.75rem; grid-template-columns: 1fr; }
-        @media (min-width: 992px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
-
-        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
-        .mt-1 { margin-top: 0.25rem; }
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-3 { margin-top: 0.75rem; }
-        .mt-4 { margin-top: 1rem; }
-        .mt-6 { margin-top: 1.5rem; }
-        .text-sm { font-size: 0.85rem; }
-        .text-xs { font-size: 0.65rem; }
-        .text-gold { color: #a77915; }
-        .text-muted { color: #68768a; }
-        .font-bold { font-weight: 700; }
-        .font-serif { font-family: 'Merriweather',serif; }
-        .border-t { border-top: 1px solid #ded6c9; }
-        .p-3 { padding: 0.75rem; }
-
-        /* Seizure specific */
-        .seizure-list { display: flex; flex-direction: column; gap: 0.3rem; }
-        .seizure-item { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.6rem; border-radius: 0.5rem; background: #fbf7ef; border: 1px solid #f0ebe2; }
-        .seizure-item .seizure-device { font-weight: 600; font-size: 0.8rem; }
-        .seizure-item .seizure-person { font-size: 0.7rem; color: #17233c; }
-        .seizure-item .seizure-location { font-size: 0.65rem; color: #6b778b; }
-        .seizure-item .seizure-time { font-size: 0.6rem; color: #6b778b; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .notice-banner { display: flex; gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 1rem; border: 1px solid #d8c79e; border-radius: 0.5rem; background: #fff9e9; color: #675121; font-size: 0.8rem; }
-        @media (max-width: 480px) { .notice-banner { font-size: 0.7rem; padding: 0.4rem 0.6rem; } }
         .notice-banner i { margin-top: 0.1rem; font-size: 0.8rem; color: #d6ad4b; }
 
-        .loading-spinner { display: flex; justify-content: center; align-items: center; padding: 2rem; }
-        .loading-spinner i { font-size: 2rem; color: #a77915; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* ----- Stats Grid ----- */
+        .stats-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); margin-bottom: 1.5rem; }
+        @media (min-width: 480px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
 
-        .toast { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem; border-radius: 0.75rem; background: #10233f; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 100; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; max-width: 400px; }
-        .toast.show { transform: translateY(0); opacity: 1; }
+        .stat-card { padding: 0.75rem 1rem; border: 1px solid #ded6c9; border-radius: 0.75rem; background: #fffcf6; }
+        .stat-card .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .stat-card .stat-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #68768a; }
+        .stat-card .stat-icon { display: inline-flex; padding: 0.35rem; border-radius: 0.5rem; font-size: 0.75rem; }
+        .stat-card .stat-icon.blue { background: #e7edf5; color: #24466f; }
+        .stat-card .stat-icon.green { background: #e1f0e5; color: #2d6545; }
+        .stat-card .stat-icon.red { background: #f9e2de; color: #9c3e32; }
+        .stat-card .stat-icon.yellow { background: #fff1c9; color: #8b6513; }
+        .stat-card .stat-value { font-size: 1.3rem; font-weight: 700; color: #10233f; }
+        @media (min-width: 768px) { .stat-card .stat-value { font-size: 1.5rem; } }
+
+        /* ----- Card ----- */
+        .card { border: 1px solid #ded6c9; border-radius: 0.75rem; background: #fffcf6; overflow: hidden; }
+        .card-body { padding: 1.5rem; }
+        @media (max-width: 480px) { .card-body { padding: 1rem; } }
+
+        /* ----- Search ----- */
+        .mb-6 { margin-bottom: 1.5rem; }
+        .input-container { position: relative; width: 100%; max-width: 28rem; }
+        .input-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #6b778b; pointer-events: none; }
+        .input-field { width: 100%; padding: 0.6rem 0.75rem 0.6rem 2.25rem; background: #f8f5ef; border: 1px solid #ded6c9; border-radius: 0.5rem; color: #17233c; font-size: 0.875rem; transition: 0.2s; }
+        .input-field:focus { outline: none; border-color: #d6ad4b; box-shadow: 0 0 0 3px rgba(214,173,75,0.15); background: #fffcf6; }
+        .input-field::placeholder { color: #9aa5b8; }
+
+        /* ----- Table ----- */
+        .table-container { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #ded6c9; background: #fbf7ef; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        thead { background: #f0ebe2; border-bottom: 2px solid #ded6c9; }
+        th { padding: 0.7rem 1rem; text-align: left; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #68768a; white-space: nowrap; }
+        td { padding: 0.8rem 1rem; border-bottom: 1px solid #ede8de; color: #17233c; vertical-align: middle; }
+        tbody tr { cursor: pointer; transition: background 0.15s; }
+        tbody tr:hover td { background: #f8f0e0; }
+
+        .student-info { display: flex; align-items: center; gap: 0.6rem; }
+        .student-avatar { width: 2rem; height: 2rem; border-radius: 9999px; background: #e7edf5; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem; color: #10233f; flex-shrink: 0; }
+        .student-name { font-weight: 500; color: #10233f; font-size: 0.85rem; }
+        .student-matric { font-size: 0.65rem; color: #68768a; margin-top: 0.05rem; }
+        .department, .level, .last-incident { color: #68768a; font-size: 0.8rem; }
+        .seizure-count { font-weight: 600; color: #10233f; font-size: 0.9rem; }
+
+        /* ----- Badges ----- */
+        .badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.6rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 600; white-space: nowrap; }
+        .badge.danger { background: #f9e2de; color: #9c3e32; border: 1px solid rgba(156,62,50,0.2); }
+        .badge.warning { background: #fff1c9; color: #8b6513; border: 1px solid rgba(139,101,19,0.2); }
+        .badge.info { background: #e7edf5; color: #24466f; border: 1px solid rgba(36,70,111,0.2); }
+        .badge.neutral { background: #f0ebe2; color: #68768a; border: 1px solid #ded6c9; }
+        .badge.success { background: #e1f0e5; color: #2d6545; border: 1px solid rgba(45,101,69,0.2); }
+
+        /* ----- States ----- */
+        .loading, .empty-state, .error-state { padding: 2.5rem 1rem; text-align: center; color: #68768a; }
+        .loading-spinner { display: inline-block; width: 2rem; height: 2rem; border: 3px solid #ded6c9; border-radius: 50%; border-top-color: #d6ad4b; animation: spin 1s linear infinite; margin-bottom: 0.75rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state-icon { font-size: 2.5rem; color: #9aa5b8; margin-bottom: 0.75rem; }
+        .empty-state h3 { font-size: 1.1rem; color: #10233f; margin-bottom: 0.3rem; }
+        .empty-state p { font-size: 0.85rem; color: #68768a; }
+        .text-sm { font-size: 0.8rem; color: #68768a; }
+
+        /* ----- Modal ----- */
+        .modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); padding: 1rem; overflow-y: auto; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: #fffcf6; border: 1px solid #ded6c9; border-radius: 0.75rem; width: 95%; max-width: 800px; max-height: 95vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.15); margin: auto; }
+        .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid #ded6c9; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #fffcf6; z-index: 10; }
+        .modal-title { font-family: 'Merriweather',serif; font-size: 1.1rem; font-weight: 700; color: #10233f; }
+        .modal-close { background: none; border: none; color: #68768a; cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; font-size: 1.2rem; transition: 0.2s; }
+        .modal-close:hover { color: #17233c; background: #f0ebe2; }
+        .modal-body { padding: 1.25rem; }
+
+        .person-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.5rem; }
+        @media (max-width: 480px) { .person-details-grid { grid-template-columns: 1fr; } }
+        .detail-item h4 { font-size: 0.7rem; font-weight: 600; color: #68768a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; }
+        .detail-item p { color: #17233c; font-size: 0.9rem; }
+
+        .mt-8 { margin-top: 1.5rem; }
+        .text-lg { font-size: 1rem; font-weight: 600; color: #10233f; }
+        .mb-4 { margin-bottom: 1rem; }
+
+        /* ----- Toast ----- */
+        .toast { position: fixed; top: 1.2rem; right: 1.2rem; padding: 0.9rem 1.5rem; border-radius: 0.75rem; background: #10233f; color: white; z-index: 9999; box-shadow: 0 12px 30px rgba(0,0,0,0.15); animation: slideIn 0.3s ease; max-width: 380px; }
         .toast.success { background: #3f755d; }
         .toast.error { background: #a84134; }
         .toast.info { background: #1e3a5f; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 
-        .status-dot { display: inline-block; width: 0.4rem; height: 0.4rem; border-radius: 50%; }
-        .status-dot.green { background: #2d6545; }
-        .status-dot.gold { background: #d4af37; }
-        .status-dot.red { background: #8a3328; }
-
-        /* Error fallback */
-        .error-fallback { text-align: center; padding: 3rem 1rem; }
-        .error-fallback .error-icon { font-size: 3rem; color: #9c3e32; margin-bottom: 1rem; }
-        .error-fallback h2 { color: #10233f; margin-bottom: 0.5rem; }
-        .error-fallback p { color: #68768a; margin-bottom: 1.5rem; }
+        /* ----- Utilities ----- */
+        .text-muted { color: #68768a; }
+        .text-xs { font-size: 0.65rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #e8e4de; }
         ::-webkit-scrollbar-thumb { background: #d6ad4b; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #c49a2a; }
+
+        @media (max-width: 640px) {
+            td:nth-child(3), th:nth-child(3),
+            td:nth-child(5), th:nth-child(5) { display: none; }
+        }
+        @media (max-width: 480px) {
+            td:nth-child(4), th:nth-child(4) { display: none; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+            .stat-card { padding: 0.5rem 0.75rem; }
+            .stat-card .stat-value { font-size: 1.1rem; }
+        }
     </style>
 </head>
 <body>
-
-    <!-- ===== TOAST NOTIFICATION ===== -->
-    <div id="toast" class="toast"></div>
-
-    <!-- ===== PORTAL ===== -->
-    <div id="portalApp" class="app-wrapper">
+    <div class="app-wrapper">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="brand">
-                <div class="brand-badge">ST</div>
+                <div class="brand-badge">SS</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -195,10 +218,10 @@
             </div>
             <p class="workspace-label">Workspace</p>
             <nav id="desktopNav">
-                <a href="index.html" class="nav-item active"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="index.html" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
-                <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
+                <a href="Person.html" class="nav-item active"><i class="fas fa-users"></i> Persons</a>
                 <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
@@ -212,17 +235,17 @@
         <aside class="mobile-drawer" id="mobileDrawer">
             <button class="close-btn" id="closeDrawer"><i class="fas fa-times"></i></button>
             <div class="brand">
-                <div class="brand-badge">ST</div>
+                <div class="brand-badge">SS</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
                 </div>
             </div>
             <nav id="mobileNav">
-                <a href="index.html" class="nav-item active"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="index.html" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
-                <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
+                <a href="Person.html" class="nav-item active"><i class="fas fa-users"></i> Persons</a>
                 <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="drawer-footer" id="mobileRoleFooter">Security Officer · Enforcement access</div>
@@ -241,470 +264,523 @@
                     </div>
                     <div class="header-right">
                         <a href="Profile.html" class="profile-btn">
-                            <span class="profile-avatar" id="profileAvatar">ST</span>
-                            <span class="profile-name" id="profileName">Sasha Troger</span>
-                            <span class="profile-role" id="profileRoleLabel">Electrical Engineering</span>
+                            <span class="profile-avatar" id="profileAvatar"></span>
+                            <span class="profile-name" id="profileName"></span>
+                            <span class="profile-role" id="profileRoleLabel"></span>
                         </a>
                         <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
                 </div>
             </header>
+
             <div class="content-container">
                 <div class="notice-banner" id="noticeBanner">
                     <i class="fas fa-shield-halved"></i>
-                    <span id="noticeText">Loading dashboard...</span>
+                    <span id="noticeText">Loading persons registry...</span>
                 </div>
-                <div id="screenContent">
-                    <div class="loading-spinner"><i class="fas fa-spinner"></i></div>
+
+                <!-- Page Heading -->
+                <div class="page-heading">
+                    <div>
+                        <p class="eyebrow">Enforcement Operations</p>
+                        <h1>Persons Registry</h1>
+                        <p class="desc">List of all individuals with recorded seizures and enforcement history.</p>
+                    </div>
+                    <button class="btn-gold" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid" id="statsContainer"></div>
+
+                <!-- Main Card -->
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Search -->
+                        <div class="mb-6">
+                            <div class="input-container">
+                                <i class="fas fa-search input-icon"></i>
+                                <input type="text" class="input-field" id="searchInput" placeholder="Search by name, matric, or department..." />
+                            </div>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Department</th>
+                                        <th>Level</th>
+                                        <th>Seizures</th>
+                                        <th>Last Incident</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="personsTable"></tbody>
+                            </table>
+
+                            <!-- Loading -->
+                            <div id="loadingState" class="loading" style="display:none;">
+                                <div class="loading-spinner"></div>
+                                <p>Loading persons data...</p>
+                            </div>
+
+                            <!-- Empty -->
+                            <div id="emptyState" class="empty-state" style="display:none;">
+                                <div class="empty-state-icon"><i class="fas fa-users"></i></div>
+                                <h3>No Persons Found</h3>
+                                <p>No persons have been registered yet.</p>
+                                <p class="text-sm">Start by adding a seizure to automatically register a person.</p>
+                            </div>
+
+                            <!-- Error -->
+                            <div id="errorState" class="error-state" style="display:none;">
+                                <div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div>
+                                <h3>Error Loading Data</h3>
+                                <p id="errorMessage">Failed to load persons data. Please try again.</p>
+                                <button class="btn-gold" id="retryBtn" style="margin-top:0.5rem;font-size:0.8rem;padding:0.5rem 1rem;">
+                                    <i class="fas fa-redo"></i> Retry
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- MODAL -->
+    <div class="modal" id="personModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Person Details</h3>
+                <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="person-details-grid" id="personDetails"></div>
+                <div class="mt-8">
+                    <h4 class="text-lg mb-4">Seizure History</h4>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr><th>Date &amp; Time</th><th>Device</th><th>Location</th><th>Reason</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="personSeizuresTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        (function() {
-            'use strict';
+        // ============================================================
+        //  CONFIG & STATE
+        // ============================================================
+        const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+        let allPersons = [];
+        let filteredPersons = [];
+        let debounceTimer = null;
+        let currentUser = null;
 
-            // =============================================
-            // CONFIGURATION
-            // =============================================
-            const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
+        // ============================================================
+        //  AUTH
+        // ============================================================
+        function getToken() { return localStorage.getItem('token'); }
+        function getUser() {
+            const u = localStorage.getItem('user');
+            try { return u ? JSON.parse(u) : null; } catch { return null; }
+        }
+        function isLoggedIn() { return !!getToken(); }
+        function redirectToLogin() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+        function getAuthHeaders() {
+            const h = { 'Content-Type': 'application/json' };
+            const t = getToken();
+            if (t) h['Authorization'] = `Bearer ${t}`;
+            return h;
+        }
+        async function authFetch(url, opts = {}) {
+            const res = await fetch(`${API_BASE_URL}${url}`, {
+                ...opts,
+                headers: { ...getAuthHeaders(), ...(opts.headers || {}) }
+            });
+            if (res.status === 401) { redirectToLogin(); throw new Error('Session expired'); }
+            return res;
+        }
 
-            // =============================================
-            // TOAST NOTIFICATION
-            // =============================================
-            function showToast(message, type = 'success') {
-                const toast = document.getElementById('toast');
-                toast.textContent = message;
-                toast.className = `toast ${type}`;
-                setTimeout(() => toast.classList.add('show'), 10);
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 4000);
-            }
+        // ============================================================
+        //  UI HELPERS
+        // ============================================================
+        function updateNotice(msg) {
+            const el = document.getElementById('noticeText');
+            if (el) el.textContent = msg;
+        }
 
-            // =============================================
-            // AUTH
-            // =============================================
-            function getToken() { return localStorage.getItem('token'); }
-            function isLoggedIn() { return !!getToken(); }
-            function redirectToLogin() { window.location.href = '/login.html'; }
+        function toast(msg, type = 'info') {
+            document.querySelectorAll('.toast').forEach(t => t.remove());
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = msg;
+            document.body.appendChild(t);
+            setTimeout(() => {
+                t.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => t.remove(), 300);
+            }, 4000);
+        }
+
+        function updateProfileDisplay() {
+            const user = getUser();
+            if (!user) return;
             
-            function logout() {
+            // Use first_name and surname if available, fallback to name or email
+            const firstName = user.first_name || '';
+            const surname = user.surname || '';
+            const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
+            const initials = firstName && surname ? `${firstName.charAt(0)}${surname.charAt(0)}`.toUpperCase() : (user.name || 'U').charAt(0).toUpperCase();
+            
+            document.getElementById('profileAvatar').textContent = initials;
+            document.getElementById('profileName').textContent = fullName;
+            document.getElementById('profileRoleLabel').textContent = user.department || user.role || 'Security';
+            document.getElementById('roleLabel').textContent = user.role || 'Security Officer';
+            document.getElementById('roleScope').textContent = 'Enforcement access';
+            document.getElementById('mobileRoleFooter').textContent = `${user.role || 'Security Officer'} · Enforcement access`;
+        }
+
+        function setDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // ============================================================
+        //  AUTH CHECK
+        // ============================================================
+        async function checkAuth() {
+            if (!isLoggedIn()) { redirectToLogin(); return null; }
+            try {
+                const res = await fetch(`${API_BASE_URL}/check`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        currentUser = data.user;
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        updateProfileDisplay();
+                        return currentUser;
+                    }
+                }
+                redirectToLogin();
+                return null;
+            } catch { redirectToLogin(); return null; }
+        }
+
+        // ============================================================
+        //  DATA LOADING
+        // ============================================================
+        async function loadPersons() {
+            showLoading();
+            hideError();
+            hideEmpty();
+            try {
+                const res = await authFetch('/persons');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        allPersons = (data.data || []).map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            matric_number: p.matric_number,
+                            department: p.department,
+                            level: p.level,
+                            total_seizures: parseInt(p.total_seizures) || 0,
+                            last_seized: p.last_seized,
+                            created_at: p.created_at
+                        }));
+                        filteredPersons = [...allPersons];
+                        renderStats(calcStats(allPersons));
+                        if (allPersons.length === 0) {
+                            showEmpty();
+                            updateNotice('No persons registered yet.');
+                        } else {
+                            renderTable();
+                            updateNotice(`${allPersons.length} persons loaded`);
+                        }
+                        return;
+                    }
+                }
+                throw new Error('Failed to load persons');
+            } catch (err) {
+                showError(err.message);
+                updateNotice('Error loading data');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function calcStats(persons) {
+            const total = persons.length;
+            const seizures = persons.reduce((s, p) => s + p.total_seizures, 0);
+            const repeat = persons.filter(p => p.total_seizures >= 2).length;
+            return {
+                totalPersons: total,
+                totalSeizures: seizures,
+                repeatOffenders: repeat,
+                avgSeizures: total > 0 ? (seizures / total).toFixed(1) : 0
+            };
+        }
+
+        // ============================================================
+        //  FILTER
+        // ============================================================
+        function filterPersons() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            filteredPersons = allPersons.filter(p =>
+                (p.name || '').toLowerCase().includes(q) ||
+                (p.matric_number || '').toLowerCase().includes(q) ||
+                (p.department || '').toLowerCase().includes(q)
+            );
+            if (filteredPersons.length === 0) {
+                showEmpty();
+                document.getElementById('personsTable').innerHTML = '';
+            } else {
+                hideEmpty();
+                renderTable();
+            }
+        }
+
+        // ============================================================
+        //  RENDER
+        // ============================================================
+        function renderStats(stats) {
+            const container = document.getElementById('statsContainer');
+            if (!container) return;
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-title">Total Persons</span><span class="stat-icon blue"><i class="fas fa-users"></i></span></div>
+                    <div class="stat-value">${stats.totalPersons}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-title">Total Seizures</span><span class="stat-icon red"><i class="fas fa-mobile-alt"></i></span></div>
+                    <div class="stat-value">${stats.totalSeizures}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-title">Repeat Offenders</span><span class="stat-icon yellow"><i class="fas fa-exclamation-triangle"></i></span></div>
+                    <div class="stat-value">${stats.repeatOffenders}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-title">Avg. per Person</span><span class="stat-icon green"><i class="fas fa-chart-line"></i></span></div>
+                    <div class="stat-value">${stats.avgSeizures}</div>
+                </div>
+            `;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('personsTable');
+            if (!tbody) return;
+            const sorted = [...filteredPersons].sort((a, b) => b.total_seizures - a.total_seizures);
+            tbody.innerHTML = '';
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:#68768a;">No persons found</td></tr>`;
+                return;
+            }
+            sorted.forEach(p => {
+                const total = p.total_seizures || 0;
+                const last = p.last_seized ? new Date(p.last_seized).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : 'No seizures';
+                let badge = '';
+                if (total >= 3) badge = `<span class="badge danger"><i class="fas fa-exclamation-triangle"></i> Frequent</span>`;
+                else if (total === 2) badge = `<span class="badge warning"><i class="fas fa-exclamation-circle"></i> Repeat</span>`;
+                else if (total === 1) badge = `<span class="badge info"><i class="fas fa-user"></i> First</span>`;
+                else badge = `<span class="badge neutral"><i class="fas fa-check"></i> Clean</span>`;
+
+                const tr = document.createElement('tr');
+                tr.addEventListener('click', () => showPersonDetails(p.id));
+                tr.innerHTML = `
+                    <td>
+                        <div class="student-info">
+                            <div class="student-avatar">${(p.name||'?').charAt(0).toUpperCase()}</div>
+                            <div>
+                                <div class="student-name">${p.name || 'Unknown'}</div>
+                                <div class="student-matric">${p.matric_number || 'No matric'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="department">${p.department || 'Not specified'}</td>
+                    <td class="level">${p.level || 'Not specified'}</td>
+                    <td><span class="seizure-count">${total}</span></td>
+                    <td class="last-incident">${last}</td>
+                    <td>${badge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ============================================================
+        //  PERSON DETAILS (modal)
+        // ============================================================
+        async function showPersonDetails(id) {
+            try {
+                const res = await authFetch(`/persons/${id}`);
+                if (!res.ok) throw new Error('Failed to load person details');
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Failed');
+
+                const person = data.data;
+                const seizuresRes = await authFetch(`/seizures?person_id=${id}`);
+                let seizures = [];
+                if (seizuresRes.ok) {
+                    const sd = await seizuresRes.json();
+                    if (sd.success) seizures = sd.data || [];
+                }
+
+                const details = document.getElementById('personDetails');
+                const sTable = document.getElementById('personSeizuresTable');
+                if (!details || !sTable) return;
+
+                const lastSeized = person.last_seized ? new Date(person.last_seized).toLocaleString('en-US', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Never';
+                const created = person.created_at ? new Date(person.created_at).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) : 'Unknown';
+
+                details.innerHTML = `
+                    <div class="detail-item"><h4>Full Name</h4><p>${person.name || 'Not specified'}</p></div>
+                    <div class="detail-item"><h4>Matric Number</h4><p>${person.matric_number || 'Not specified'}</p></div>
+                    <div class="detail-item"><h4>Department</h4><p>${person.department || 'Not specified'}</p></div>
+                    <div class="detail-item"><h4>Level</h4><p>${person.level || 'Not specified'}</p></div>
+                    <div class="detail-item"><h4>Total Seizures</h4><p><strong>${person.total_seizures || 0}</strong></p></div>
+                    <div class="detail-item"><h4>Last Seized</h4><p>${lastSeized}</p></div>
+                    <div class="detail-item"><h4>Registered Since</h4><p>${created}</p></div>
+                `;
+
+                sTable.innerHTML = '';
+                if (seizures.length === 0) {
+                    sTable.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:#68768a;">No seizure records found.</td></tr>`;
+                } else {
+                    seizures.forEach(s => {
+                        const d = new Date(s.created_at).toLocaleString('en-US', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+                        let statusClass = 'badge info', statusText = 'Active';
+                        if (s.status) {
+                            const st = s.status.toLowerCase();
+                            if (st.includes('return')) { statusClass = 'badge success'; statusText = 'Returned'; }
+                            else if (st.includes('lost')) { statusClass = 'badge danger'; statusText = 'Lost'; }
+                        }
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${d}</td><td>${s.phone_model || 'N/A'}</td><td>${s.location || 'N/A'}</td><td>${s.seizure_reason || 'N/A'}</td><td><span class="${statusClass}">${statusText}</span></td>`;
+                        sTable.appendChild(tr);
+                    });
+                }
+
+                document.getElementById('personModal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } catch (err) {
+                toast('Error loading details: ' + err.message, 'error');
+            }
+        }
+
+        // ============================================================
+        //  UI STATE
+        // ============================================================
+        function showLoading() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('personsTable').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('statsContainer').style.display = 'none';
+        }
+        function hideLoading() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('personsTable').style.display = 'table-row-group';
+            document.getElementById('statsContainer').style.display = 'grid';
+        }
+        function showEmpty() {
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('personsTable').style.display = 'none';
+        }
+        function hideEmpty() {
+            document.getElementById('emptyState').style.display = 'none';
+        }
+        function showError(msg) {
+            document.getElementById('errorMessage').textContent = msg;
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('personsTable').style.display = 'none';
+            document.getElementById('statsContainer').style.display = 'none';
+            document.getElementById('loadingState').style.display = 'none';
+        }
+        function hideError() {
+            document.getElementById('errorState').style.display = 'none';
+        }
+
+        // ============================================================
+        //  EVENT LISTENERS
+        // ============================================================
+        function init() {
+            setDate();
+            updateNotice('Loading persons registry...');
+
+            // Mobile menu
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                document.getElementById('mobileDrawer').classList.add('open');
+                document.getElementById('drawerOverlay').classList.add('show');
+            });
+            document.getElementById('closeDrawer').addEventListener('click', () => {
+                document.getElementById('mobileDrawer').classList.remove('open');
+                document.getElementById('drawerOverlay').classList.remove('show');
+            });
+            document.getElementById('drawerOverlay').addEventListener('click', () => {
+                document.getElementById('mobileDrawer').classList.remove('open');
+                document.getElementById('drawerOverlay').classList.remove('show');
+            });
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', () => {
                 if (confirm('Are you sure you want to logout?')) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     window.location.href = '/login.html';
                 }
-            }
+            });
 
-            function getAuthHeaders() {
-                return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' };
-            }
+            // Refresh
+            document.getElementById('refreshBtn').addEventListener('click', async () => {
+                updateNotice('Refreshing data...');
+                await loadPersons();
+                toast('Persons data refreshed', 'success');
+            });
 
-            // =============================================
-            // AUTHENTICATED API HELPER
-            // =============================================
-            async function apiCall(endpoint, options = {}) {
-                const token = getToken();
-                if (!token) {
-                    showToast('No authentication token found. Please login again.', 'error');
-                    setTimeout(() => redirectToLogin(), 1500);
-                    throw new Error('No authentication token');
+            // Retry
+            document.getElementById('retryBtn').addEventListener('click', loadPersons);
+
+            // Search debounce
+            document.getElementById('searchInput').addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(filterPersons, 300);
+            });
+
+            // Modal close
+            document.getElementById('modalClose').addEventListener('click', () => {
+                document.getElementById('personModal').classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            document.getElementById('personModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    document.getElementById('personModal').classList.remove('active');
+                    document.body.style.overflow = '';
                 }
+            });
+        }
 
-                try {
-                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                        ...options,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`,
-                            ...(options.headers || {})
-                        }
-                    });
-                    
-                    if (response.status === 401) {
-                        showToast('Session expired. Please login again.', 'error');
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-                        setTimeout(() => redirectToLogin(), 1500);
-                        throw new Error('Authentication required');
-                    }
-                    
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
-                    
-                    const data = await response.json();
-                    if (!data.success) {
-                        throw new Error(data.message || 'API error');
-                    }
-                    return data;
-                } catch (error) {
-                    if (!error.message.includes('Authentication required')) {
-                        showToast('Error: ' + error.message, 'error');
-                    }
-                    throw error;
-                }
-            }
-
-            // =============================================
-            // HELPERS
-            // =============================================
-            function getInitials(firstName, surname) {
-                const first = firstName ? firstName.charAt(0).toUpperCase() : '';
-                const last = surname ? surname.charAt(0).toUpperCase() : '';
-                return first + last || 'U';
-            }
-
-            function getTimeAgo(dateStr) {
-                if (!dateStr) return 'Just now';
-                const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
-                if (diff < 60) return 'Just now';
-                if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-                if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-                return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            }
-
-            // =============================================
-            // UPDATE USER PROFILE IN UI
-            // =============================================
-            function updateUserProfile(user) {
-                if (!user) return;
-                
-                // Get first name and surname from user data
-                const firstName = user.first_name || '';
-                const surname = user.surname || '';
-                
-                // Build full name
-                const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
-                
-                // Generate initials from first name and surname
-                const initials = getInitials(firstName, surname);
-                
-                // Get department or role
-                const department = user.department || user.role || 'Security';
-                const roleDisplay = user.role || 'Security Officer';
-                
-                // Update profile elements
-                document.getElementById('profileAvatar').textContent = initials;
-                document.getElementById('profileName').textContent = fullName;
-                document.getElementById('profileRoleLabel').textContent = department;
-                document.getElementById('roleLabel').textContent = roleDisplay;
-                document.getElementById('roleScope').textContent = 'Enforcement access';
-                document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · Enforcement access`;
-            }
-
-            // =============================================
-            // DATA LOADING WITH FALLBACKS
-            // =============================================
-            async function loadDashboardData() {
-                try {
-                    const data = await apiCall('/api/stats/dashboard');
-                    return data.data || { stats: { totalSeizures: 0, todaySeizures: 0, totalPersons: 0, repeatOffenders: 0 }, recentSeizures: [] };
-                } catch (error) {
-                    console.error('Failed to load dashboard data:', error);
-                    return { stats: { totalSeizures: 0, todaySeizures: 0, totalPersons: 0, repeatOffenders: 0 }, recentSeizures: [] };
-                }
-            }
-
-            async function loadPersons() {
-                try {
-                    const data = await apiCall('/api/persons');
-                    return data.data || [];
-                } catch (error) {
-                    console.error('Failed to load persons:', error);
-                    return [];
-                }
-            }
-
-            // =============================================
-            // AUTHENTICATION CHECK
-            // =============================================
-            async function checkAuth() {
-                try {
-                    const token = getToken();
-                    if (!token) {
-                        redirectToLogin();
-                        return false;
-                    }
-
-                    const response = await fetch(`${API_BASE_URL}/api/check`, {
-                        method: 'POST',
-                        headers: getAuthHeaders()
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Auth failed');
-                    }
-
-                    const data = await response.json();
-                    if (!data.success) {
-                        throw new Error('Auth invalid');
-                    }
-
-                    // Update user info in UI
-                    const user = data.user;
-                    updateUserProfile(user);
-
-                    return true;
-                } catch (error) {
-                    console.error('Auth check failed:', error);
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    redirectToLogin();
-                    return false;
-                }
-            }
-
-            // =============================================
-            // SET DATE
-            // =============================================
-            function setDate() {
-                const now = new Date();
-                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
-            }
-
-            // =============================================
-            // MOBILE DRAWER
-            // =============================================
-            function openMobileDrawer() {
-                document.getElementById('mobileDrawer').classList.add('open');
-                document.getElementById('drawerOverlay').classList.add('show');
-            }
-
-            function closeMobileDrawer() {
-                document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
-            }
-
-            // =============================================
-            // RENDER DASHBOARD WITH FALLBACKS
-            // =============================================
-            function renderDashboard(statsData, persons) {
-                const container = document.getElementById('screenContent');
-
-                // Safely access stats with fallbacks
-                const stats = statsData?.stats || {};
-                const recentSeizures = statsData?.recentSeizures || [];
-
-                const totalSeizures = stats.totalSeizures || 0;
-                const todaySeizures = stats.todaySeizures || 0;
-                const totalPersons = stats.totalPersons || 0;
-                const repeatOffenders = stats.repeatOffenders || 0;
-
-                // Get repeat offenders
-                const offenders = (persons || [])
-                    .filter(p => p.total_seizures >= 2)
-                    .sort((a, b) => b.total_seizures - a.total_seizures)
-                    .slice(0, 5);
-
-                // Check if we have any data to show
-                const hasData = totalSeizures > 0 || todaySeizures > 0 || totalPersons > 0 || recentSeizures.length > 0;
-
-                if (!hasData) {
-                    container.innerHTML = `
-                        <div class="error-fallback">
-                            <div class="error-icon"><i class="fas fa-database"></i></div>
-                            <h2>No Data Available</h2>
-                            <p>Start by recording your first seizure. The dashboard will display statistics and recent activity here.</p>
-                            <a href="AddSeizure.html" class="btn-gold"><i class="fas fa-plus"></i> Record First Seizure</a>
-                        </div>
-                    `;
-                    return;
-                }
-
-                container.innerHTML = `
-                    <!-- Page Heading -->
-                    <div class="page-heading">
-                        <div>
-                            <p class="eyebrow">Enforcement Operations</p>
-                            <h1>Command Center</h1>
-                            <p class="desc">Live monitoring of device seizures, offender activity, and enforcement statistics.</p>
-                        </div>
-                        <div class="action-group">
-                            <a href="AddSeizure.html" class="btn-gold"><i class="fas fa-plus"></i> Record Seizure</a>
-                        </div>
-                    </div>
-
-                    <!-- Metric Grid -->
-                    <div class="metric-grid">
-                        <div class="metric-card">
-                            <div class="metric-icon navy"><i class="fas fa-mobile-alt"></i></div>
-                            <div class="metric-value">${totalSeizures.toLocaleString()}</div>
-                            <div class="metric-title">Total Seizures</div>
-                            <div class="metric-detail">All time records</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon gold"><i class="fas fa-calendar-day"></i></div>
-                            <div class="metric-value">${todaySeizures.toLocaleString()}</div>
-                            <div class="metric-title">Today's Seizures</div>
-                            <div class="metric-detail">Recorded today</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon purple"><i class="fas fa-users"></i></div>
-                            <div class="metric-value">${totalPersons.toLocaleString()}</div>
-                            <div class="metric-title">Total Persons</div>
-                            <div class="metric-detail">Unique offenders</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-                            <div class="metric-value">${repeatOffenders.toLocaleString()}</div>
-                            <div class="metric-title">Repeat Offenders</div>
-                            <div class="metric-detail">2+ seizures recorded</div>
-                        </div>
-                    </div>
-
-                    <!-- Main Layout -->
-                    <div class="grid-2 mt-4">
-                        <!-- Left Column - Recent Seizures -->
-                        <div>
-                            <div class="card">
-                                <div class="flex-between">
-                                    <div class="card-title"><i class="fas fa-history" style="color:#a77915;font-size:0.9rem;"></i> Recent Seizures</div>
-                                    <a href="History.html" style="color:#a77915;font-size:0.85rem;text-decoration:none;">View all <i class="fas fa-arrow-right"></i></a>
-                                </div>
-                                <div class="seizure-list mt-2">
-                                    ${recentSeizures.length === 0 ? '<p class="text-xs text-muted">No recent seizures recorded</p>' : recentSeizures.map(s => `
-                                        <div class="seizure-item">
-                                            <div>
-                                                <div class="seizure-device">${s.phoneModel || 'Unknown Device'}</div>
-                                                <div class="seizure-person">${s.person?.name || 'Unknown Person'} · ${s.person?.matricNumber || ''}</div>
-                                                <div class="seizure-location">${s.location || 'Unknown Location'}</div>
-                                            </div>
-                                            <div style="text-align:right;">
-                                                <div class="seizure-time">${getTimeAgo(s.createdAt)}</div>
-                                                <span class="badge ${s.status === 'active' ? 'badge-live' : 'badge-info'}">${s.status || 'Active'}</span>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-
-                            <!-- Quick Actions -->
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
-                                <a href="AddSeizure.html" style="text-decoration:none;">
-                                    <div style="padding:0.75rem;border:1px solid #ded6c9;border-radius:0.75rem;background:#fffcf6;display:flex;align-items:center;justify-content:space-between;">
-                                        <div>
-                                            <div style="font-weight:600;font-size:0.85rem;color:#10233f;">Record Seizure</div>
-                                            <div style="font-size:0.6rem;color:#68768a;">Log new event</div>
-                                        </div>
-                                        <div style="width:2rem;height:2rem;border-radius:9999px;background:#d6ad4b;display:flex;align-items:center;justify-content:center;color:white;"><i class="fas fa-plus"></i></div>
-                                    </div>
-                                </a>
-                                <a href="Person.html" style="text-decoration:none;">
-                                    <div style="padding:0.75rem;border:1px solid #ded6c9;border-radius:0.75rem;background:#fffcf6;display:flex;align-items:center;justify-content:space-between;">
-                                        <div>
-                                            <div style="font-weight:600;font-size:0.85rem;color:#10233f;">Search Persons</div>
-                                            <div style="font-size:0.6rem;color:#68768a;">Find by name/matric</div>
-                                        </div>
-                                        <div style="width:2rem;height:2rem;border-radius:9999px;background:#e7edf5;display:flex;align-items:center;justify-content:center;color:#10233f;"><i class="fas fa-search"></i></div>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Right Column - Repeat Offenders -->
-                        <div>
-                            <div class="card">
-                                <div class="card-title"><i class="fas fa-exclamation-triangle" style="color:#9c3e32;font-size:0.9rem;"></i> Repeat Offenders</div>
-                                <div style="margin-top:0.5rem;">
-                                    ${offenders.length === 0 ? '<p class="text-xs text-muted">No repeat offenders found</p>' : offenders.map(o => `
-                                        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #f0ebe2;">
-                                            <div style="display:flex;align-items:center;gap:0.75rem;">
-                                                <div style="width:2rem;height:2rem;border-radius:9999px;background:#f9e2de;color:#9c3e32;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;">${o.total_seizures || 0}</div>
-                                                <div>
-                                                    <div style="font-weight:500;font-size:0.85rem;color:#17233c;">${o.name || 'Unknown'}</div>
-                                                    <div style="font-size:0.65rem;color:#6b778b;">${o.matric_number || ''} · ${o.department || ''}</div>
-                                                </div>
-                                            </div>
-                                            <span class="badge ${(o.total_seizures || 0) >= 3 ? 'badge-danger' : 'badge-warning'}">${(o.total_seizures || 0) >= 3 ? 'Frequent' : 'Repeat'}</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                                <div style="padding-top:0.75rem;border-top:1px solid #ded6c9;margin-top:0.5rem;">
-                                    <a href="Person.html" style="display:block;width:100%;">
-                                        <button style="width:100%;padding:0.35rem 0.7rem;border:1px solid #ded6c9;border-radius:0.5rem;background:transparent;color:#10233f;font-size:0.75rem;cursor:pointer;">View All Persons</button>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="mt-4 pt-3 border-t">
-                        <p class="text-xs text-muted">
-                            SeizeTrack · © Benson Idahosa University · Security Operations
-                        </p>
-                    </div>
-                `;
-            }
-
-            // =============================================
-            // INIT
-            // =============================================
-            async function init() {
-                // Check authentication
-                const authenticated = await checkAuth();
-                if (!authenticated) return;
-
-                setDate();
-
-                // Setup mobile drawer
-                document.getElementById('menuToggle').addEventListener('click', openMobileDrawer);
-                document.getElementById('closeDrawer').addEventListener('click', closeMobileDrawer);
-                document.getElementById('drawerOverlay').addEventListener('click', closeMobileDrawer);
-                document.getElementById('logoutBtn').addEventListener('click', logout);
-
-                // Load data
-                try {
-                    document.getElementById('noticeText').textContent = 'Loading dashboard...';
-                    
-                    const [statsData, persons] = await Promise.all([
-                        loadDashboardData(),
-                        loadPersons()
-                    ]);
-
-                    // Update notice
-                    const seizureCount = statsData?.recentSeizures?.length || 0;
-                    const personCount = persons?.length || 0;
-                    
-                    if (statsData && (statsData.stats?.totalSeizures > 0 || seizureCount > 0)) {
-                        document.getElementById('noticeText').textContent = `Ready · ${seizureCount} recent seizures, ${personCount} persons`;
-                    } else {
-                        document.getElementById('noticeText').textContent = 'No data yet. Record your first seizure!';
-                    }
-
-                    renderDashboard(statsData, persons);
-                } catch (error) {
-                    console.error('Error loading dashboard:', error);
-                    document.getElementById('noticeText').textContent = 'Error loading data. Please refresh.';
-                    showToast('Error loading data: ' + error.message, 'error');
-                    
-                    // Show fallback with error message
-                    const container = document.getElementById('screenContent');
-                    container.innerHTML = `
-                        <div class="error-fallback">
-                            <div class="error-icon"><i class="fas fa-exclamation-circle"></i></div>
-                            <h2>Unable to Load Dashboard</h2>
-                            <p>There was an error loading the dashboard data. Please try refreshing the page.</p>
-                            <button class="btn-gold" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh Page</button>
-                        </div>
-                    `;
-                }
-            }
-
-            // Start the app
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
-
-        })();
+        // ============================================================
+        //  BOOT
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            const user = await checkAuth();
+            if (!user) return;
+            init();
+            await loadPersons();
+        });
     </script>
-
 </body>
 </html>
