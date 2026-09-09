@@ -654,7 +654,10 @@
         }
         if (response.status === 401) this.clearAuth();
         return null;
-      } catch (error) { return null; }
+      } catch (error) { 
+        console.error('❌ Auth check error:', error);
+        return null; 
+      }
     }
     
     getToken() { return localStorage.getItem('token'); }
@@ -719,6 +722,10 @@
       if (icon) icon.className = type === "password" ? "fas fa-eye" : "fas fa-eye-slash";
     });
 
+    // Clear any pre-filled values
+    emailField.value = '';
+    passwordField.value = '';
+
     form.addEventListener("submit", async function(e) {
       e.preventDefault();
       const email = emailField.value.trim();
@@ -755,7 +762,10 @@
           return;
         }
         
-        const userName = result.user?.name || result.user?.email || 'User';
+        const userName = result.user?.first_name && result.user?.surname 
+          ? `${result.user.first_name} ${result.user.surname}`
+          : result.user?.name || result.user?.email || 'User';
+        
         showMessage(`Welcome back, ${userName}!`, "success");
         
         setTimeout(() => { 
@@ -804,27 +814,24 @@
     emailField.addEventListener('focus', function() {
       this.style.borderColor = '#e9edf2';
     });
+
+    // Add keyboard shortcut for Enter key
+    form.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      }
+    });
   }
 
   // ==================== REQUEST ACCOUNT ====================
   window.requestAccount = function() {
     alert(
       "To request an account, contact your security administrator.\n\n" +
-      "Demo credentials (for testing):\n" +
-      "Email: admin@seizetrack.com\n" +
-      "Password: admin123"
+      "Please provide your full name, department, and role to request access."
     );
-    setTimeout(() => {
-      const emailField = document.getElementById("email");
-      const passwordField = document.getElementById("password");
-      if (emailField && passwordField) {
-        emailField.value = "admin@seizetrack.com";
-        passwordField.value = "admin123";
-        emailField.dispatchEvent(new Event('input'));
-        passwordField.dispatchEvent(new Event('input'));
-      }
-    }, 100);
   };
 </script>
+
 </body>
 </html>
