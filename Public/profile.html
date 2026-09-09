@@ -131,12 +131,13 @@
             display: inline-block;
             padding: 0.2rem 0.8rem;
             border-radius: 9999px;
-            background: #e7edf5;
-            color: #24466f;
             font-size: 0.75rem;
             font-weight: 600;
             margin-top: 0.25rem;
         }
+        .role-tag.admin { background: #d6ad4b; color: #10233f; }
+        .role-tag.security { background: #e7edf5; color: #24466f; }
+        .role-tag.student { background: #e1f0e5; color: #2d6545; }
 
         .profile-grid {
             display: grid;
@@ -178,6 +179,71 @@
             font-style: italic;
         }
 
+        /* Password Change Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            padding: 1rem;
+            overflow-y: auto;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #fffcf6;
+            border: 1px solid #ded6c9;
+            border-radius: 0.75rem;
+            width: 95%;
+            max-width: 500px;
+            max-height: 95vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            margin: auto;
+        }
+        .modal-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #ded6c9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #fffcf6;
+            z-index: 10;
+        }
+        .modal-title {
+            font-family: 'Merriweather',serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #10233f;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #68768a;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .modal-close:hover { color: #17233c; background: #f0ebe2; }
+        .modal-body { padding: 1.25rem; }
+
+        .form-group { margin-bottom: 1.2rem; }
+        .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: #17233c; margin-bottom: 0.3rem; }
+        .input-container { position: relative; }
+        .input-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #6b778b; pointer-events: none; }
+        .input-field { width: 100%; padding: 0.6rem 0.75rem 0.6rem 2.25rem; background: #f8f5ef; border: 1px solid #ded6c9; border-radius: 0.5rem; color: #17233c; font-size: 0.875rem; transition: 0.2s; }
+        .input-field:focus { outline: none; border-color: #d6ad4b; box-shadow: 0 0 0 3px rgba(214,173,75,0.15); background: #fffcf6; }
+        .input-field::placeholder { color: #9aa5b8; }
+
+        .form-actions { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid #ded6c9; margin-top: 0.5rem; flex-wrap: wrap; }
+
         .toast { position: fixed; top: 1.2rem; right: 1.2rem; padding: 0.9rem 1.5rem; border-radius: 0.75rem; background: #10233f; color: white; z-index: 9999; box-shadow: 0 12px 30px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; max-width: 380px; }
         .toast.success { background: #3f755d; }
         .toast.error { background: #a84134; }
@@ -218,11 +284,11 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
-                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">Security Officer</span></div>
-                <div class="role-scope" id="roleScope">Enforcement access</div>
+                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">Loading...</span></div>
+                <div class="role-scope" id="roleScope">Loading...</div>
             </div>
         </aside>
 
@@ -242,9 +308,9 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
             </nav>
-            <div class="drawer-footer" id="mobileRoleFooter">Security Officer · Enforcement access</div>
+            <div class="drawer-footer" id="mobileRoleFooter">Loading...</div>
         </aside>
 
         <!-- Main Content -->
@@ -261,8 +327,8 @@
                     <div class="header-right">
                         <a href="Profile.html" class="profile-btn">
                             <span class="profile-avatar" id="profileAvatar">ST</span>
-                            <span class="profile-name" id="profileName">Sasha Troger</span>
-                            <span class="profile-role" id="profileRoleLabel">Security</span>
+                            <span class="profile-name" id="profileName">Loading...</span>
+                            <span class="profile-role" id="profileRoleLabel">Loading...</span>
                         </a>
                         <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
@@ -283,7 +349,7 @@
                         <p class="desc">Manage your personal information and account settings.</p>
                     </div>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        <button class="btn-secondary" id="editProfileBtn"><i class="fas fa-edit"></i> Edit Profile</button>
+                        <button class="btn-secondary" id="changePasswordBtn"><i class="fas fa-key"></i> Change Password</button>
                         <button class="btn-gold" id="refreshProfile"><i class="fas fa-sync-alt"></i> Refresh</button>
                     </div>
                 </div>
@@ -302,9 +368,9 @@
                             <div class="profile-header">
                                 <div class="profile-avatar-large" id="largeAvatar">ST</div>
                                 <div class="profile-info">
-                                    <h2 id="fullName">Sasha Efosa Troger</h2>
-                                    <span class="role-tag" id="userRole">Security Officer</span>
-                                    <p style="color:#68768a;font-size:0.85rem;margin-top:0.25rem;" id="userEmail">sachatroger@gmail.com</p>
+                                    <h2 id="fullName">Loading...</h2>
+                                    <span class="role-tag" id="userRoleTag">Loading...</span>
+                                    <p style="color:#68768a;font-size:0.85rem;margin-top:0.25rem;" id="userEmail">Loading...</p>
                                 </div>
                             </div>
 
@@ -317,13 +383,54 @@
                         <!-- Footer -->
                         <div class="mt-4 pt-3 border-t" id="profileFooter" style="display:none;">
                             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
-                                <p class="text-xs text-muted" id="lastUpdated">Last updated: Today at 12:30 PM</p>
+                                <p class="text-xs text-muted" id="lastUpdated">Loading...</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-key" style="color:#d6ad4b;"></i> Change Password</h3>
+                <button class="modal-close" id="closePasswordModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label class="form-label" for="currentPassword">Current Password</label>
+                        <div class="input-container">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="currentPassword" class="input-field" placeholder="Enter current password" required />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="newPassword">New Password</label>
+                        <div class="input-container">
+                            <i class="fas fa-key input-icon"></i>
+                            <input type="password" id="newPassword" class="input-field" placeholder="Enter new password" required minlength="6" />
+                        </div>
+                        <div style="font-size:0.7rem;color:#68768a;margin-top:0.25rem;">Password must be at least 6 characters</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="confirmPassword">Confirm New Password</label>
+                        <div class="input-container">
+                            <i class="fas fa-check-circle input-icon"></i>
+                            <input type="password" id="confirmPassword" class="input-field" placeholder="Confirm new password" required />
+                        </div>
+                    </div>
+                    <div id="passwordMessage" style="margin-bottom:0.75rem;font-size:0.85rem;"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelPassword">Cancel</button>
+                        <button type="submit" class="btn-gold" id="savePasswordBtn">Update Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -388,6 +495,20 @@
             return value || 'Not specified';
         }
 
+        function getRoleBadgeClass(role) {
+            const r = (role || 'student').toLowerCase();
+            if (r === 'admin') return 'admin';
+            if (r === 'security') return 'security';
+            return 'student';
+        }
+
+        function getRoleDisplay(role) {
+            const r = (role || 'student').toLowerCase();
+            if (r === 'admin') return 'Administrator';
+            if (r === 'security') return 'Security Officer';
+            return 'Student';
+        }
+
         // ============================================================
         //  PROFILE RENDER
         // ============================================================
@@ -420,16 +541,24 @@
             const nameParts = [user.first_name, user.middle_name, user.surname].filter(Boolean);
             const fullName = nameParts.length > 0 ? nameParts.join(' ') : user.name || 'User';
             const initials = fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+            const roleDisplay = getRoleDisplay(user.role);
+            const roleClass = getRoleBadgeClass(user.role);
 
             document.getElementById('fullName').textContent = fullName;
             document.getElementById('largeAvatar').textContent = initials;
             document.getElementById('profileAvatar').textContent = initials;
             document.getElementById('profileName').textContent = fullName;
-            document.getElementById('userRole').textContent = user.role || 'Security Officer';
+            document.getElementById('profileRoleLabel').textContent = roleDisplay;
+            
+            // Role tag
+            const roleTag = document.getElementById('userRoleTag');
+            roleTag.textContent = roleDisplay;
+            roleTag.className = `role-tag ${roleClass}`;
+            
             document.getElementById('userEmail').textContent = user.email || '';
-            document.getElementById('profileRoleLabel').textContent = user.role || 'Security';
-            document.getElementById('roleLabel').textContent = user.role || 'Security Officer';
-            document.getElementById('mobileRoleFooter').textContent = `${user.role || 'Security Officer'} · Enforcement access`;
+            document.getElementById('roleLabel').textContent = roleDisplay;
+            document.getElementById('roleScope').textContent = user.department || 'System Access';
+            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${user.department || 'System Access'}`;
 
             // Update last updated
             const updated = user.profile_updated_at || user.updated_at || new Date().toISOString();
@@ -458,7 +587,6 @@
                     currentUser = data.user;
                     localStorage.setItem('user', JSON.stringify(data.user));
                     renderProfile(data.user);
-                    toast('Profile loaded successfully', 'success');
                 } else {
                     throw new Error(data.message || 'Failed to load profile');
                 }
@@ -474,6 +602,29 @@
                         </button>
                     </div>
                 `;
+            }
+        }
+
+        // ============================================================
+        //  CHANGE PASSWORD
+        // ============================================================
+        async function changePassword(currentPassword, newPassword) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/change-password`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to change password');
+                }
+
+                const data = await response.json();
+                return { success: true, message: data.message || 'Password changed successfully' };
+            } catch (error) {
+                return { success: false, message: error.message };
             }
         }
 
@@ -532,14 +683,84 @@
             // Logout
             document.getElementById('logoutBtn').addEventListener('click', logout);
 
-            // Edit Profile
-            document.getElementById('editProfileBtn').addEventListener('click', () => {
-                toast('Edit profile feature coming soon!', 'info');
-            });
-
             // Refresh
             document.getElementById('refreshProfile').addEventListener('click', () => {
                 loadProfile();
+            });
+
+            // Change Password Modal
+            const modal = document.getElementById('passwordModal');
+            document.getElementById('changePasswordBtn').addEventListener('click', () => {
+                modal.classList.add('active');
+                document.getElementById('passwordForm').reset();
+                document.getElementById('passwordMessage').textContent = '';
+                document.body.style.overflow = 'hidden';
+            });
+
+            document.getElementById('closePasswordModal').addEventListener('click', () => {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+
+            document.getElementById('cancelPassword').addEventListener('click', () => {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // Password Form Submit
+            document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const messageEl = document.getElementById('passwordMessage');
+
+                // Validate
+                if (newPassword.length < 6) {
+                    messageEl.innerHTML = '<span style="color:#9c3e32;">Password must be at least 6 characters.</span>';
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    messageEl.innerHTML = '<span style="color:#9c3e32;">New passwords do not match.</span>';
+                    return;
+                }
+
+                messageEl.innerHTML = '<span style="color:#68768a;"><i class="fas fa-spinner fa-spin"></i> Changing password...</span>';
+                
+                const btn = document.getElementById('savePasswordBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+                try {
+                    const result = await changePassword(currentPassword, newPassword);
+                    
+                    if (result.success) {
+                        messageEl.innerHTML = `<span style="color:#2d6545;">✅ ${result.message}</span>`;
+                        setTimeout(() => {
+                            document.getElementById('passwordModal').classList.remove('active');
+                            document.body.style.overflow = '';
+                            document.getElementById('passwordForm').reset();
+                            messageEl.textContent = '';
+                        }, 1500);
+                        toast('Password changed successfully!', 'success');
+                    } else {
+                        messageEl.innerHTML = `<span style="color:#9c3e32;">❌ ${result.message}</span>`;
+                    }
+                } catch (error) {
+                    messageEl.innerHTML = `<span style="color:#9c3e32;">❌ Error: ${error.message}</span>`;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Update Password';
+                }
             });
         }
 
