@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         /* ============================================================
-           SEIZETRACK
+           SEIZETRACK · BEDCHECK THEME
            ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f1e8; color: #17233c; min-height: 100vh; }
@@ -210,7 +210,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="brand">
-                <div class="brand-badge"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-badge">ST</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -222,7 +222,7 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item active"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
                 <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">Security Officer</span></div>
@@ -235,7 +235,7 @@
         <aside class="mobile-drawer" id="mobileDrawer">
             <button class="close-btn" id="closeDrawer"><i class="fas fa-times"></i></button>
             <div class="brand">
-                <div class="brand-badge"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-badge">ST</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -246,7 +246,7 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item active"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="drawer-footer" id="mobileRoleFooter">Security Officer · Enforcement access</div>
         </aside>
@@ -264,9 +264,9 @@
                     </div>
                     <div class="header-right">
                         <a href="Profile.html" class="profile-btn">
-                            <span class="profile-avatar" id="profileAvatar"></span>
-                            <span class="profile-name" id="profileName"></span>
-                            <span class="profile-role" id="profileRoleLabel"></span>
+                            <span class="profile-avatar" id="profileAvatar">ST</span>
+                            <span class="profile-name" id="profileName">Sasha Troger</span>
+                            <span class="profile-role" id="profileRoleLabel">Electrical Engineering</span>
                         </a>
                         <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
@@ -432,15 +432,22 @@
             }, 4000);
         }
 
-        function updateProfile() {
-            const u = getUser();
-            if (!u) return;
-            document.getElementById('profileName').textContent = u.name || u.email || 'User';
-            document.getElementById('profileRoleLabel').textContent = u.department || u.role || 'Security';
-            document.getElementById('profileAvatar').textContent = (u.name || 'U').charAt(0).toUpperCase();
-            document.getElementById('roleLabel').textContent = u.role || 'Security Officer';
+        function updateProfileDisplay() {
+            const user = getUser();
+            if (!user) return;
+            
+            // Use first_name and surname if available, fallback to name or email
+            const firstName = user.first_name || '';
+            const surname = user.surname || '';
+            const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
+            const initials = firstName && surname ? `${firstName.charAt(0)}${surname.charAt(0)}`.toUpperCase() : (user.name || 'U').charAt(0).toUpperCase();
+            
+            document.getElementById('profileAvatar').textContent = initials;
+            document.getElementById('profileName').textContent = fullName;
+            document.getElementById('profileRoleLabel').textContent = user.department || user.role || 'Security';
+            document.getElementById('roleLabel').textContent = user.role || 'Security Officer';
             document.getElementById('roleScope').textContent = 'Enforcement access';
-            document.getElementById('mobileRoleFooter').textContent = `${u.role || 'Security Officer'} · Enforcement access`;
+            document.getElementById('mobileRoleFooter').textContent = `${user.role || 'Security Officer'} · Enforcement access`;
         }
 
         function setDate() {
@@ -464,7 +471,7 @@
                     if (data.success) {
                         currentUser = data.user;
                         localStorage.setItem('user', JSON.stringify(data.user));
-                        updateProfile();
+                        updateProfileDisplay();
                         return currentUser;
                     }
                 }
