@@ -169,6 +169,12 @@
         .status-dot.gold { background: #d4af37; }
         .status-dot.red { background: #8a3328; }
 
+        /* Error fallback */
+        .error-fallback { text-align: center; padding: 3rem 1rem; }
+        .error-fallback .error-icon { font-size: 3rem; color: #9c3e32; margin-bottom: 1rem; }
+        .error-fallback h2 { color: #10233f; margin-bottom: 0.5rem; }
+        .error-fallback p { color: #68768a; margin-bottom: 1.5rem; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #e8e4de; }
         ::-webkit-scrollbar-thumb { background: #d6ad4b; border-radius: 3px; }
@@ -363,15 +369,15 @@
             }
 
             // =============================================
-            // DATA LOADING
+            // DATA LOADING WITH FALLBACKS
             // =============================================
             async function loadDashboardData() {
                 try {
                     const data = await apiCall('/api/stats/dashboard');
-                    return data.data;
+                    return data.data || { stats: { totalSeizures: 0, todaySeizures: 0, totalPersons: 0, repeatOffenders: 0 }, recentSeizures: [] };
                 } catch (error) {
                     console.error('Failed to load dashboard data:', error);
-                    return null;
+                    return { stats: { totalSeizures: 0, todaySeizures: 0, totalPersons: 0, repeatOffenders: 0 }, recentSeizures: [] };
                 }
             }
 
@@ -381,16 +387,6 @@
                     return data.data || [];
                 } catch (error) {
                     console.error('Failed to load persons:', error);
-                    return [];
-                }
-            }
-
-            async function loadSeizures() {
-                try {
-                    const data = await apiCall('/api/seizures?limit=10');
-                    return data.data || [];
-                } catch (error) {
-                    console.error('Failed to load seizures:', error);
                     return [];
                 }
             }
@@ -462,25 +458,40 @@
             }
 
             // =============================================
-            // RENDER DASHBOARD
+            // RENDER DASHBOARD WITH FALLBACKS
             // =============================================
-            function renderDashboard(stats, seizures, persons) {
+            function renderDashboard(statsData, persons) {
                 const container = document.getElementById('screenContent');
 
-                // Calculate stats
-                const totalSeizures = stats?.totalSeizures || 0;
-                const todaySeizures = stats?.todaySeizures || 0;
-                const totalPersons = stats?.totalPersons || 0;
-                const repeatOffenders = stats?.repeatOffenders || 0;
+                // Safely access stats with fallbacks
+                const stats = statsData?.stats || {};
+                const recentSeizures = statsData?.recentSeizures || [];
 
-                // Get recent seizures (limit to 5)
-                const recentSeizures = (seizures || []).slice(0, 5);
+                const totalSeizures = stats.totalSeizures || 0;
+                const todaySeizures = stats.todaySeizures || 0;
+                const totalPersons = stats.totalPersons || 0;
+                const repeatOffenders = stats.repeatOffenders || 0;
 
                 // Get repeat offenders
                 const offenders = (persons || [])
                     .filter(p => p.total_seizures >= 2)
                     .sort((a, b) => b.total_seizures - a.total_seizures)
                     .slice(0, 5);
+
+                // Check if we have any data to show
+                const hasData = totalSeizures > 0 || todaySeizures > 0 || totalPersons > 0 || recentSeizures.length > 0;
+
+                if (!hasData) {
+                    container.innerHTML = `
+                        <div class="error-fallback">
+                            <div class="error-icon"><i class="fas fa-database"></i></div>
+                            <h2>No Data Available</h2>
+                            <p>Start by recording your first seizure. The dashboard will display statistics and recent activity here.</p>
+                            <a href="AddSeizure.html" class="btn-gold"><i class="fas fa-plus"></i> Record First Seizure</a>
+                        </div>
+                    `;
+                    return;
+                }
 
                 container.innerHTML = `
                     <!-- Page Heading -->
@@ -628,20 +639,37 @@
                 try {
                     document.getElementById('noticeText').textContent = 'Loading dashboard...';
                     
-                    const [stats, seizures, persons] = await Promise.all([
+                    const [statsData, persons] = await Promise.all([
                         loadDashboardData(),
-                        loadSeizures(),
                         loadPersons()
                     ]);
 
-                    renderDashboard(stats, seizures, persons);
-                    
-                    const seizureCount = seizures?.length || 0;
+                    // Update notice
+                    const seizureCount = statsData?.recentSeizures?.length || 0;
                     const personCount = persons?.length || 0;
-                    document.getElementById('noticeText').textContent = `Ready · ${seizureCount} seizures, ${personCount} persons`;
+                    
+                    if (statsData && (statsData.stats?.totalSeizures > 0 || seizureCount > 0)) {
+                        document.getElementById('noticeText').textContent = `Ready · ${seizureCount} recent seizures, ${personCount} persons`;
+                    } else {
+                        document.getElementById('noticeText').textContent = 'No data yet. Record your first seizure!';
+                    }
+
+                    renderDashboard(statsData, persons);
                 } catch (error) {
+                    console.error('Error loading dashboard:', error);
                     document.getElementById('noticeText').textContent = 'Error loading data. Please refresh.';
                     showToast('Error loading data: ' + error.message, 'error');
+                    
+                    // Show fallback with error message
+                    const container = document.getElementById('screenContent');
+                    container.innerHTML = `
+                        <div class="error-fallback">
+                            <div class="error-icon"><i class="fas fa-exclamation-circle"></i></div>
+                            <h2>Unable to Load Dashboard</h2>
+                            <p>There was an error loading the dashboard data. Please try refreshing the page.</p>
+                            <button class="btn-gold" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh Page</button>
+                        </div>
+                    `;
                 }
             }
 
