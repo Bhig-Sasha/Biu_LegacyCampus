@@ -729,284 +729,291 @@
         </div>
     </div>
 
-    <script>
-        // ============================================================
-        //  API & AUTH
-        // ============================================================
-        const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
+<script>
+    // ============================================================
+    //  API & AUTH
+    // ============================================================
+    const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
 
-        function getToken() { return localStorage.getItem('token'); }
-        function isLoggedIn() { return !!getToken(); }
-        function redirectToLogin() { window.location.href = '/login.html'; }
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/login.html';
-            }
+    function getToken() { return localStorage.getItem('token'); }
+    function isLoggedIn() { return !!getToken(); }
+    function redirectToLogin() { window.location.href = '/login.html'; }
+    function logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
         }
-        function getAuthHeaders() {
-            return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' };
-        }
+    }
+    function getAuthHeaders() {
+        return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' };
+    }
 
-        // ============================================================
-        //  INIT
-        // ============================================================
-        document.addEventListener('DOMContentLoaded', async function() {
-            if (!isLoggedIn()) { redirectToLogin(); return; }
+    // ============================================================
+    //  INIT
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', async function() {
+        if (!isLoggedIn()) { redirectToLogin(); return; }
 
-            const overlay = document.getElementById('loadingOverlay');
-            const msg = document.getElementById('loadingMessage');
-            const dashboard = document.getElementById('dashboardContent');
+        const overlay = document.getElementById('loadingOverlay');
+        const msg = document.getElementById('loadingMessage');
+        const dashboard = document.getElementById('dashboardContent');
 
-            try {
-                msg.textContent = 'Verifying authentication ...';
-                const token = getToken();
-                const authRes = await fetch(`${API_BASE_URL}/api/check`, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-                });
-                if (!authRes.ok) throw new Error('Auth failed');
-                const authData = await authRes.json();
-                if (!authData.success) throw new Error('Auth invalid');
-
-                msg.textContent = 'Loading dashboard data ...';
-                setupSidebar();
-                await loadDashboardData();
-
-                overlay.style.display = 'none';
-                dashboard.style.display = 'block';
-
-            } catch (err) {
-                console.error(err);
-                msg.innerHTML = `
-                    <div class="loading-error">
-                        <p><strong>Error loading dashboard</strong></p>
-                        <p>${err.message}</p>
-                        <p style="margin-top:1rem;">
-                            <button onclick="location.reload()" style="padding:0.5rem 1.2rem; background:var(--brand); color:#07111f; border:none; border-radius:0.5rem; font-weight:600; cursor:pointer;">Retry</button>
-                        </p>
-                    </div>
-                `;
-            }
-        });
-
-        // ============================================================
-        //  SIDEBAR
-        // ============================================================
-        function setupSidebar() {
-            const menuBtn = document.getElementById('mobileMenuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('sidebarBackdrop');
-
-            if (menuBtn) {
-                menuBtn.addEventListener('click', () => {
-                    sidebar.classList.add('active');
-                    backdrop.classList.add('active');
-                });
-            }
-            if (backdrop) {
-                backdrop.addEventListener('click', () => {
-                    sidebar.classList.remove('active');
-                    backdrop.classList.remove('active');
-                });
-            }
-            // active nav highlight
-            const current = window.location.pathname.split('/').pop() || 'index.html';
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('active');
-                const href = el.getAttribute('href');
-                if (href && href.includes(current)) el.classList.add('active');
-            });
-        }
-
-        // ============================================================
-        //  DATA LOADING
-        // ============================================================
-        async function loadDashboardData() {
-            const status = document.getElementById('connectionStatus');
+        try {
+            msg.textContent = 'Verifying authentication ...';
             const token = getToken();
+            
+            // FIX: Changed to POST method
+            const authRes = await fetch(`${API_BASE_URL}/api/check`, {
+                method: 'POST',  // <-- THIS IS THE FIX
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+            });
+            
+            if (!authRes.ok) throw new Error('Auth failed');
+            const authData = await authRes.json();
+            if (!authData.success) throw new Error('Auth invalid');
 
-            try {
-                status.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading dashboard data ...</span>';
-                status.style.background = 'var(--surface-3)';
-                status.style.borderColor = 'var(--border)';
+            msg.textContent = 'Loading dashboard data ...';
+            setupSidebar();
+            await loadDashboardData();
 
-                renderLoadingStats();
-                renderLoadingSeizures();
-                renderLoadingOffenders();
+            overlay.style.display = 'none';
+            dashboard.style.display = 'block';
 
-                const res = await fetch(`${API_BASE_URL}/api/stats/dashboard`, { headers: getAuthHeaders() });
-                if (res.status === 401) { localStorage.removeItem('token'); redirectToLogin(); return; }
-                if (!res.ok) throw new Error(`Server error ${res.status}`);
-
-                const result = await res.json();
-                if (result.success) {
-                    status.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected to server</span>';
-                    status.style.background = 'linear-gradient(135deg, var(--success-bg), rgba(34,197,94,.08))';
-                    status.style.borderColor = 'rgba(34,197,94,.25)';
-                    status.style.color = '#b7f7c9';
-
-                    renderStatsCards(result.data.stats);
-                    renderRecentSeizures(result.data.recentSeizures);
-                    await loadRepeatOffenders();
-                } else {
-                    throw new Error(result.message || 'Failed to load data');
-                }
-            } catch (err) {
-                console.error(err);
-                status.innerHTML = `<i class="fas fa-exclamation-circle"></i><span>Error: ${err.message}</span>`;
-                status.style.background = 'var(--danger-bg)';
-                status.style.borderColor = 'rgba(239,68,68,.3)';
-                status.style.color = '#fecaca';
-                showErrorStates();
-            }
-        }
-
-        async function loadRepeatOffenders() {
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/persons`, { headers: getAuthHeaders() });
-                if (!res.ok) throw new Error('Failed to fetch persons');
-                const result = await res.json();
-                if (result.success) {
-                    const offenders = (result.data || [])
-                        .filter(p => p.total_seizures >= 2)
-                        .sort((a, b) => b.total_seizures - a.total_seizures)
-                        .slice(0, 5);
-                    renderRepeatOffenders(offenders);
-                }
-            } catch (e) {
-                console.warn('Repeat offenders load error:', e);
-                renderRepeatOffenders([]);
-            }
-        }
-
-        // ============================================================
-        //  RENDER FUNCTIONS
-        // ============================================================
-        function renderLoadingStats() {
-            const grid = document.getElementById('stats-grid');
-            if (!grid) return;
-            grid.innerHTML = `
-                ${cardLoading('Total Seizures', 'fa-mobile-alt')}
-                ${cardLoading("Today's Seizures", 'fa-calendar-day')}
-                ${cardLoading('Total Persons', 'fa-users')}
-                ${cardLoading('Repeat Offenders', 'fa-exclamation-triangle')}
-            `;
-        }
-        function cardLoading(label, icon) {
-            return `
-                <div class="stats-card loading">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon blue"><i class="fas ${icon}"></i></div>
-                        <div class="stats-content"><dl><dt>${label}</dt><dd><div class="stats-value">—</div></dd></dl><div class="stats-description">loading</div></div>
-                    </div>
+        } catch (err) {
+            console.error('❌ Error:', err);
+            msg.innerHTML = `
+                <div class="loading-error">
+                    <p><strong>Error loading dashboard</strong></p>
+                    <p>${err.message}</p>
+                    <p style="margin-top:1rem;">
+                        <button onclick="location.reload()" style="padding:0.5rem 1.2rem; background:var(--brand); color:#07111f; border:none; border-radius:0.5rem; font-weight:600; cursor:pointer;">Retry</button>
+                    </p>
                 </div>
             `;
         }
+    });
 
-        function renderStatsCards(stats) {
-            const grid = document.getElementById('stats-grid');
-            if (!grid || !stats) return;
-            grid.innerHTML = `
-                <div class="stats-card"><div class="stats-card-inner"><div class="stats-icon blue"><i class="fas fa-mobile-alt"></i></div><div class="stats-content"><dl><dt>Total Seizures</dt><dd><div class="stats-value">${stats.totalSeizures || 0}</div></dd></dl><div class="stats-description">All time records</div></div></div></div>
-                <div class="stats-card"><div class="stats-card-inner"><div class="stats-icon blue"><i class="fas fa-calendar-day"></i></div><div class="stats-content"><dl><dt>Today's Seizures</dt><dd><div class="stats-value">${stats.todaySeizures || 0}</div></dd></dl><div class="stats-description">Recorded today</div></div></div></div>
-                <div class="stats-card"><div class="stats-card-inner"><div class="stats-icon blue"><i class="fas fa-users"></i></div><div class="stats-content"><dl><dt>Total Persons</dt><dd><div class="stats-value">${stats.totalPersons || 0}</div></dd></dl><div class="stats-description">Unique offenders</div></div></div></div>
-                <div class="stats-card"><div class="stats-card-inner"><div class="stats-icon red"><i class="fas fa-exclamation-triangle"></i></div><div class="stats-content"><dl><dt>Repeat Offenders</dt><dd><div class="stats-value">${stats.repeatOffenders || 0}</div></dd></dl><div class="stats-description">2+ seizures recorded</div></div></div></div>
-            `;
-        }
+    // ============================================================
+    //  SIDEBAR
+    // ============================================================
+    function setupSidebar() {
+        const menuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
 
-        function renderLoadingSeizures() {
-            const tbody = document.getElementById('recent-seizures');
-            if (!tbody) return;
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>Loading recent seizures ...</td></tr>`;
-        }
-
-        function renderRecentSeizures(seizures) {
-            const tbody = document.getElementById('recent-seizures');
-            if (!tbody) return;
-            if (!seizures || seizures.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);"><i class="fas fa-clock" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>No recent seizures found</td></tr>`;
-                return;
-            }
-            let html = '';
-            seizures.forEach(s => {
-                const t = new Date(s.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                html += `<tr><td>${t}</td><td><div class="person-name">${s.person?.name || 'Unknown'}</div><div class="matric-number">${s.person?.matricNumber || ''}</div></td><td>${s.phoneModel || 'Unknown'}</td><td>${s.location || 'Unknown'}</td></tr>`;
+        if (menuBtn) {
+            menuBtn.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                backdrop.classList.add('active');
             });
-            tbody.innerHTML = html;
         }
-
-        function renderLoadingOffenders() {
-            const list = document.getElementById('offenders-list');
-            if (!list) return;
-            list.innerHTML = `<div style="text-align:center;padding:2rem 1rem;color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>Loading repeat offenders ...</div>`;
+        if (backdrop) {
+            backdrop.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                backdrop.classList.remove('active');
+            });
         }
+        // active nav highlight
+        const current = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.remove('active');
+            const href = el.getAttribute('href');
+            if (href && href.includes(current)) el.classList.add('active');
+        });
+    }
 
-        function renderRepeatOffenders(offenders) {
-            const list = document.getElementById('offenders-list');
-            if (!list) return;
-            if (!offenders || offenders.length === 0) {
-                list.innerHTML = `<div style="text-align:center;padding:2rem 1rem;color:var(--text-muted);"><i class="fas fa-user-shield" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>No repeat offenders found</div>`;
-                return;
+    // ============================================================
+    //  DATA LOADING
+    // ============================================================
+    async function loadDashboardData() {
+        const status = document.getElementById('connectionStatus');
+        const token = getToken();
+
+        try {
+            status.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading dashboard data ...</span>';
+            status.style.background = 'var(--surface-3)';
+            status.style.borderColor = 'var(--border)';
+
+            renderLoadingStats();
+            renderLoadingSeizures();
+            renderLoadingOffenders();
+
+            const res = await fetch(`${API_BASE_URL}/api/stats/dashboard`, { headers: getAuthHeaders() });
+            if (res.status === 401) { localStorage.removeItem('token'); redirectToLogin(); return; }
+            if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+            const result = await res.json();
+            if (result.success) {
+                status.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected to server</span>';
+                status.style.background = 'linear-gradient(135deg, var(--success-bg), rgba(34,197,94,.08))';
+                status.style.borderColor = 'rgba(34,197,94,.25)';
+                status.style.color = '#b7f7c9';
+
+                renderStatsCards(result.data.stats);
+                renderRecentSeizures(result.data.recentSeizures);
+                await loadRepeatOffenders();
+            } else {
+                throw new Error(result.message || 'Failed to load data');
             }
-            let html = '';
-            offenders.forEach(o => {
-                const count = o.total_seizures || 0;
-                const cls = count >= 3 ? 'badge danger' : 'badge';
-                const label = count >= 3 ? 'Frequent' : 'Repeat';
-                html += `
-                    <li>
-                        <div class="person-info">
-                            <div class="person-count">${count}</div>
-                            <div class="person-details">
-                                <div class="name">${o.name || 'Unknown'}</div>
-                                <div class="matric">${o.matric_number || ''} • ${o.department || ''}</div>
-                            </div>
+        } catch (err) {
+            console.error('❌ Error loading data:', err);
+            status.innerHTML = `<i class="fas fa-exclamation-circle"></i><span>Error: ${err.message}</span>`;
+            status.style.background = 'var(--danger-bg)';
+            status.style.borderColor = 'rgba(239,68,68,.3)';
+            status.style.color = '#fecaca';
+            showErrorStates();
+        }
+    }
+
+    async function loadRepeatOffenders() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/persons`, { headers: getAuthHeaders() });
+            if (!res.ok) throw new Error('Failed to fetch persons');
+            const result = await res.json();
+            if (result.success) {
+                const offenders = (result.data || [])
+                    .filter(p => p.total_seizures >= 2)
+                    .sort((a, b) => b.total_seizures - a.total_seizures)
+                    .slice(0, 5);
+                renderRepeatOffenders(offenders);
+            }
+        } catch (e) {
+            console.warn('Repeat offenders load error:', e);
+            renderRepeatOffenders([]);
+        }
+    }
+
+    // ============================================================
+    //  RENDER FUNCTIONS
+    // ============================================================
+    function renderLoadingStats() {
+        const grid = document.getElementById('stats-grid');
+        if (!grid) return;
+        grid.innerHTML = `
+            ${cardLoading('Total Seizures', 'fa-mobile-alt')}
+            ${cardLoading("Today's Seizures", 'fa-calendar-day')}
+            ${cardLoading('Total Persons', 'fa-users')}
+            ${cardLoading('Repeat Offenders', 'fa-exclamation-triangle')}
+        `;
+    }
+    
+    function cardLoading(label, icon) {
+        return `
+            <div class="stats-card loading">
+                <div class="stats-card-inner">
+                    <div class="stats-icon blue"><i class="fas ${icon}"></i></div>
+                    <div class="stats-content"><dl><dt>${label}</dt><dd><div class="stats-value">—</div></dd></dl><div class="stats-description">loading</div></div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderStatsCards(stats) {
+        const grid = document.getElementById('stats-grid');
+        if (!grid || !stats) return;
+        grid.innerHTML = `
+            <div class="stats-card"><div class="stats-card-inner"><div class="stats-icon blue"><i class="fas fa-mobile-alt"></i></div><div class="stats-content"><dl><dt>Total Seizures</dt><dd><div class="stats-value">${stats.totalSeizures || 0}</div></dd></dl><div class="stats-description">All time records</div></div></div></div>
+            <div class="stats-card"><div class="stats-card-inner"><div class="stats-icon blue"><i class="fas fa-calendar-day"></i></div><div class="stats-content"><dl><dt>Today's Seizures</dt><dd><div class="stats-value">${stats.todaySeizures || 0}</div></dd></dl><div class="stats-description">Recorded today</div></div></div></div>
+            <div class="stats-card"><div class="stats-card-inner"><div class="stats-icon blue"><i class="fas fa-users"></i></div><div class="stats-content"><dl><dt>Total Persons</dt><dd><div class="stats-value">${stats.totalPersons || 0}</div></dd></dl><div class="stats-description">Unique offenders</div></div></div></div>
+            <div class="stats-card"><div class="stats-card-inner"><div class="stats-icon red"><i class="fas fa-exclamation-triangle"></i></div><div class="stats-content"><dl><dt>Repeat Offenders</dt><dd><div class="stats-value">${stats.repeatOffenders || 0}</div></dd></dl><div class="stats-description">2+ seizures recorded</div></div></div></div>
+        `;
+    }
+
+    function renderLoadingSeizures() {
+        const tbody = document.getElementById('recent-seizures');
+        if (!tbody) return;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>Loading recent seizures ...</td></tr>`;
+    }
+
+    function renderRecentSeizures(seizures) {
+        const tbody = document.getElementById('recent-seizures');
+        if (!tbody) return;
+        if (!seizures || seizures.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);"><i class="fas fa-clock" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>No recent seizures found</td></tr>`;
+            return;
+        }
+        let html = '';
+        seizures.forEach(s => {
+            const t = new Date(s.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            html += `<tr><td>${t}</td><td><div class="person-name">${s.person?.name || 'Unknown'}</div><div class="matric-number">${s.person?.matricNumber || ''}</div></td><td>${s.phoneModel || 'Unknown'}</td><td>${s.location || 'Unknown'}</td></tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function renderLoadingOffenders() {
+        const list = document.getElementById('offenders-list');
+        if (!list) return;
+        list.innerHTML = `<div style="text-align:center;padding:2rem 1rem;color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>Loading repeat offenders ...</div>`;
+    }
+
+    function renderRepeatOffenders(offenders) {
+        const list = document.getElementById('offenders-list');
+        if (!list) return;
+        if (!offenders || offenders.length === 0) {
+            list.innerHTML = `<div style="text-align:center;padding:2rem 1rem;color:var(--text-muted);"><i class="fas fa-user-shield" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>No repeat offenders found</div>`;
+            return;
+        }
+        let html = '';
+        offenders.forEach(o => {
+            const count = o.total_seizures || 0;
+            const cls = count >= 3 ? 'badge danger' : 'badge';
+            const label = count >= 3 ? 'Frequent' : 'Repeat';
+            html += `
+                <li>
+                    <div class="person-info">
+                        <div class="person-count">${count}</div>
+                        <div class="person-details">
+                            <div class="name">${o.name || 'Unknown'}</div>
+                            <div class="matric">${o.matric_number || ''} • ${o.department || ''}</div>
                         </div>
-                        <span class="${cls}">${label}</span>
-                    </li>
-                `;
-            });
-            list.innerHTML = html;
-        }
-
-        function showErrorStates() {
-            const grid = document.getElementById('stats-grid');
-            const tbody = document.getElementById('recent-seizures');
-            const list = document.getElementById('offenders-list');
-            if (grid) {
-                grid.innerHTML = `
-                    ${cardError('Total Seizures', 'fa-mobile-alt')}
-                    ${cardError("Today's Seizures", 'fa-calendar-day')}
-                    ${cardError('Total Persons', 'fa-users')}
-                    ${cardError('Repeat Offenders', 'fa-exclamation-triangle')}
-                `;
-            }
-            if (tbody) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);"><i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>Failed to load seizures</td></tr>`;
-            }
-            if (list) {
-                list.innerHTML = `<div style="text-align:center;padding:2rem 1rem;color:var(--text-muted);"><i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>Failed to load repeat offenders</div>`;
-            }
-        }
-        function cardError(label, icon) {
-            return `
-                <div class="stats-card">
-                    <div class="stats-card-inner">
-                        <div class="stats-icon blue"><i class="fas ${icon}"></i></div>
-                        <div class="stats-content"><dl><dt>${label}</dt><dd><div class="stats-value" style="color:var(--text-muted);">N/A</div></dd></dl><div class="stats-description">failed to load</div></div>
                     </div>
-                </div>
+                    <span class="${cls}">${label}</span>
+                </li>
+            `;
+        });
+        list.innerHTML = html;
+    }
+
+    function showErrorStates() {
+        const grid = document.getElementById('stats-grid');
+        const tbody = document.getElementById('recent-seizures');
+        const list = document.getElementById('offenders-list');
+        if (grid) {
+            grid.innerHTML = `
+                ${cardError('Total Seizures', 'fa-mobile-alt')}
+                ${cardError("Today's Seizures", 'fa-calendar-day')}
+                ${cardError('Total Persons', 'fa-users')}
+                ${cardError('Repeat Offenders', 'fa-exclamation-triangle')}
             `;
         }
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);"><i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>Failed to load seizures</td></tr>`;
+        }
+        if (list) {
+            list.innerHTML = `<div style="text-align:center;padding:2rem 1rem;color:var(--text-muted);"><i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>Failed to load repeat offenders</div>`;
+        }
+    }
+    
+    function cardError(label, icon) {
+        return `
+            <div class="stats-card">
+                <div class="stats-card-inner">
+                    <div class="stats-icon blue"><i class="fas ${icon}"></i></div>
+                    <div class="stats-content"><dl><dt>${label}</dt><dd><div class="stats-value" style="color:var(--text-muted);">N/A</div></dd></dl><div class="stats-description">failed to load</div></div>
+                </div>
+            </div>
+        `;
+    }
 
-        // auto-refresh every 30s
-        setInterval(() => {
-            const dash = document.getElementById('dashboardContent');
-            if (dash && dash.style.display !== 'none' && isLoggedIn()) {
-                loadDashboardData();
-            }
-        }, 30000);
-    </script>
+    // auto-refresh every 30s
+    setInterval(() => {
+        const dash = document.getElementById('dashboardContent');
+        if (dash && dash.style.display !== 'none' && isLoggedIn()) {
+            loadDashboardData();
+        }
+    }, 30000);
+</script>
+
 </body>
 </html>
