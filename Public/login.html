@@ -406,6 +406,24 @@
       font-size: 0.6rem;
     }
 
+    .test-credentials {
+      background: #f0f4f8;
+      border: 1px dashed var(--gold-dark);
+      border-radius: 12px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+    }
+
+    .test-credentials strong {
+      color: var(--navy);
+    }
+
+    .test-credentials .cred {
+      color: var(--gold-dark);
+      font-weight: 600;
+    }
+
     /* ===== RESPONSIVE ===== */
     @media (max-width: 900px) {
       .portal-wrapper {
@@ -528,17 +546,24 @@
       <p>Sign in with your authorized security credentials.</p>
     </div>
 
+    <!-- Test Credentials Info -->
+    <div class="test-credentials">
+      <strong>🔑 Test Credentials:</strong><br>
+      Email: <span class="cred">sachatroger6@gmail.com</span><br>
+      Password: <span class="cred">password1</span>
+    </div>
+
     <form id="loginForm" novalidate>
       <div class="input-group">
         <label for="email">Email address</label>
-        <input id="email" type="email" placeholder="officer@seizetrack.com" autocomplete="email" required />
+        <input id="email" type="email" value="sachatroger6@gmail.com" placeholder="officer@seizetrack.com" autocomplete="email" required />
         <i class="fas fa-envelope input-icon"></i>
       </div>
 
       <div class="input-group">
         <label for="password">Password</label>
         <div class="password-wrapper">
-          <input id="password" type="password" placeholder="••••••••••••" autocomplete="current-password" required />
+          <input id="password" type="password" value="password1" placeholder="••••••••••••" autocomplete="current-password" required />
           <span class="toggle-password" id="togglePassword" role="button" aria-label="Toggle visibility">
             <i class="fas fa-eye"></i>
           </span>
@@ -571,32 +596,42 @@
 </div>
 
 <script>
-  // ==================== AUTH CLASS (unchanged logic, kept from original) ====================
+  // ==================== AUTH CLASS ====================
   class Auth {
     constructor() {
       this.API_BASE_URL = 'https://biu-legacycampus.onrender.com';
       this.currentUser = null;
       this.loadUserFromStorage();
     }
+    
     loadUserFromStorage() {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         try { this.currentUser = JSON.parse(userStr); } catch (e) { this.clearAuth(); }
       }
     }
+    
     isLoggedIn() { return !!localStorage.getItem('token'); }
+    
     async login(email, password) {
       try {
+        console.log('🔐 Attempting login for:', email);
         const response = await fetch(`${this.API_BASE_URL}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
+        
+        console.log('📡 Response status:', response.status);
+        
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
+        console.log('📦 Response data:', data);
+        
         if (data.success) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
@@ -607,10 +642,11 @@
           return { success: false, message: data.message || 'Login failed' };
         }
       } catch (error) {
-        console.error('Login error:', error);
+        console.error('❌ Login error:', error);
         return { success: false, message: error.message || 'Network error. Please try again.' };
       }
     }
+    
     async checkAuth() {
       const token = localStorage.getItem('token');
       if (!token) return null;
@@ -630,15 +666,24 @@
         return null;
       } catch (error) { return null; }
     }
+    
     getToken() { return localStorage.getItem('token'); }
+    
     clearAuth() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('supabase_user_id');
       this.currentUser = null;
     }
-    redirectToDashboard() { window.location.href = '/index.html'; }
-    redirectToLogin() { window.location.href = '/login.html'; }
+    
+    redirectToDashboard() { 
+      console.log('🚀 Redirecting to dashboard...');
+      window.location.href = '/index.html'; 
+    }
+    
+    redirectToLogin() { 
+      window.location.href = '/login.html'; 
+    }
   }
 
   // ==================== INIT ====================
@@ -646,11 +691,15 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     const path = window.location.pathname;
-    if (path === '/login' || path === '/login.html') {
-      if (auth.isLoggedIn()) { auth.redirectToDashboard(); return; }
+    console.log('📍 Current path:', path);
+    
+    if (path === '/login' || path === '/login.html' || path === '/') {
+      if (auth.isLoggedIn()) { 
+        console.log('✅ Already logged in, redirecting...');
+        auth.redirectToDashboard(); 
+        return; 
+      }
       initializeLoginForm();
-    } else if (path === '/' || path === '/index.html') {
-      auth.checkAuth().then(user => { if (!user) auth.redirectToLogin(); });
     }
   });
 
@@ -665,7 +714,12 @@
     const togglePassword = document.getElementById("togglePassword");
     const emailField = document.getElementById("email");
 
-    if (!form) return;
+    if (!form) {
+      console.error('❌ Form not found!');
+      return;
+    }
+
+    console.log('✅ Login form initialized');
 
     // Toggle visibility
     togglePassword.addEventListener("click", function() {
@@ -679,6 +733,8 @@
       e.preventDefault();
       const email = emailField.value.trim();
       const password = passwordField.value.trim();
+
+      console.log('📝 Form submitted with:', { email });
 
       msg.textContent = "";
       msg.className = "message";
@@ -699,23 +755,29 @@
 
       try {
         const result = await auth.login(email, password);
+        console.log('🔑 Login result:', result);
+        
         if (!result || !result.success) {
           showMessage(result?.message || "Login failed. Check credentials.", "error");
           shake();
-          return;
-        }
-        const userName = result.user?.name || result.user?.email || 'User';
-        showMessage(`Welcome back, ${userName}!`, "success");
-        setTimeout(() => { auth.redirectToDashboard(); }, 1000);
-      } catch (err) {
-        console.error(err);
-        showMessage(err.message || "Login failed. Please try again.", "error");
-        shake();
-      } finally {
-        setTimeout(() => {
           button.disabled = false;
           buttonText.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Access dashboard';
-        }, 2000);
+          return;
+        }
+        
+        const userName = result.user?.name || result.user?.email || 'User';
+        showMessage(`Welcome back, ${userName}!`, "success");
+        
+        setTimeout(() => { 
+          auth.redirectToDashboard(); 
+        }, 1000);
+        
+      } catch (err) {
+        console.error('❌ Login error:', err);
+        showMessage(err.message || "Login failed. Please try again.", "error");
+        shake();
+        button.disabled = false;
+        buttonText.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Access dashboard';
       }
     });
 
@@ -754,20 +816,20 @@
     });
   }
 
-  // ==================== REQUEST ACCOUNT (demo) ====================
+  // ==================== REQUEST ACCOUNT ====================
   window.requestAccount = function() {
     alert(
       "To request an account, contact your security administrator.\n\n" +
       "Demo credentials (for testing):\n" +
-      "Email: admin@seizetrack.com\n" +
-      "Password: admin123"
+      "Email: sachatroger6@gmail.com\n" +
+      "Password: password1"
     );
     setTimeout(() => {
       const emailField = document.getElementById("email");
       const passwordField = document.getElementById("password");
       if (emailField && passwordField) {
-        emailField.value = "admin@seizetrack.com";
-        passwordField.value = "admin123";
+        emailField.value = "sachatroger6@gmail.com";
+        passwordField.value = "password1";
         emailField.dispatchEvent(new Event('input'));
         passwordField.dispatchEvent(new Event('input'));
       }
