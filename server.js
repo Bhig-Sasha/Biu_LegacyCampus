@@ -82,14 +82,13 @@ app.use('/api/', limiter);
 // ========== FIXED CORS CONFIGURATION ==========
 const corsOptions = {
     origin: function (origin, callback) {
-        // Define allowed origins
         const allowedOrigins = [
-            'https://biulegacycampus.netlify.app',      // Your Netlify domain
-            'https://biulegacycampus.vercel.app',       // Your Vercel domain
-            'https://biu-legacycampus.onrender.com',    // Your Render domain
-            'http://localhost:3000',                    // Local development
-            'http://localhost:5000',                    // Local development
-            'http://localhost:5500',                    // Live Server
+            'https://biulegacycampus.netlify.app',
+            'https://biulegacycampus.vercel.app',
+            'https://biu-legacycampus.onrender.com',
+            'http://localhost:3000',
+            'http://localhost:5000',
+            'http://localhost:5500',
             'http://127.0.0.1:3000',
             'http://127.0.0.1:5000',
             'http://127.0.0.1:5500',
@@ -97,22 +96,18 @@ const corsOptions = {
             'https://localhost:5000',
         ];
 
-        // Add CLIENT_URL from env if set
         if (config.CLIENT_URL) {
             allowedOrigins.push(config.CLIENT_URL);
         }
 
-        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) {
             return callback(null, true);
         }
 
-        // Check if origin is allowed
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             console.log(`❌ CORS blocked request from: ${origin}`);
-            console.log(`✅ Allowed origins: ${allowedOrigins.join(', ')}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -130,20 +125,16 @@ const corsOptions = {
     exposedHeaders: ['Content-Length', 'X-Request-Id'],
     optionsSuccessStatus: 200,
     preflightContinue: false,
-    maxAge: 86400 // 24 hours
+    maxAge: 86400
 };
 
-// Apply CORS middleware
 app.use(cors(corsOptions));
-
-// Handle preflight requests explicitly
 app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.set('trust proxy', 1);
 
-// Log all requests (useful for debugging)
 if (config.NODE_ENV !== 'production') {
     app.use((req, res, next) => {
         console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`);
@@ -198,7 +189,7 @@ async function authenticate(req, res, next) {
     try {
         const { data: user, error } = await supabase
             .from('users')
-            .select('id, email, name, role, department')
+            .select('*')
             .eq('id', decoded.id)
             .single();
 
@@ -299,10 +290,33 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/check', authenticate, async (req, res) => {
-    res.json({
-        success: true,
-        user: req.user
-    });
+    try {
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', req.user.id)
+            .single();
+
+        if (error || !user) {
+            return res.status(401).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        delete user.password;
+
+        res.json({
+            success: true,
+            user: user
+        });
+    } catch (error) {
+        console.error('Check error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to verify user'
+        });
+    }
 });
 
 app.post('/api/logout', authenticate, async (req, res) => {
@@ -361,11 +375,114 @@ app.post('/api/register', authenticate, authorize('admin'), async (req, res) => 
     }
 });
 
+// ========== PROFILE ROUTES ==========
+
 app.get('/api/profile', authenticate, async (req, res) => {
-    res.json({
-        success: true,
-        user: req.user
-    });
+    try {
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', req.user.id)
+            .single();
+
+        if (error || !user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        delete user.password;
+
+        res.json({
+            success: true,
+            user: user
+        });
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch profile'
+        });
+    }
+});
+
+app.put('/api/profile', authenticate, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const {
+            surname,
+            first_name,
+            middle_name,
+            date_of_birth,
+            gender,
+            marital_status,
+            nationality,
+            state_of_origin,
+            lga,
+            religion,
+            phone,
+            address,
+            name,
+            department
+        } = req.body;
+
+        const updates = {};
+        
+        // Only include fields that are provided
+        if (surname !== undefined) updates.surname = surname;
+        if (first_name !== undefined) updates.first_name = first_name;
+        if (middle_name !== undefined) updates.middle_name = middle_name;
+        if (date_of_birth !== undefined) updates.date_of_birth = date_of_birth;
+        if (gender !== undefined) updates.gender = gender;
+        if (marital_status !== undefined) updates.marital_status = marital_status;
+        if (nationality !== undefined) updates.nationality = nationality;
+        if (state_of_origin !== undefined) updates.state_of_origin = state_of_origin;
+        if (lga !== undefined) updates.lga = lga;
+        if (religion !== undefined) updates.religion = religion;
+        if (phone !== undefined) updates.phone = phone;
+        if (address !== undefined) updates.address = address;
+        if (name !== undefined) updates.name = name;
+        if (department !== undefined) updates.department = department;
+        
+        updates.profile_updated_at = new Date().toISOString();
+
+        const { data, error } = await supabase
+            .from('users')
+            .update(updates)
+            .eq('id', userId)
+            .select('*');
+
+        if (error) {
+            console.error('Update error:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to update profile: ' + error.message
+            });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        delete data[0].password;
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            user: data[0]
+        });
+
+    } catch (error) {
+        console.error('Profile update error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update profile'
+        });
+    }
 });
 
 // ========== API ROUTES ==========
@@ -898,7 +1015,7 @@ app.get('/api/users', authenticate, authorize('admin'), async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('id, email, name, role, department, created_at, updated_at')
+            .select('*')
             .order('created_at', { ascending: false });
         
         if (error) throw error;
@@ -1005,7 +1122,6 @@ async function startServer() {
         console.log(`🖥️  API URL: ${config.API_URL}`);
         console.log(`🔗 Client URL: ${config.CLIENT_URL}`);
         
-        // Check database connection
         const { error } = await supabase
             .from('users')
             .select('count', { count: 'exact', head: true });
@@ -1025,7 +1141,6 @@ async function startServer() {
             console.log(`🚀 Server running on port ${config.PORT}`);
         });
         
-        // Graceful shutdown
         process.on('SIGTERM', () => {
             console.log('🛑 Shutting down...');
             process.exit(0);
