@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#10233f" />
     <title>SeizeTrack · Persons Registry</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,12 +13,16 @@
         /* ============================================================
            SEIZETRACK
            ============================================================ */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f1e8; color: #17233c; min-height: 100vh; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f1e8; color: #17233c; min-height: 100vh; overflow-x: hidden; }
+
+        img, svg { max-width: 100%; height: auto; display: block; }
+        button, input, select, textarea { font: inherit; }
 
         /* ----- PORTAL LAYOUT ----- */
-        .app-wrapper { display: flex; min-height: 100vh; }
-        .sidebar { position: fixed; inset: 0 0 0 0; width: 16rem; background-color: #10233f; color: white; padding: 1.5rem 1rem; display: none; flex-direction: column; z-index: 30; }
+        .app-wrapper { display: flex; min-height: 100vh; min-height: 100dvh; }
+        .sidebar { position: fixed; inset: 0 auto 0 0; width: 16rem; background-color: #10233f; color: white; padding: 1.5rem 1rem; display: none; flex-direction: column; z-index: 30; }
         @media (min-width: 1024px) { .sidebar { display: flex; } }
 
         .sidebar .brand { display: flex; align-items: center; gap: 0.75rem; }
@@ -36,8 +41,8 @@
         .sidebar .role-card .role-title i { color: #e1bd65; }
         .sidebar .role-card .role-scope { margin-top: 0.25rem; font-size: 0.75rem; color: #b9c7db; line-height: 1.4; }
 
-        .mobile-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: 18rem; background-color: #10233f; color: white; padding: 1.5rem 1rem; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); z-index: 50; display: flex; flex-direction: column; overflow-y: auto; }
-        .mobile-drawer.open { transform: translateX(0); }
+        .mobile-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(18rem, 85vw); background-color: #10233f; color: white; padding: 1.5rem 1rem; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); z-index: 50; display: flex; flex-direction: column; overflow-y: auto; }
+        .mobile-drawer.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.3); }
         .mobile-drawer .close-btn { align-self: flex-end; background: transparent; border: none; color: white; padding: 0.5rem; cursor: pointer; font-size: 1.2rem; }
         .mobile-drawer .brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
         .mobile-drawer .brand-badge { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border: 1px solid rgba(225,189,101,0.7); background-color: #d6ad4b; border-radius: 0.5rem; font-family: 'Merriweather',serif; font-weight: 900; font-size: 1.25rem; color: #10233f; }
@@ -50,31 +55,32 @@
         .drawer-overlay.show { display: block; opacity: 1; }
         @media (min-width: 1024px) { .drawer-overlay { display: none !important; } }
 
-        .main-content { flex: 1; min-height: 100vh; padding-bottom: 2rem; }
+        .main-content { flex: 1; min-width: 0; min-height: 100vh; padding-bottom: 2rem; }
         @media (min-width: 1024px) { .main-content { margin-left: 16rem; } }
 
-        .main-header { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #dfd8cb; background: rgba(245,241,232,0.95); backdrop-filter: blur(4px); padding: 0.75rem 1rem; }
+        .main-header { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #dfd8cb; background: rgba(245,241,232,0.95); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); padding: 0.75rem 1rem; padding-top: max(0.75rem, env(safe-area-inset-top)); }
         @media (min-width: 640px) { .main-header { padding: 0.75rem 1.75rem; } }
-        .header-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-        .header-left { display: flex; align-items: center; gap: 0.75rem; }
-        .menu-toggle { border: 1px solid #d8d0c2; border-radius: 0.5rem; background: transparent; padding: 0.5rem; cursor: pointer; font-size: 1.1rem; color: #17233c; }
+        .header-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+        .header-left { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+        .menu-toggle { border: 1px solid #d8d0c2; border-radius: 0.5rem; background: transparent; padding: 0.5rem; cursor: pointer; font-size: 1.1rem; color: #17233c; flex-shrink: 0; }
         .menu-toggle:hover { background: rgba(0,0,0,0.05); }
         @media (min-width: 1024px) { .menu-toggle { display: none; } }
-        .header-date { font-size: 0.7rem; font-weight: 600; color: #6b778b; }
+        .header-date { font-size: 0.7rem; font-weight: 600; color: #6b778b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .header-title { font-family: 'Merriweather',serif; font-size: 1.2rem; font-weight: 700; color: #10233f; }
+        @media (max-width: 480px) { .header-date { display: none; } .header-title { font-size: 1rem; } }
 
-        .header-right { display: flex; align-items: center; gap: 0.5rem; }
+        .header-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
         @media (min-width: 640px) { .header-right { gap: 0.75rem; } }
-        .profile-btn { display: flex; align-items: center; gap: 0.5rem; border: 1px solid #d8d0c2; border-radius: 0.5rem; background: #fffcf6; padding: 0.25rem 0.5rem 0.25rem 0.25rem; cursor: pointer; text-decoration: none; }
+        .profile-btn { display: flex; align-items: center; gap: 0.5rem; border: 1px solid #d8d0c2; border-radius: 0.5rem; background: #fffcf6; padding: 0.25rem 0.5rem 0.25rem 0.25rem; cursor: pointer; text-decoration: none; min-width: 0; }
         .profile-btn:hover { background: #f5f1e8; }
-        .profile-avatar { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: #d6ad4b; font-size: 0.6rem; font-weight: 700; color: #10233f; }
-        .profile-name { display: none; font-weight: 700; font-size: 0.9rem; color: #17233c; }
+        .profile-avatar { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: #d6ad4b; font-size: 0.6rem; font-weight: 700; color: #10233f; flex-shrink: 0; }
+        .profile-name { display: none; font-weight: 700; font-size: 0.9rem; color: #17233c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 12rem; }
         .profile-role { display: none; font-size: 0.6rem; color: #68768a; }
-        .logout-btn { background: transparent; border: none; color: #68768a; cursor: pointer; font-size: 1.1rem; padding: 0.5rem; }
+        .logout-btn { background: transparent; border: none; color: #68768a; cursor: pointer; font-size: 1.1rem; padding: 0.5rem; flex-shrink: 0; }
         .logout-btn:hover { color: #17233c; }
         @media (min-width: 640px) { .profile-name { display: block; } .profile-role { display: block; } }
 
-        .content-container { max-width: 1280px; margin: 0 auto; padding: 1.75rem 1rem; }
+        .content-container { max-width: 1280px; margin: 0 auto; padding: 1.75rem 1rem; padding-bottom: max(1.75rem, env(safe-area-inset-bottom)); }
         @media (min-width: 640px) { .content-container { padding: 1.75rem 1.75rem; } }
         @media (max-width: 480px) { .content-container { padding: 1rem 0.75rem; } }
 
@@ -86,22 +92,21 @@
         @media (max-width: 480px) { .page-heading h1 { font-size: 1.4rem; } }
         .page-heading .desc { margin-top: 0.25rem; font-size: 0.9rem; color: #5c6a7d; }
 
-        .btn-gold { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border: none; border-radius: 0.5rem; background: #d6ad4b; color: #10233f; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; text-decoration: none; justify-content: center; }
+        .btn-gold { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border: none; border-radius: 0.5rem; background: #d6ad4b; color: #10233f; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; text-decoration: none; justify-content: center; min-height: 44px; }
         .btn-gold:hover { background: #c49a2a; }
         .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .notice-banner { display: flex; gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 1rem; border: 1px solid #d8c79e; border-radius: 0.5rem; background: #fff9e9; color: #675121; font-size: 0.8rem; }
-        .notice-banner i { margin-top: 0.1rem; font-size: 0.8rem; color: #d6ad4b; }
+        .notice-banner i { margin-top: 0.1rem; font-size: 0.8rem; color: #d6ad4b; flex-shrink: 0; }
 
         /* ----- Stats Grid ----- */
         .stats-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); margin-bottom: 1.5rem; }
-        @media (min-width: 480px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
 
-        .stat-card { padding: 0.75rem 1rem; border: 1px solid #ded6c9; border-radius: 0.75rem; background: #fffcf6; }
-        .stat-card .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
-        .stat-card .stat-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #68768a; }
-        .stat-card .stat-icon { display: inline-flex; padding: 0.35rem; border-radius: 0.5rem; font-size: 0.75rem; }
+        .stat-card { padding: 0.75rem 1rem; border: 1px solid #ded6c9; border-radius: 0.75rem; background: #fffcf6; min-width: 0; }
+        .stat-card .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; gap: 0.5rem; }
+        .stat-card .stat-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #68768a; overflow: hidden; text-overflow: ellipsis; }
+        .stat-card .stat-icon { display: inline-flex; padding: 0.35rem; border-radius: 0.5rem; font-size: 0.75rem; flex-shrink: 0; }
         .stat-card .stat-icon.blue { background: #e7edf5; color: #24466f; }
         .stat-card .stat-icon.green { background: #e1f0e5; color: #2d6545; }
         .stat-card .stat-icon.red { background: #f9e2de; color: #9c3e32; }
@@ -122,9 +127,9 @@
         .input-field:focus { outline: none; border-color: #d6ad4b; box-shadow: 0 0 0 3px rgba(214,173,75,0.15); background: #fffcf6; }
         .input-field::placeholder { color: #9aa5b8; }
 
-        /* ----- Table ----- */
-        .table-container { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #ded6c9; background: #fbf7ef; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        /* ----- Table (horizontal scroll on mobile) ----- */
+        .table-container { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #ded6c9; background: #fbf7ef; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 640px; }
         thead { background: #f0ebe2; border-bottom: 2px solid #ded6c9; }
         th { padding: 0.7rem 1rem; text-align: left; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #68768a; white-space: nowrap; }
         td { padding: 0.8rem 1rem; border-bottom: 1px solid #ede8de; color: #17233c; vertical-align: middle; }
@@ -156,17 +161,17 @@
         .text-sm { font-size: 0.8rem; color: #68768a; }
 
         /* ----- Modal ----- */
-        .modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); padding: 1rem; overflow-y: auto; align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); padding: 1rem; padding-top: max(1rem, env(safe-area-inset-top)); padding-bottom: max(1rem, env(safe-area-inset-bottom)); overflow-y: auto; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
-        .modal-content { background: #fffcf6; border: 1px solid #ded6c9; border-radius: 0.75rem; width: 95%; max-width: 800px; max-height: 95vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.15); margin: auto; }
+        .modal-content { background: #fffcf6; border: 1px solid #ded6c9; border-radius: 0.75rem; width: 100%; max-width: 800px; max-height: 95vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.15); margin: auto; -webkit-overflow-scrolling: touch; }
         .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid #ded6c9; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #fffcf6; z-index: 10; }
         .modal-title { font-family: 'Merriweather',serif; font-size: 1.1rem; font-weight: 700; color: #10233f; }
-        .modal-close { background: none; border: none; color: #68768a; cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; font-size: 1.2rem; transition: 0.2s; }
+        .modal-close { background: none; border: none; color: #68768a; cursor: pointer; padding: 0.5rem; border-radius: 0.25rem; font-size: 1.2rem; transition: 0.2s; min-width: 44px; min-height: 44px; }
         .modal-close:hover { color: #17233c; background: #f0ebe2; }
         .modal-body { padding: 1.25rem; }
 
         .person-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.5rem; }
-        @media (max-width: 480px) { .person-details-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) { .person-details-grid { grid-template-columns: 1fr; gap: 0.75rem; } }
         .detail-item h4 { font-size: 0.7rem; font-weight: 600; color: #68768a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; }
         .detail-item p { color: #17233c; font-size: 0.9rem; }
 
@@ -175,7 +180,8 @@
         .mb-4 { margin-bottom: 1rem; }
 
         /* ----- Toast ----- */
-        .toast { position: fixed; top: 1.2rem; right: 1.2rem; padding: 0.9rem 1.5rem; border-radius: 0.75rem; background: #10233f; color: white; z-index: 9999; box-shadow: 0 12px 30px rgba(0,0,0,0.15); animation: slideIn 0.3s ease; max-width: 380px; }
+        .toast { position: fixed; top: 1.2rem; right: 1.2rem; left: auto; padding: 0.9rem 1.5rem; border-radius: 0.75rem; background: #10233f; color: white; z-index: 9999; box-shadow: 0 12px 30px rgba(0,0,0,0.15); animation: slideIn 0.3s ease; max-width: min(380px, calc(100vw - 2rem)); word-wrap: break-word; }
+        @media (max-width: 480px) { .toast { left: 1rem; right: 1rem; top: auto; bottom: 1rem; padding: 0.75rem 1rem; font-size: 0.85rem; } }
         .toast.success { background: #3f755d; }
         .toast.error { background: #a84134; }
         .toast.info { background: #1e3a5f; }
@@ -188,20 +194,110 @@
         .mt-2 { margin-top: 0.5rem; }
         .mt-4 { margin-top: 1rem; }
 
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #e8e4de; }
         ::-webkit-scrollbar-thumb { background: #d6ad4b; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #c49a2a; }
 
-        @media (max-width: 640px) {
-            td:nth-child(3), th:nth-child(3),
-            td:nth-child(5), th:nth-child(5) { display: none; }
+        /* ============================================================
+           RESPONSIVE BREAKPOINTS
+           ============================================================ */
+
+        /* Tablet (<= 900px) */
+        @media (max-width: 900px) {
+            .content-container { padding: 1.5rem 1rem; }
         }
+
+        /* Small tablet / large phone (<= 768px) */
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+            .stat-card { padding: 0.6rem 0.75rem; }
+            .stat-card .stat-value { font-size: 1.15rem; }
+            .stat-card .stat-title { font-size: 0.65rem; }
+        }
+
+        /* Mobile (<= 640px) */
+        @media (max-width: 640px) {
+            /* Table: switch to card-style rows on small screens */
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+            tbody tr {
+                border: 1px solid #ded6c9;
+                border-radius: 0.5rem;
+                margin-bottom: 0.5rem;
+                padding: 0.75rem;
+                background: #fffcf6;
+                display: grid;
+                gap: 0.4rem;
+            }
+            tbody tr:hover td { background: transparent; }
+            tbody tr td {
+                padding: 0;
+                border: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            tbody tr td::before {
+                content: attr(data-label);
+                font-size: 0.65rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #68768a;
+                flex-shrink: 0;
+            }
+            tbody tr td:first-child {
+                display: block;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px solid #f0ebe2;
+                margin-bottom: 0.25rem;
+            }
+            tbody tr td:first-child::before { display: none; }
+        }
+
+        /* Small mobile (<= 480px) */
         @media (max-width: 480px) {
-            td:nth-child(4), th:nth-child(4) { display: none; }
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-            .stat-card { padding: 0.5rem 0.75rem; }
-            .stat-card .stat-value { font-size: 1.1rem; }
+            .stat-card { padding: 0.5rem 0.6rem; }
+            .stat-card .stat-value { font-size: 1.05rem; }
+            .stat-card .stat-icon { padding: 0.25rem; font-size: 0.65rem; }
+            .card-body { padding: 0.75rem; }
+            .page-heading h1 { font-size: 1.35rem; }
+            .page-heading .desc { font-size: 0.8rem; }
+            .notice-banner { font-size: 0.7rem; padding: 0.4rem 0.6rem; }
+            .profile-name { display: none; }
+            .header-title { font-size: 0.95rem; }
+        }
+
+        /* Very small (<= 360px) */
+        @media (max-width: 360px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .content-container { padding: 0.75rem 0.5rem; }
+            .main-header { padding: 0.5rem; }
+        }
+
+        /* Landscape phones */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .mobile-drawer { width: min(20rem, 60vw); }
+            .modal-content { max-height: 98vh; }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Print */
+        @media print {
+            .sidebar, .mobile-drawer, .drawer-overlay, .main-header, .btn-gold { display: none !important; }
+            .main-content { margin-left: 0 !important; }
+            .card { box-shadow: none; border: 1px solid #000; }
         }
     </style>
 </head>
@@ -233,7 +329,7 @@
         <!-- Mobile Drawer -->
         <div class="drawer-overlay" id="drawerOverlay"></div>
         <aside class="mobile-drawer" id="mobileDrawer">
-            <button class="close-btn" id="closeDrawer"><i class="fas fa-times"></i></button>
+            <button class="close-btn" id="closeDrawer" aria-label="Close menu"><i class="fas fa-times"></i></button>
             <div class="brand">
                 <div class="brand-badge" id="mobileBrandBadge">--</div>
                 <div>
@@ -256,7 +352,7 @@
             <header class="main-header">
                 <div class="header-inner">
                     <div class="header-left">
-                        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                        <button class="menu-toggle" id="menuToggle" aria-label="Open menu"><i class="fas fa-bars"></i></button>
                         <div>
                             <p class="header-date" id="currentDate">Loading...</p>
                             <p class="header-title">SeizeTrack</p>
@@ -268,7 +364,7 @@
                             <span class="profile-name" id="profileName"></span>
                             <span class="profile-role" id="profileRoleLabel"></span>
                         </a>
-                        <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+                        <button class="logout-btn" id="logoutBtn" title="Logout" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
                 </div>
             </header>
@@ -354,7 +450,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Person Details</h3>
-                <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+                <button class="modal-close" id="modalClose" aria-label="Close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <div class="person-details-grid" id="personDetails"></div>
@@ -459,17 +555,12 @@
             const roleDisplay = getRoleDisplay(user.role);
             const department = user.department || 'General';
             
-            // Update profile header
             document.getElementById('profileAvatar').textContent = initials;
             document.getElementById('profileName').textContent = fullName;
             document.getElementById('profileRoleLabel').textContent = roleDisplay;
-            
-            // Update sidebar
             document.getElementById('roleLabel').textContent = roleDisplay;
             document.getElementById('roleScope').textContent = department;
             document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
-            
-            // Update brand badges with initials
             document.getElementById('brandBadge').textContent = initials;
             document.getElementById('mobileBrandBadge').textContent = initials;
         }
@@ -495,8 +586,6 @@
                     if (data.success) {
                         const user = data.user;
                         const userRole = (user.role || '').toLowerCase();
-
-                        // 🔒 Restrict to admin and security only
                         if (!ALLOWED_ROLES.includes(userRole)) {
                             toast('Access denied. Only Admin or Security officers can view the persons registry.', 'error');
                             localStorage.removeItem('token');
@@ -504,7 +593,6 @@
                             setTimeout(() => redirectToLogin(), 1500);
                             return null;
                         }
-
                         currentUser = user;
                         localStorage.setItem('user', JSON.stringify(user));
                         updateUserProfile(user);
@@ -637,7 +725,7 @@
                 const tr = document.createElement('tr');
                 tr.addEventListener('click', () => showPersonDetails(p.id));
                 tr.innerHTML = `
-                    <td>
+                    <td data-label="Student">
                         <div class="student-info">
                             <div class="student-avatar">${(p.name||'?').charAt(0).toUpperCase()}</div>
                             <div>
@@ -646,11 +734,11 @@
                             </div>
                         </div>
                     </td>
-                    <td class="department">${p.department || 'Not specified'}</td>
-                    <td class="level">${p.level || 'Not specified'}</td>
-                    <td><span class="seizure-count">${total}</span></td>
-                    <td class="last-incident">${last}</td>
-                    <td>${badge}</td>
+                    <td data-label="Department" class="department">${p.department || 'Not specified'}</td>
+                    <td data-label="Level" class="level">${p.level || 'Not specified'}</td>
+                    <td data-label="Seizures"><span class="seizure-count">${total}</span></td>
+                    <td data-label="Last Incident" class="last-incident">${last}</td>
+                    <td data-label="Status">${badge}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -662,7 +750,11 @@
         async function showPersonDetails(id) {
             try {
                 const res = await authFetch(`/persons/${id}`);
-                if (!res.ok) throw new Error('Failed to load person details');
+                if (!res.ok) {
+                    let errMsg = 'Failed to load person details';
+                    try { const e = await res.json(); errMsg = e.message || errMsg; } catch(_) {}
+                    throw new Error(errMsg);
+                }
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'Failed');
 
@@ -704,7 +796,7 @@
                             else if (st.includes('lost')) { statusClass = 'badge danger'; statusText = 'Lost'; }
                         }
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${d}</td><td>${s.phone_model || 'N/A'}</td><td>${s.location || 'N/A'}</td><td>${s.seizure_reason || 'N/A'}</td><td><span class="${statusClass}">${statusText}</span></td>`;
+                        tr.innerHTML = `<td data-label="Date">${d}</td><td data-label="Device">${s.phone_model || 'N/A'}</td><td data-label="Location">${s.location || 'N/A'}</td><td data-label="Reason">${s.seizure_reason || 'N/A'}</td><td data-label="Status"><span class="${statusClass}">${statusText}</span></td>`;
                         sTable.appendChild(tr);
                     });
                 }
@@ -712,7 +804,7 @@
                 document.getElementById('personModal').classList.add('active');
                 document.body.style.overflow = 'hidden';
             } catch (err) {
-                toast('Error loading details: ' + err.message, 'error');
+                toast('Error: ' + err.message, 'error');
             }
         }
 
@@ -803,6 +895,16 @@
             document.getElementById('personModal').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) {
                     document.getElementById('personModal').classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // ESC closes modal & drawer
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.getElementById('personModal').classList.remove('active');
+                    document.getElementById('mobileDrawer').classList.remove('open');
+                    document.getElementById('drawerOverlay').classList.remove('show');
                     document.body.style.overflow = '';
                 }
             });
