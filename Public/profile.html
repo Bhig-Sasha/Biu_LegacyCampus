@@ -266,9 +266,111 @@
         ::-webkit-scrollbar-track { background: #e8e4de; }
         ::-webkit-scrollbar-thumb { background: #d6ad4b; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #c49a2a; }
+
+        /* ============================================================
+           LOGOUT CONFIRMATION MODAL (added)
+           ============================================================ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            padding: 1rem;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-overlay.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px) scale(0.96); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+        .modal-box {
+            background: #fffcf6;
+            border: 1px solid #ded6c9;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 420px;
+            padding: 1.75rem 1.5rem 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-icon-wrap {
+            display: grid;
+            place-items: center;
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            background: #f9e2de;
+            color: #9c3e32;
+            font-size: 1.75rem;
+        }
+        .modal-title {
+            font-family: 'Merriweather', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #10233f;
+            margin-bottom: 0.5rem;
+        }
+        .modal-text {
+            font-size: 0.9rem;
+            color: #68768a;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+        .modal-actions { display: flex; gap: 0.75rem; flex-direction: column-reverse; }
+        @media (min-width: 480px) { .modal-actions { flex-direction: row; justify-content: flex-end; } }
+
+        .modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s, transform 0.1s;
+            min-height: 44px;
+            flex: 1;
+        }
+        .modal-btn:active { transform: scale(0.98); }
+        .modal-btn.cancel { background: #fffcf6; border: 1px solid #ded6c9; color: #17233c; }
+        .modal-btn.cancel:hover { background: #f5f1e8; border-color: #c9bfa8; }
+        .modal-btn.confirm { background: #a84134; color: white; }
+        .modal-btn.confirm:hover { background: #8a3328; }
+        .modal-btn i { font-size: 0.85rem; }
     </style>
 </head>
 <body>
+
+    <!-- ===== LOGOUT CONFIRMATION MODAL (added) ===== -->
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal-box">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Confirm Logout</h3>
+            <p class="modal-text">
+                Are you sure you want to log out of SeizeTrack? You'll need to sign in again to access the system.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn cancel" id="cancelLogout">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="modal-btn confirm" id="confirmLogout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="app-wrapper">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -285,7 +387,7 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
-                <a href="Profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
+                <a href="profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
                 <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">--</span></div>
@@ -309,7 +411,7 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
-                <a href="Profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
+                <a href="profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="drawer-footer" id="mobileRoleFooter">--</div>
         </aside>
@@ -326,7 +428,7 @@
                         </div>
                     </div>
                     <div class="header-right">
-                        <a href="Profile.html" class="profile-btn">
+                        <a href="profile.html" class="profile-btn">
                             <span class="profile-avatar" id="profileAvatar"></span>
                             <span class="profile-name" id="profileName"></span>
                             <span class="profile-role" id="profileRoleLabel"></span>
@@ -515,19 +617,38 @@
             window.location.href = '/login.html';
         }
 
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/login.html';
-            }
-        }
-
         function getAuthHeaders() {
             const h = { 'Content-Type': 'application/json' };
             const t = getToken();
             if (t) h['Authorization'] = `Bearer ${t}`;
             return h;
+        }
+
+        // ============================================================
+        //  LOGOUT MODAL (added)
+        // ============================================================
+        function openLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        function performLogout() {
+            toast('Logging out...', 'info');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('supabase_user_id');
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 500);
         }
 
         // ============================================================
@@ -861,8 +982,22 @@
                 overlay.classList.remove('show');
             });
 
-            // Logout
-            if (logoutBtn) logoutBtn.addEventListener('click', logout);
+            // ============================================================
+            //  LOGOUT — now opens confirmation modal (changed)
+            // ============================================================
+            if (logoutBtn) logoutBtn.addEventListener('click', openLogoutModal);
+
+            const cancelLogoutBtn = document.getElementById('cancelLogout');
+            const confirmLogoutBtn = document.getElementById('confirmLogout');
+            if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+            if (confirmLogoutBtn) confirmLogoutBtn.addEventListener('click', performLogout);
+
+            const logoutModal = document.getElementById('logoutModal');
+            if (logoutModal) {
+                logoutModal.addEventListener('click', (e) => {
+                    if (e.target === logoutModal) closeLogoutModal();
+                });
+            }
 
             // Refresh
             if (refreshBtn) refreshBtn.addEventListener('click', loadProfile);
@@ -1057,13 +1192,15 @@
                 });
             }
 
-            // ESC closes all modals & drawer
+            // ESC closes all modals, drawer, and logout modal
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     closeAllModals();
                     const drawer = document.getElementById('mobileDrawer');
                     if (drawer) drawer.classList.remove('open');
                     if (overlay) overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                    closeLogoutModal();
                 }
             });
         }
