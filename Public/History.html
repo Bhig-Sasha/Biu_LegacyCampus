@@ -209,27 +209,93 @@
         ::-webkit-scrollbar-thumb:hover { background: #c49a2a; }
 
         /* ============================================================
+           MODAL STYLES — LOGOUT CONFIRMATION
+           ============================================================ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            padding: 1rem;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-overlay.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px) scale(0.96); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+        .modal-box {
+            background: #fffcf6;
+            border: 1px solid #ded6c9;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 420px;
+            padding: 1.75rem 1.5rem 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-icon-wrap {
+            display: grid;
+            place-items: center;
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            background: #f9e2de;
+            color: #9c3e32;
+            font-size: 1.75rem;
+        }
+        .modal-title {
+            font-family: 'Merriweather', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #10233f;
+            margin-bottom: 0.5rem;
+        }
+        .modal-text {
+            font-size: 0.9rem;
+            color: #68768a;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+        .modal-actions { display: flex; gap: 0.75rem; flex-direction: column-reverse; }
+        @media (min-width: 480px) { .modal-actions { flex-direction: row; justify-content: flex-end; } }
+
+        .modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s, transform 0.1s;
+            min-height: 44px;
+            flex: 1;
+        }
+        .modal-btn:active { transform: scale(0.98); }
+        .modal-btn.cancel { background: #fffcf6; border: 1px solid #ded6c9; color: #17233c; }
+        .modal-btn.cancel:hover { background: #f5f1e8; border-color: #c9bfa8; }
+        .modal-btn.confirm { background: #a84134; color: white; }
+        .modal-btn.confirm:hover { background: #8a3328; }
+        .modal-btn i { font-size: 0.85rem; }
+
+        /* ============================================================
            RESPONSIVE — MOBILE CARD TABLE (≤ 768px)
            ============================================================ */
         @media (max-width: 768px) {
-            .table-container {
-                border: none;
-                background: transparent;
-                overflow: visible;
-            }
-
-            table {
-                min-width: 0;
-                width: 100%;
-            }
-
-            table, thead, tbody, th, td, tr {
-                display: block;
-            }
-
-            thead {
-                display: none;
-            }
+            .table-container { border: none; background: transparent; overflow: visible; }
+            table { min-width: 0; width: 100%; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
 
             tbody tr {
                 background: #fffcf6;
@@ -238,17 +304,8 @@
                 margin-bottom: 0.75rem;
                 padding: 0.85rem 0.9rem;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-                transition: box-shadow 0.15s, transform 0.15s;
             }
-
-            tbody tr:active {
-                box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            }
-
-            tbody tr:hover td {
-                background: transparent;
-            }
-
+            tbody tr:hover td { background: transparent; }
             tbody tr td {
                 display: flex;
                 justify-content: space-between;
@@ -259,16 +316,8 @@
                 text-align: right;
                 font-size: 0.82rem;
             }
-
-            tbody tr td:last-child {
-                border-bottom: none;
-                padding-bottom: 0;
-            }
-
-            tbody tr td:first-child {
-                padding-top: 0;
-            }
-
+            tbody tr td:last-child { border-bottom: none; padding-bottom: 0; }
+            tbody tr td:first-child { padding-top: 0; }
             tbody tr td::before {
                 content: attr(data-label);
                 font-weight: 700;
@@ -282,35 +331,12 @@
                 line-height: 1.4;
                 align-self: center;
             }
-
-            .date-main,
-            .person-name,
-            .device-info,
-            .location,
-            .notes {
+            .date-main, .person-name, .device-info, .location, .notes {
                 text-align: right;
                 word-break: break-word;
                 overflow-wrap: anywhere;
             }
-
-            .notes {
-                max-width: none;
-                white-space: normal;
-                text-overflow: clip;
-                overflow: visible;
-            }
-
-            /* Section header inside mobile card */
-            tbody tr td:first-child {
-                border-bottom: 1px solid #ded6c9;
-                padding-bottom: 0.6rem;
-                margin-bottom: 0.15rem;
-            }
-
-            tbody tr td:first-child::before {
-                display: none;
-            }
-
+            .notes { max-width: none; white-space: normal; text-overflow: clip; overflow: visible; }
             tbody tr td:first-child {
                 display: block;
                 text-align: left;
@@ -318,22 +344,23 @@
                 font-weight: 700;
                 color: #10233f;
                 padding-right: 0;
+                border-bottom: 1px solid #ded6c9;
+                padding-bottom: 0.6rem;
+                margin-bottom: 0.15rem;
             }
+            tbody tr td:first-child::before { display: none; }
         }
 
-        /* Tablet 640-768: hide some columns as fallback */
         @media (min-width: 641px) and (max-width: 768px) {
             td:nth-child(6), th:nth-child(6),
             td:nth-child(7), th:nth-child(7) { display: none; }
         }
 
-        /* Small phone ≤ 480px */
         @media (max-width: 480px) {
             .card-body { padding: 0.75rem; }
             .page-heading { margin-bottom: 1rem; }
         }
 
-        /* Very small ≤ 360px */
         @media (max-width: 360px) {
             .content-container { padding: 0.75rem 0.5rem; }
             .stats-grid { gap: 0.4rem; }
@@ -342,12 +369,10 @@
             .stat-card .stat-change { font-size: 0.5rem; }
         }
 
-        /* Landscape phones */
         @media (max-height: 500px) and (orientation: landscape) {
             .mobile-drawer { width: min(20rem, 60vw); }
         }
 
-        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
@@ -356,7 +381,6 @@
             }
         }
 
-        /* Print */
         @media print {
             .sidebar, .mobile-drawer, .drawer-overlay, .main-header, .btn-gold, .pagination { display: none !important; }
             .main-content { margin-left: 0 !important; }
@@ -366,6 +390,28 @@
     </style>
 </head>
 <body>
+
+    <!-- ===== LOGOUT CONFIRMATION MODAL ===== -->
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal-box">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Confirm Logout</h3>
+            <p class="modal-text">
+                Are you sure you want to log out of SeizeTrack? You'll need to sign in again to access the system.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn cancel" id="cancelLogout">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="modal-btn confirm" id="confirmLogout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="app-wrapper">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -439,7 +485,6 @@
                     <span id="noticeText">Loading seizure history...</span>
                 </div>
 
-                <!-- Page Heading -->
                 <div class="page-heading">
                     <div>
                         <p class="eyebrow">Enforcement Operations</p>
@@ -449,13 +494,10 @@
                     <button class="btn-gold" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
                 </div>
 
-                <!-- Stats -->
                 <div class="stats-grid" id="statsContainer"></div>
 
-                <!-- Main Card -->
                 <div class="card">
                     <div class="card-body">
-                        <!-- Filters -->
                         <div class="filter-section">
                             <div class="filter-main">
                                 <div class="input-container">
@@ -471,7 +513,6 @@
                             </div>
                         </div>
 
-                        <!-- Table -->
                         <div class="table-container">
                             <table>
                                 <thead>
@@ -488,13 +529,11 @@
                                 <tbody id="seizureTable"></tbody>
                             </table>
 
-                            <!-- Loading -->
                             <div id="loadingState" class="loading" style="display:none;">
                                 <div class="loading-spinner"></div>
                                 <p>Loading seizure history...</p>
                             </div>
 
-                            <!-- Empty -->
                             <div id="emptyState" class="empty-state" style="display:none;">
                                 <div class="empty-state-icon"><i class="fas fa-history"></i></div>
                                 <h3>No Seizure Records Found</h3>
@@ -504,7 +543,6 @@
                                 </a>
                             </div>
 
-                            <!-- Error -->
                             <div id="errorState" class="error-state" style="display:none;">
                                 <div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div>
                                 <h3>Error Loading Data</h3>
@@ -515,7 +553,6 @@
                             </div>
                         </div>
 
-                        <!-- Pagination -->
                         <div id="paginationContainer" class="pagination" style="display:none;"></div>
                     </div>
                 </div>
@@ -566,6 +603,33 @@
             });
             if (res.status === 401) { redirectToLogin(); throw new Error('Session expired'); }
             return res;
+        }
+
+        // ============================================================
+        //  LOGOUT MODAL
+        // ============================================================
+        function openLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        function performLogout() {
+            toast('Logging out...', 'info');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('supabase_user_id');
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 500);
         }
 
         // ============================================================
@@ -634,7 +698,6 @@
         // ============================================================
         function updateUserProfile(user) {
             if (!user) return;
-
             const firstName = user.first_name || '';
             const surname = user.surname || '';
             const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
@@ -669,7 +732,7 @@
         }
 
         // ============================================================
-        //  AUTH CHECK (with role restriction)
+        //  AUTH CHECK
         // ============================================================
         async function checkAuth() {
             if (!isLoggedIn()) { redirectToLogin(); return null; }
@@ -683,7 +746,6 @@
                     if (data.success) {
                         const user = data.user;
                         const userRole = (user.role || '').toLowerCase();
-
                         if (!ALLOWED_ROLES.includes(userRole)) {
                             toast('Access denied. Only Admin or Security officers can view history.', 'error');
                             localStorage.removeItem('token');
@@ -691,7 +753,6 @@
                             setTimeout(() => redirectToLogin(), 1500);
                             return null;
                         }
-
                         currentUser = user;
                         localStorage.setItem('user', JSON.stringify(user));
                         updateUserProfile(user);
@@ -711,10 +772,7 @@
                 const res = await authFetch('/stats/dashboard');
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.success) {
-                        renderStats(data.data.stats || {});
-                        return;
-                    }
+                    if (data.success) { renderStats(data.data.stats || {}); return; }
                 }
                 renderStats({});
             } catch { renderStats({}); }
@@ -1005,7 +1063,6 @@
             setDate();
             updateNotice('Loading seizure history...');
 
-            // Mobile menu
             const menuBtn = document.getElementById('menuToggle');
             const closeBtn = document.getElementById('closeDrawer');
             const overlay = document.getElementById('drawerOverlay');
@@ -1028,26 +1085,32 @@
                 overlay.classList.remove('show');
             });
 
-            // ESC closes drawer
+            // 🔓 Wire up logout modal
+            if (logoutBtn) logoutBtn.addEventListener('click', openLogoutModal);
+
+            const cancelLogoutBtn = document.getElementById('cancelLogout');
+            const confirmLogoutBtn = document.getElementById('confirmLogout');
+            if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+            if (confirmLogoutBtn) confirmLogoutBtn.addEventListener('click', performLogout);
+
+            const logoutModal = document.getElementById('logoutModal');
+            if (logoutModal) {
+                logoutModal.addEventListener('click', (e) => {
+                    if (e.target === logoutModal) closeLogoutModal();
+                });
+            }
+
+            // ESC closes drawer + modal
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     const drawer = document.getElementById('mobileDrawer');
                     const ov = document.getElementById('drawerOverlay');
                     if (drawer) drawer.classList.remove('open');
                     if (ov) ov.classList.remove('show');
+                    closeLogoutModal();
                 }
             });
 
-            // Logout
-            if (logoutBtn) logoutBtn.addEventListener('click', () => {
-                if (confirm('Are you sure you want to logout?')) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = '/login.html';
-                }
-            });
-
-            // Refresh
             if (refreshBtn) refreshBtn.addEventListener('click', async () => {
                 updateNotice('Refreshing data...');
                 await loadDashboardStats();
@@ -1055,13 +1118,11 @@
                 toast('Data refreshed successfully', 'success');
             });
 
-            // Retry
             if (retryBtn) retryBtn.addEventListener('click', async () => {
                 await loadDashboardStats();
                 await loadSeizureHistory();
             });
 
-            // Search with debounce
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     clearTimeout(debounceTimer);
@@ -1069,7 +1130,6 @@
                 });
             }
 
-            // Date filter
             if (dateFilter) {
                 dateFilter.addEventListener('change', filterSeizures);
             }
