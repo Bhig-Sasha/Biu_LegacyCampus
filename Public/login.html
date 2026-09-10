@@ -496,7 +496,7 @@
   <!-- ===== LEFT: OPERATIONS PANEL ===== -->
   <div class="ops-panel">
     <div class="brand">
-      <div class="brand-badge"><i class="fas fa-shield-halved" style="color:#10233f;">S</i></div>
+      <div class="brand-badge"><i class="fas fa-shield-halved" style="color:#10233f;"></i></div>
       <h1>SeizeTrack</h1>
     </div>
     <div class="brand-sub">Security Operations Portal</div>
@@ -561,9 +561,9 @@
 
       <div class="form-options">
         <label>
-          <input type="checkbox" checked /> Keep me signed in
+          <input type="checkbox" id="keepSignedIn" /> Keep me signed in
         </label>
-        <a href="#" class="forgot-link">Forgot password?</a>
+        <a href="javascript:void(0)" class="forgot-link" onclick="forgotPassword()">Forgot password?</a>
       </div>
 
       <button type="submit" class="btn-primary" id="loginButton">
@@ -590,92 +590,113 @@
     constructor() {
       this.API_BASE_URL = 'https://biu-legacycampus.onrender.com';
       this.currentUser = null;
+      this.allowedRoles = ['admin', 'security'];
       this.loadUserFromStorage();
     }
-    
+
     loadUserFromStorage() {
       const userStr = localStorage.getItem('user');
       if (userStr) {
-        try { this.currentUser = JSON.parse(userStr); } catch (e) { this.clearAuth(); }
+        try {
+          this.currentUser = JSON.parse(userStr);
+        } catch (e) {
+          this.clearAuth();
+        }
       }
     }
-    
-    isLoggedIn() { return !!localStorage.getItem('token'); }
-    
+
+    isLoggedIn() {
+      return !!localStorage.getItem('token');
+    }
+
     async login(email, password) {
       try {
-        console.log('🔐 Attempting login for:', email);
         const response = await fetch(`${this.API_BASE_URL}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        
-        console.log('📡 Response status:', response.status);
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Invalid credentials');
         }
-        
-        const data = await response.json();
-        console.log('📦 Response data:', data);
-        
-        if (data.success) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          localStorage.setItem('supabase_user_id', data.user.id);
-          this.currentUser = data.user;
-          return { success: true, message: data.message, user: data.user, token: data.token };
-        } else {
-          return { success: false, message: data.message || 'Login failed' };
+
+        // Verify the user has an allowed role
+        const userRole = (data.user?.role || '').toLowerCase();
+        if (!this.allowedRoles.includes(userRole)) {
+          throw new Error('Access denied. Only admin and security accounts are allowed.');
         }
+
+        // Store token + user
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        this.currentUser = data.user;
+
+        return { success: true, user: data.user };
       } catch (error) {
-        console.error('❌ Login error:', error);
-        return { success: false, message: error.message || 'Network error. Please try again.' };
+        return { success: false, message: error.message || 'Network error' };
       }
     }
-    
+
     async checkAuth() {
       const token = localStorage.getItem('token');
       if (!token) return null;
+
       try {
         const response = await fetch(`${this.API_BASE_URL}/api/check`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            this.currentUser = data.user;
-            localStorage.setItem('user', JSON.stringify(data.user));
-            return this.currentUser;
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
+        });
+
+        if (!response.ok) {
+          this.clearAuth();
+          return null;
         }
-        if (response.status === 401) this.clearAuth();
+
+        const data = await response.json();
+        if (data.success) {
+          // Verify role is allowed
+          const userRole = (data.user?.role || '').toLowerCase();
+          if (!this.allowedRoles.includes(userRole)) {
+            this.clearAuth();
+            return null;
+          }
+
+          this.currentUser = data.user;
+          localStorage.setItem('user', JSON.stringify(data.user));
+          return data.user;
+        }
+
+        this.clearAuth();
         return null;
-      } catch (error) { 
-        console.error('❌ Auth check error:', error);
-        return null; 
+      } catch (error) {
+        this.clearAuth();
+        return null;
       }
     }
-    
-    getToken() { return localStorage.getItem('token'); }
-    
+
+    getToken() {
+      return localStorage.getItem('token');
+    }
+
     clearAuth() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('supabase_user_id');
       this.currentUser = null;
     }
-    
-    redirectToDashboard() { 
-      console.log('🚀 Redirecting to dashboard...');
-      window.location.href = '/index.html'; 
+
+    redirectToDashboard() {
+      window.location.href = '/index.html';
     }
-    
-    redirectToLogin() { 
-      window.location.href = '/login.html'; 
+
+    redirectToLogin() {
+      window.location.href = '/login.html';
     }
   }
 
@@ -684,13 +705,18 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     const path = window.location.pathname;
-    console.log('📍 Current path:', path);
-    
-    if (path === '/login' || path === '/login.html' || path === '/') {
-      if (auth.isLoggedIn()) { 
-        console.log('✅ Already logged in, redirecting...');
-        auth.redirectToDashboard(); 
-        return; 
+
+    if (path === '/login' || path === '/login.html' || path === '/' || path === '') {
+      if (auth.isLoggedIn()) {
+        // Double-check the stored user has an allowed role
+        const user = auth.currentUser;
+        if (user && auth.allowedRoles.includes((user.role || '').toLowerCase())) {
+          auth.redirectToDashboard();
+          return;
+        } else {
+          // Bad role stored — clear and show login
+          auth.clearAuth();
+        }
       }
       initializeLoginForm();
     }
@@ -706,15 +732,14 @@
     const passwordField = document.getElementById("password");
     const togglePassword = document.getElementById("togglePassword");
     const emailField = document.getElementById("email");
+    const keepSignedIn = document.getElementById("keepSignedIn");
 
     if (!form) {
       console.error('❌ Form not found!');
       return;
     }
 
-    console.log('✅ Login form initialized');
-
-    // Toggle visibility
+    // Toggle password visibility
     togglePassword.addEventListener("click", function() {
       const type = passwordField.type === "password" ? "text" : "password";
       passwordField.type = type;
@@ -726,23 +751,39 @@
     emailField.value = '';
     passwordField.value = '';
 
+    // Restore remembered email if "keep signed in" was used
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      emailField.value = rememberedEmail;
+      keepSignedIn.checked = true;
+      passwordField.focus();
+    } else {
+      emailField.focus();
+    }
+
     form.addEventListener("submit", async function(e) {
       e.preventDefault();
       const email = emailField.value.trim();
       const password = passwordField.value.trim();
 
-      console.log('📝 Form submitted with:', { email });
-
       msg.textContent = "";
       msg.className = "message";
 
+      // Client-side validation
       if (!email || !password) {
         showMessage("Please fill in all fields", "error");
         shake();
         return;
       }
+
       if (!validateEmail(email)) {
         showMessage("Please enter a valid email address", "error");
+        shake();
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage("Password must be at least 6 characters", "error");
         shake();
         return;
       }
@@ -752,26 +793,34 @@
 
       try {
         const result = await auth.login(email, password);
-        console.log('🔑 Login result:', result);
-        
+
         if (!result || !result.success) {
-          showMessage(result?.message || "Login failed. Check credentials.", "error");
+          showMessage(result?.message || "Login failed. Check your credentials.", "error");
           shake();
           button.disabled = false;
           buttonText.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Access dashboard';
           return;
         }
-        
-        const userName = result.user?.first_name && result.user?.surname 
-          ? `${result.user.first_name} ${result.user.surname}`
-          : result.user?.name || result.user?.email || 'User';
-        
+
+        // Handle "keep me signed in"
+        if (keepSignedIn.checked) {
+          localStorage.setItem('rememberedEmail', email);
+        } else {
+          localStorage.removeItem('rememberedEmail');
+        }
+
+        // Build display name
+        const user = result.user || {};
+        const userName = user.first_name && user.surname
+          ? `${user.first_name} ${user.surname}`
+          : user.name || user.email || 'User';
+
         showMessage(`Welcome back, ${userName}!`, "success");
-        
-        setTimeout(() => { 
-          auth.redirectToDashboard(); 
-        }, 1000);
-        
+
+        setTimeout(() => {
+          auth.redirectToDashboard();
+        }, 900);
+
       } catch (err) {
         console.error('❌ Login error:', err);
         showMessage(err.message || "Login failed. Please try again.", "error");
@@ -814,21 +863,22 @@
     emailField.addEventListener('focus', function() {
       this.style.borderColor = '#e9edf2';
     });
-
-    // Add keyboard shortcut for Enter key
-    form.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        form.dispatchEvent(new Event('submit'));
-      }
-    });
   }
 
   // ==================== REQUEST ACCOUNT ====================
   window.requestAccount = function() {
     alert(
       "To request an account, contact your security administrator.\n\n" +
-      "Please provide your full name, department, and role to request access."
+      "Please provide your full name, department, and the role you need (Admin or Security)."
+    );
+  };
+
+  // ==================== FORGOT PASSWORD ====================
+  window.forgotPassword = function() {
+    alert(
+      "Password Reset\n\n" +
+      "Please contact your security administrator to reset your password.\n\n" +
+      "For security reasons, self-service password reset is not available."
     );
   };
 </script>

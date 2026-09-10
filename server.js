@@ -6,13 +6,15 @@ const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const { createClient } = require("@supabase/supabase-js");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { body, param, query, validationResult } = require("express-validator");
 
 // =============================================
-// SEIZETRACK API SERVER - PRODUCTION
+// SEIZETRACK API SERVER - PRODUCTION (HARDENED)
 // =============================================
 
-// Configuration
-const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+// Validate required environment variables
+const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET'];
 for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
         console.error(`❌ Missing required environment variable: ${envVar}`);
@@ -25,13 +27,14 @@ const config = {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
-    JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
+    JWT_SECRET: process.env.JWT_SECRET,
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
     NODE_ENV: process.env.NODE_ENV || 'production',
     CLIENT_URL: process.env.CLIENT_URL || 'https://biulegacycampus.netlify.app',
     API_URL: process.env.API_URL || 'https://biu-legacycampus.onrender.com',
     RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW) || 15 * 60 * 1000,
     RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX) || 100,
-    BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS) || 10
+    BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS) || 12
 };
 
 const app = express();
@@ -67,6 +70,7 @@ app.use(helmet({
 
 app.use(compression());
 
+// General API limiter
 const limiter = rateLimit({
     windowMs: config.RATE_LIMIT_WINDOW,
     max: config.RATE_LIMIT_MAX,
@@ -79,7 +83,16 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// ========== FIXED CORS CONFIGURATION ==========
+// Strict limiter for login
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { success: false, message: 'Too many login attempts. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// ========== CORS CONFIGURATION ==========
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
@@ -145,30 +158,35 @@ if (config.NODE_ENV !== 'production') {
 // ========== AUTHENTICATION UTILITIES ==========
 
 function generateToken(user) {
-    const payload = {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        timestamp: Date.now()
-    };
-    return Buffer.from(JSON.stringify(payload)).toString('base64');
+    return jwt.sign(
+        {
+            id: user.id,
+            email: user.email,
+            role: user.role
+        },
+        config.JWT_SECRET,
+        { expiresIn: config.JWT_EXPIRES_IN }
+    );
 }
 
 function verifyToken(token) {
     try {
-        const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-        if (Date.now() - decoded.timestamp > 24 * 60 * 60 * 1000) {
-            return null;
-        }
-        return decoded;
-    } catch (error) {
+        return jwt.verify(token, config.JWT_SECRET);
+    } catch (err) {
         return null;
     }
 }
 
+// Helper to strip password from user objects (extra safety layer)
+function sanitizeUser(user) {
+    if (!user) return null;
+    const { password, ...safeUser } = user;
+    return safeUser;
+}
+
 async function authenticate(req, res, next) {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({
             success: false,
@@ -178,7 +196,7 @@ async function authenticate(req, res, next) {
 
     const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
-    
+
     if (!decoded) {
         return res.status(401).json({
             success: false,
@@ -187,9 +205,16 @@ async function authenticate(req, res, next) {
     }
 
     try {
+        // 🔒 Password is NEVER fetched here
         const { data: user, error } = await supabase
             .from('users')
-            .select('*')
+            .select(`
+                id, email, name, role, department,
+                surname, first_name, middle_name, date_of_birth,
+                gender, marital_status, nationality, state_of_origin,
+                lga, religion, phone, address,
+                created_at, updated_at, profile_updated_at
+            `)
             .eq('id', decoded.id)
             .single();
 
@@ -197,6 +222,14 @@ async function authenticate(req, res, next) {
             return res.status(401).json({
                 success: false,
                 message: 'User not found'
+            });
+        }
+
+        // Extra safety: ensure role still matches the token
+        if (user.role !== decoded.role) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token role mismatch – please log in again'
             });
         }
 
@@ -230,70 +263,90 @@ function authorize(...roles) {
     };
 }
 
-// ========== AUTHENTICATION ROUTES ==========
-
-app.post('/api/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email and password are required'
-            });
-        }
-
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', email.toLowerCase())
-            .single();
-
-        if (error || !user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid credentials'
-            });
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        
-        if (!isPasswordValid) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid credentials'
-            });
-        }
-
-        const token = generateToken(user);
-        delete user.password;
-
-        await supabase
-            .from('users')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', user.id);
-
-        res.json({
-            success: true,
-            message: 'Login successful',
-            token: token,
-            user: user
-        });
-
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({
+// Validation error handler
+function handleValidationErrors(req, res, next) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
             success: false,
-            message: 'Login failed'
+            message: 'Validation failed',
+            errors: errors.array().map(e => ({ field: e.path, message: e.msg }))
         });
     }
-});
+    next();
+}
+
+// ========== AUTHENTICATION ROUTES ==========
+
+app.post('/api/login',
+    loginLimiter,
+    [
+        body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+        body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { email, password } = req.body;
+
+            // 🔓 Password IS fetched here (needed for comparison)
+            const { data: user, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', email.toLowerCase())
+                .single();
+
+            if (error || !user) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Invalid credentials'
+                });
+            }
+
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Invalid credentials'
+                });
+            }
+
+            const token = generateToken(user);
+
+            await supabase
+                .from('users')
+                .update({ updated_at: new Date().toISOString() })
+                .eq('id', user.id);
+
+            res.json({
+                success: true,
+                message: 'Login successful',
+                token,
+                user: sanitizeUser(user)
+            });
+
+        } catch (error) {
+            console.error('Login error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Login failed'
+            });
+        }
+    }
+);
 
 app.post('/api/check', authenticate, async (req, res) => {
     try {
+        // 🔒 Password is NEVER fetched here
         const { data: user, error } = await supabase
             .from('users')
-            .select('*')
+            .select(`
+                id, email, name, role, department,
+                surname, first_name, middle_name, date_of_birth,
+                gender, marital_status, nationality, state_of_origin,
+                lga, religion, phone, address,
+                created_at, updated_at, profile_updated_at
+            `)
             .eq('id', req.user.id)
             .single();
 
@@ -303,8 +356,6 @@ app.post('/api/check', authenticate, async (req, res) => {
                 message: 'User not found'
             });
         }
-
-        delete user.password;
 
         res.json({
             success: true,
@@ -319,84 +370,83 @@ app.post('/api/check', authenticate, async (req, res) => {
     }
 });
 
-app.post('/api/logout', authenticate, async (req, res) => {
+app.post('/api/logout', authenticate, (req, res) => {
     res.json({
         success: true,
         message: 'Logged out successfully'
     });
 });
 
-app.post('/api/register', authenticate, authorize('admin'), async (req, res) => {
-    try {
-        const { email, password, name, role, department } = req.body;
-        
-        if (!email || !password || !name) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email, password, and name are required'
-            });
-        }
+app.post('/api/register',
+    authenticate,
+    authorize('admin'),
+    [
+        body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+        body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+        body('name').trim().isLength({ min: 2 }).withMessage('Name is required'),
+        body('role').optional().isIn(['admin', 'security']).withMessage('Role must be admin or security'),
+        body('department').optional().trim().isLength({ max: 100 })
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { email, password, name, role, department } = req.body;
 
-        const hashedPassword = await bcrypt.hash(password, config.BCRYPT_ROUNDS);
-        
-        const { data, error } = await supabase
-            .from('users')
-            .insert([{
-                email: email.toLowerCase(),
-                password: hashedPassword,
-                name,
-                role: role || 'student',
-                department: department || null
-            }])
-            .select('id, email, name, role, department');
-
-        if (error) {
-            if (error.code === '23505') {
-                return res.status(409).json({
+            // Explicit check — reject student role even if somehow passed
+            if (role === 'student') {
+                return res.status(400).json({
                     success: false,
-                    message: 'Email already exists'
+                    message: 'Student accounts are not allowed'
                 });
             }
-            throw error;
+
+            const hashedPassword = await bcrypt.hash(password, config.BCRYPT_ROUNDS);
+
+            const { data, error } = await supabase
+                .from('users')
+                .insert([{
+                    email: email.toLowerCase(),
+                    password: hashedPassword,
+                    name: name.trim(),
+                    role: role || 'security',   // default to security, not student
+                    department: department || null
+                }])
+                .select('id, email, name, role, department, created_at');
+
+            if (error) {
+                if (error.code === '23505') {
+                    return res.status(409).json({
+                        success: false,
+                        message: 'Email already exists'
+                    });
+                }
+                throw error;
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'User created successfully',
+                user: data[0]
+            });
+
+        } catch (error) {
+            console.error('Registration error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Registration failed'
+            });
         }
-
-        res.json({
-            success: true,
-            message: 'User created successfully',
-            user: data[0]
-        });
-
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Registration failed'
-        });
     }
-});
+);
 
 // ========== PROFILE ROUTES ==========
 
 app.get('/api/profile', authenticate, async (req, res) => {
     try {
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', req.user.id)
-            .single();
-
-        if (error || !user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        delete user.password;
-
+        // req.user is already sanitized (no password)
         res.json({
             success: true,
-            user: user
+            user: req.user
         });
     } catch (error) {
         console.error('Get profile error:', error);
@@ -407,160 +457,144 @@ app.get('/api/profile', authenticate, async (req, res) => {
     }
 });
 
-app.put('/api/profile', authenticate, async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const {
-            surname,
-            first_name,
-            middle_name,
-            date_of_birth,
-            gender,
-            marital_status,
-            nationality,
-            state_of_origin,
-            lga,
-            religion,
-            phone,
-            address,
-            name,
-            department
-        } = req.body;
+app.put('/api/profile',
+    authenticate,
+    [
+        body('surname').optional().trim().isLength({ max: 50 }),
+        body('first_name').optional().trim().isLength({ max: 50 }),
+        body('middle_name').optional().trim().isLength({ max: 50 }),
+        body('date_of_birth').optional({ nullable: true }).isISO8601().withMessage('Invalid date of birth'),
+        body('gender').optional({ nullable: true }).isIn(['male', 'female', 'other', 'Male', 'Female', 'Other']).withMessage('Invalid gender'),
+        body('marital_status').optional({ nullable: true }).trim(),
+        body('nationality').optional().trim().isLength({ max: 50 }),
+        body('state_of_origin').optional().trim().isLength({ max: 50 }),
+        body('lga').optional().trim().isLength({ max: 50 }),
+        body('religion').optional().trim().isLength({ max: 50 }),
+        body('phone').optional().trim().isLength({ max: 20 }),
+        body('address').optional().trim().isLength({ max: 500 }),
+        body('name').optional().trim().isLength({ min: 2, max: 100 }),
+        body('department').optional().trim().isLength({ max: 100 })
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const allowedFields = [
+                'surname', 'first_name', 'middle_name', 'date_of_birth',
+                'gender', 'marital_status', 'nationality', 'state_of_origin',
+                'lga', 'religion', 'phone', 'address', 'name', 'department'
+            ];
 
-        const updates = {};
-        
-        // Only include fields that are provided
-        if (surname !== undefined) updates.surname = surname;
-        if (first_name !== undefined) updates.first_name = first_name;
-        if (middle_name !== undefined) updates.middle_name = middle_name;
-        if (date_of_birth !== undefined) updates.date_of_birth = date_of_birth;
-        if (gender !== undefined) updates.gender = gender;
-        if (marital_status !== undefined) updates.marital_status = marital_status;
-        if (nationality !== undefined) updates.nationality = nationality;
-        if (state_of_origin !== undefined) updates.state_of_origin = state_of_origin;
-        if (lga !== undefined) updates.lga = lga;
-        if (religion !== undefined) updates.religion = religion;
-        if (phone !== undefined) updates.phone = phone;
-        if (address !== undefined) updates.address = address;
-        if (name !== undefined) updates.name = name;
-        if (department !== undefined) updates.department = department;
-        
-        updates.profile_updated_at = new Date().toISOString();
+            const updates = {};
+            for (const field of allowedFields) {
+                if (req.body[field] !== undefined) {
+                    updates[field] = typeof req.body[field] === 'string'
+                        ? req.body[field].trim()
+                        : req.body[field];
+                }
+            }
 
-        const { data, error } = await supabase
-            .from('users')
-            .update(updates)
-            .eq('id', userId)
-            .select('*');
+            if (Object.keys(updates).length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No valid fields provided for update'
+                });
+            }
 
-        if (error) {
-            console.error('Update error:', error);
-            return res.status(500).json({
+            updates.profile_updated_at = new Date().toISOString();
+
+            // 🔒 Select only safe fields (no password)
+            const { data, error } = await supabase
+                .from('users')
+                .update(updates)
+                .eq('id', userId)
+                .select(`
+                    id, email, name, role, department,
+                    surname, first_name, middle_name, date_of_birth,
+                    gender, marital_status, nationality, state_of_origin,
+                    lga, religion, phone, address,
+                    created_at, updated_at, profile_updated_at
+                `);
+
+            if (error) {
+                console.error('Update error:', error);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to update profile'
+                });
+            }
+
+            if (!data || data.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Profile updated successfully',
+                user: data[0]
+            });
+        } catch (error) {
+            console.error('Profile update error:', error);
+            res.status(500).json({
                 success: false,
-                message: 'Failed to update profile: ' + error.message
+                message: 'Failed to update profile'
             });
         }
-
-        if (!data || data.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        delete data[0].password;
-
-        res.json({
-            success: true,
-            message: 'Profile updated successfully',
-            user: data[0]
-        });
-
-    } catch (error) {
-        console.error('Profile update error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to update profile'
-        });
     }
-});
+);
 
 // ========== CHANGE PASSWORD ==========
-app.post('/api/change-password', authenticate, async (req, res) => {
-    try {
-        const { currentPassword, newPassword } = req.body;
-        const userId = req.user.id;
 
-        if (!currentPassword || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: 'Current password and new password are required'
-            });
+app.post('/api/change-password',
+    authenticate,
+    [
+        body('currentPassword').notEmpty().withMessage('Current password is required'),
+        body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { currentPassword, newPassword } = req.body;
+            const userId = req.user.id;
+
+            // 🔓 Password IS fetched here (needed for verification)
+            const { data: user, error } = await supabase
+                .from('users')
+                .select('password')
+                .eq('id', userId)
+                .single();
+
+            if (error || !user) {
+                return res.status(404).json({ success: false, message: 'User not found' });
+            }
+
+            const isValid = await bcrypt.compare(currentPassword, user.password);
+            if (!isValid) {
+                return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, config.BCRYPT_ROUNDS);
+
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({
+                    password: hashedPassword,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', userId);
+
+            if (updateError) throw updateError;
+
+            res.json({ success: true, message: 'Password changed successfully' });
+        } catch (error) {
+            console.error('Change password error:', error);
+            res.status(500).json({ success: false, message: 'Failed to change password' });
         }
-
-        if (newPassword.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: 'New password must be at least 6 characters'
-            });
-        }
-
-        // Get user with password
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('password')
-            .eq('id', userId)
-            .single();
-
-        if (error || !user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        // Verify current password
-        const isValid = await bcrypt.compare(currentPassword, user.password);
-        if (!isValid) {
-            return res.status(401).json({
-                success: false,
-                message: 'Current password is incorrect'
-            });
-        }
-
-        // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, config.BCRYPT_ROUNDS);
-
-        // Update password
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({ 
-                password: hashedPassword,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', userId);
-
-        if (updateError) {
-            console.error('Password update error:', updateError);
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to update password'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Password changed successfully'
-        });
-
-    } catch (error) {
-        console.error('Change password error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to change password'
-        });
     }
-});
+);
 
 // ========== API ROUTES ==========
 
@@ -597,10 +631,10 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/stats/dashboard', authenticate, async (req, res) => {
     try {
         res.set('Cache-Control', 'public, max-age=60');
-        
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const [
             totalSeizuresResult,
             todaySeizuresResult,
@@ -631,7 +665,7 @@ app.get('/api/stats/dashboard', authenticate, async (req, res) => {
                 .order('created_at', { ascending: false })
                 .limit(5)
         ]);
-        
+
         res.json({
             success: true,
             data: {
@@ -646,7 +680,8 @@ app.get('/api/stats/dashboard', authenticate, async (req, res) => {
                     createdAt: row.created_at,
                     person: row.persons ? {
                         name: row.persons.name,
-                        matricNumber: row.persons.matric_number
+                        matricNumber: row.persons.matric_number,
+                        department: row.persons.department
                     } : null,
                     phoneModel: row.phone_model,
                     location: row.location,
@@ -655,7 +690,6 @@ app.get('/api/stats/dashboard', authenticate, async (req, res) => {
                 }))
             }
         });
-        
     } catch (error) {
         console.error('Dashboard stats error:', error);
         res.status(500).json({
@@ -667,424 +701,430 @@ app.get('/api/stats/dashboard', authenticate, async (req, res) => {
 
 // ========== PERSONS CRUD ==========
 
-app.get('/api/persons', authenticate, async (req, res) => {
-    try {
-        const { search } = req.query;
-        
-        let query = supabase.from('persons').select('*');
-        
-        if (search) {
-            query = query.or(`name.ilike.%${search}%,matric_number.ilike.%${search}%,department.ilike.%${search}%`);
-        }
-        
-        const { data, error } = await query.order('name');
-        
-        if (error) throw error;
-        
-        res.json({
-            success: true,
-            data: data
-        });
-        
-    } catch (error) {
-        console.error('Get persons error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch persons'
-        });
-    }
-});
+app.get('/api/persons',
+    authenticate,
+    [
+        query('search').optional().trim().isLength({ max: 100 })
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { search } = req.query;
 
-app.get('/api/persons/:id', authenticate, async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        const { data, error } = await supabase
-            .from('persons')
-            .select('*')
-            .eq('id', id)
-            .single();
-        
-        if (error) throw error;
-        
-        if (!data) {
-            return res.status(404).json({
-                success: false,
-                message: 'Person not found'
-            });
-        }
-        
-        res.json({
-            success: true,
-            data: data
-        });
-        
-    } catch (error) {
-        console.error('Get person error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch person'
-        });
-    }
-});
+            let query = supabase
+                .from('persons')
+                .select('id, name, matric_number, department, level, total_seizures, last_seized, created_at');
 
-app.post('/api/persons', authenticate, authorize('admin', 'security'), async (req, res) => {
-    try {
-        const { name, matric_number, department, level } = req.body;
-        
-        if (!name || !matric_number) {
-            return res.status(400).json({
-                success: false,
-                message: 'Name and matric number are required'
-            });
+            if (search) {
+                query = query.or(
+                    `name.ilike.%${search}%,matric_number.ilike.%${search}%,department.ilike.%${search}%`
+                );
+            }
+
+            const { data, error } = await query.order('name');
+
+            if (error) throw error;
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Get persons error:', error);
+            res.status(500).json({ success: false, message: 'Failed to fetch persons' });
         }
-        
-        const { data, error } = await supabase
-            .from('persons')
-            .insert([
-                {
-                    name,
-                    matric_number: matric_number.toUpperCase(),
-                    department,
-                    level,
+    }
+);
+
+app.get('/api/persons/:id',
+    authenticate,
+    [
+        param('id').isInt({ min: 1 }).withMessage('Invalid person ID')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data, error } = await supabase
+                .from('persons')
+                .select('id, name, matric_number, department, level, total_seizures, last_seized, created_at')
+                .eq('id', id)
+                .single();
+
+            if (error || !data) {
+                return res.status(404).json({ success: false, message: 'Person not found' });
+            }
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Get person error:', error);
+            res.status(500).json({ success: false, message: 'Failed to fetch person' });
+        }
+    }
+);
+
+app.post('/api/persons',
+    authenticate,
+    authorize('admin', 'security'),
+    [
+        body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name is required (2-100 chars)'),
+        body('matric_number').trim().isLength({ min: 3, max: 30 }).withMessage('Matric number is required'),
+        body('department').optional({ nullable: true }).trim().isLength({ max: 100 }),
+        body('level').optional({ nullable: true }).trim().isLength({ max: 20 })
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { name, matric_number, department, level } = req.body;
+
+            const { data, error } = await supabase
+                .from('persons')
+                .insert([{
+                    name: name.trim(),
+                    matric_number: matric_number.toUpperCase().trim(),
+                    department: department?.trim() || null,
+                    level: level?.trim() || null,
                     total_seizures: 0
+                }])
+                .select('id, name, matric_number, department, level, total_seizures, created_at');
+
+            if (error) {
+                if (error.code === '23505') {
+                    return res.status(409).json({
+                        success: false,
+                        message: 'Matric number already exists'
+                    });
                 }
-            ])
-            .select();
-        
-        if (error) {
-            if (error.code === '23505') {
+                throw error;
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Person added successfully',
+                data: data[0]
+            });
+        } catch (error) {
+            console.error('Create person error:', error);
+            res.status(500).json({ success: false, message: 'Failed to add person' });
+        }
+    }
+);
+
+app.put('/api/persons/:id',
+    authenticate,
+    authorize('admin', 'security'),
+    [
+        param('id').isInt({ min: 1 }).withMessage('Invalid person ID'),
+        body('name').optional().trim().isLength({ min: 2, max: 100 }),
+        body('matric_number').optional().trim().isLength({ min: 3, max: 30 }),
+        body('department').optional({ nullable: true }).trim().isLength({ max: 100 }),
+        body('level').optional({ nullable: true }).trim().isLength({ max: 20 })
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const updates = { ...req.body };
+
+            delete updates.id;
+            delete updates.created_at;
+            delete updates.total_seizures;
+            delete updates.last_seized;
+
+            if (updates.matric_number) {
+                updates.matric_number = updates.matric_number.toUpperCase().trim();
+            }
+            if (updates.name) {
+                updates.name = updates.name.trim();
+            }
+
+            const { data, error } = await supabase
+                .from('persons')
+                .update(updates)
+                .eq('id', id)
+                .select('id, name, matric_number, department, level, total_seizures, last_seized, created_at');
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                return res.status(404).json({ success: false, message: 'Person not found' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Person updated successfully',
+                data: data[0]
+            });
+        } catch (error) {
+            console.error('Update person error:', error);
+            res.status(500).json({ success: false, message: 'Failed to update person' });
+        }
+    }
+);
+
+app.delete('/api/persons/:id',
+    authenticate,
+    authorize('admin'),
+    [
+        param('id').isInt({ min: 1 }).withMessage('Invalid person ID')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { count } = await supabase
+                .from('seizures')
+                .select('*', { count: 'exact', head: true })
+                .eq('person_id', id);
+
+            if (count && count > 0) {
                 return res.status(409).json({
                     success: false,
-                    message: 'Matric number already exists'
+                    message: 'Cannot delete person with existing seizures'
                 });
             }
-            throw error;
-        }
-        
-        res.json({
-            success: true,
-            message: 'Person added successfully',
-            data: data[0]
-        });
-        
-    } catch (error) {
-        console.error('Create person error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to add person'
-        });
-    }
-});
 
-app.put('/api/persons/:id', authenticate, authorize('admin', 'security'), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updates = req.body;
-        
-        delete updates.id;
-        delete updates.created_at;
-        delete updates.total_seizures;
-        delete updates.last_seized;
-        
-        const { data, error } = await supabase
-            .from('persons')
-            .update(updates)
-            .eq('id', id)
-            .select();
-        
-        if (error) throw error;
-        
-        if (!data || data.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Person not found'
-            });
-        }
-        
-        res.json({
-            success: true,
-            message: 'Person updated successfully',
-            data: data[0]
-        });
-        
-    } catch (error) {
-        console.error('Update person error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to update person'
-        });
-    }
-});
+            const { error } = await supabase
+                .from('persons')
+                .delete()
+                .eq('id', id);
 
-app.delete('/api/persons/:id', authenticate, authorize('admin'), async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        const { count } = await supabase
-            .from('seizures')
-            .select('*', { count: 'exact', head: true })
-            .eq('person_id', id);
-        
-        if (count && count > 0) {
-            return res.status(409).json({
-                success: false,
-                message: 'Cannot delete person with existing seizures'
-            });
+            if (error) throw error;
+
+            res.json({ success: true, message: 'Person deleted successfully' });
+        } catch (error) {
+            console.error('Delete person error:', error);
+            res.status(500).json({ success: false, message: 'Failed to delete person' });
         }
-        
-        const { error } = await supabase
-            .from('persons')
-            .delete()
-            .eq('id', id);
-        
-        if (error) throw error;
-        
-        res.json({
-            success: true,
-            message: 'Person deleted successfully'
-        });
-        
-    } catch (error) {
-        console.error('Delete person error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to delete person'
-        });
     }
-});
+);
 
 // ========== SEIZURES CRUD ==========
 
-app.get('/api/seizures', authenticate, async (req, res) => {
-    try {
-        const { person_id } = req.query;
-        
-        let query = supabase
-            .from('seizures')
-            .select(`
-                *,
-                persons (
-                    name,
-                    matric_number,
-                    department,
-                    level
-                )
-            `);
-        
-        if (person_id) {
-            query = query.eq('person_id', person_id);
-        }
-        
-        const { data, error } = await query.order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        res.json({
-            success: true,
-            data: data
-        });
-        
-    } catch (error) {
-        console.error('Get seizures error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch seizures'
-        });
-    }
-});
+app.get('/api/seizures',
+    authenticate,
+    [
+        query('person_id').optional().isInt({ min: 1 }).withMessage('Invalid person_id')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { person_id } = req.query;
 
-app.get('/api/seizures/:id', authenticate, async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        const { data, error } = await supabase
-            .from('seizures')
-            .select(`
-                *,
-                persons (
-                    name,
-                    matric_number,
-                    department,
-                    level
-                )
-            `)
-            .eq('id', id)
-            .single();
-        
-        if (error) throw error;
-        
-        if (!data) {
-            return res.status(404).json({
-                success: false,
-                message: 'Seizure not found'
-            });
-        }
-        
-        res.json({
-            success: true,
-            data: data
-        });
-        
-    } catch (error) {
-        console.error('Get seizure error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch seizure'
-        });
-    }
-});
+            let query = supabase
+                .from('seizures')
+                .select(`
+                    id, person_id, phone_model, device_color, location,
+                    seized_by, seizure_reason, notes, status, created_at,
+                    persons (
+                        id, name, matric_number, department, level
+                    )
+                `);
 
-app.post('/api/seizures', authenticate, authorize('admin', 'security'), async (req, res) => {
-    try {
-        const {
-            person_id,
-            phone_model,
-            device_color,
-            location,
-            seized_by,
-            seizure_reason,
-            notes,
-            status
-        } = req.body;
-        
-        if (!person_id || !phone_model || !location) {
-            return res.status(400).json({
-                success: false,
-                message: 'Person ID, phone model, and location are required'
-            });
+            if (person_id) {
+                query = query.eq('person_id', person_id);
+            }
+
+            const { data, error } = await query.order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Get seizures error:', error);
+            res.status(500).json({ success: false, message: 'Failed to fetch seizures' });
         }
-        
-        const { data: person, error: personCheckError } = await supabase
-            .from('persons')
-            .select('id, total_seizures')
-            .eq('id', person_id)
-            .single();
-        
-        if (personCheckError || !person) {
-            return res.status(404).json({
-                success: false,
-                message: 'Person not found'
-            });
+    }
+);
+
+app.get('/api/seizures/:id',
+    authenticate,
+    [
+        param('id').isInt({ min: 1 }).withMessage('Invalid seizure ID')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data, error } = await supabase
+                .from('seizures')
+                .select(`
+                    id, person_id, phone_model, device_color, location,
+                    seized_by, seizure_reason, notes, status, created_at,
+                    persons (
+                        id, name, matric_number, department, level
+                    )
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error || !data) {
+                return res.status(404).json({ success: false, message: 'Seizure not found' });
+            }
+
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Get seizure error:', error);
+            res.status(500).json({ success: false, message: 'Failed to fetch seizure' });
         }
-        
-        const { data: seizure, error: seizureError } = await supabase
-            .from('seizures')
-            .insert([
-                {
+    }
+);
+
+app.post('/api/seizures',
+    authenticate,
+    authorize('admin', 'security'),
+    [
+        body('person_id').isInt({ min: 1 }).withMessage('Valid person_id is required'),
+        body('phone_model').trim().isLength({ min: 1, max: 100 }).withMessage('Phone model is required'),
+        body('device_color').optional({ nullable: true }).trim().isLength({ max: 50 }),
+        body('location').trim().isLength({ min: 1, max: 150 }).withMessage('Location is required'),
+        body('seized_by').optional({ nullable: true }).trim().isLength({ max: 100 }),
+        body('seizure_reason').optional({ nullable: true }).trim().isLength({ max: 255 }),
+        body('notes').optional({ nullable: true }).trim().isLength({ max: 1000 }),
+        body('status').optional().isIn(['active', 'returned', 'lost', 'draft', 'forfeited']).withMessage('Invalid status')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const {
+                person_id,
+                phone_model,
+                device_color,
+                location,
+                seized_by,
+                seizure_reason,
+                notes,
+                status
+            } = req.body;
+
+            const { data: person, error: personError } = await supabase
+                .from('persons')
+                .select('id, total_seizures')
+                .eq('id', person_id)
+                .single();
+
+            if (personError || !person) {
+                return res.status(404).json({ success: false, message: 'Person not found' });
+            }
+
+            const { data: seizure, error: seizureError } = await supabase
+                .from('seizures')
+                .insert([{
                     person_id,
-                    phone_model,
-                    device_color,
-                    location,
-                    seized_by: seized_by || req.user.name,
-                    seizure_reason,
-                    notes,
+                    phone_model: phone_model.trim(),
+                    device_color: device_color?.trim() || null,
+                    location: location.trim(),
+                    seized_by: seized_by?.trim() || req.user.name,
+                    seizure_reason: seizure_reason?.trim() || null,
+                    notes: notes?.trim() || null,
                     status: status || 'active'
-                }
-            ])
-            .select();
-        
-        if (seizureError) throw seizureError;
-        
-        await supabase
-            .from('persons')
-            .update({
-                total_seizures: (person.total_seizures || 0) + 1,
-                last_seized: new Date().toISOString()
-            })
-            .eq('id', person_id);
-        
-        res.json({
-            success: true,
-            message: 'Seizure recorded successfully',
-            data: seizure[0]
-        });
-        
-    } catch (error) {
-        console.error('Create seizure error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to record seizure'
-        });
-    }
-});
+                }])
+                .select();
 
-app.put('/api/seizures/:id', authenticate, authorize('admin', 'security'), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updates = req.body;
-        
-        delete updates.id;
-        delete updates.created_at;
-        delete updates.person_id;
-        
-        const { data, error } = await supabase
-            .from('seizures')
-            .update(updates)
-            .eq('id', id)
-            .select();
-        
-        if (error) throw error;
-        
-        if (!data || data.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Seizure not found'
-            });
-        }
-        
-        res.json({
-            success: true,
-            message: 'Seizure updated successfully',
-            data: data[0]
-        });
-        
-    } catch (error) {
-        console.error('Update seizure error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to update seizure'
-        });
-    }
-});
+            if (seizureError) throw seizureError;
 
-app.delete('/api/seizures/:id', authenticate, authorize('admin'), async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        const { data: seizure, error: getError } = await supabase
-            .from('seizures')
-            .select('person_id')
-            .eq('id', id)
-            .single();
-        
-        if (getError || !seizure) {
-            return res.status(404).json({
-                success: false,
-                message: 'Seizure not found'
+            await supabase
+                .from('persons')
+                .update({
+                    total_seizures: (person.total_seizures || 0) + 1,
+                    last_seized: new Date().toISOString()
+                })
+                .eq('id', person_id);
+
+            res.status(201).json({
+                success: true,
+                message: 'Seizure recorded successfully',
+                data: seizure[0]
             });
+        } catch (error) {
+            console.error('Create seizure error:', error);
+            res.status(500).json({ success: false, message: 'Failed to record seizure' });
         }
-        
-        const { error } = await supabase
-            .from('seizures')
-            .delete()
-            .eq('id', id);
-        
-        if (error) throw error;
-        
-        res.json({
-            success: true,
-            message: 'Seizure deleted successfully'
-        });
-        
-    } catch (error) {
-        console.error('Delete seizure error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to delete seizure'
-        });
     }
-});
+);
+
+app.put('/api/seizures/:id',
+    authenticate,
+    authorize('admin', 'security'),
+    [
+        param('id').isInt({ min: 1 }).withMessage('Invalid seizure ID'),
+        body('phone_model').optional().trim().isLength({ min: 1, max: 100 }),
+        body('device_color').optional({ nullable: true }).trim().isLength({ max: 50 }),
+        body('location').optional().trim().isLength({ min: 1, max: 150 }),
+        body('seized_by').optional({ nullable: true }).trim().isLength({ max: 100 }),
+        body('seizure_reason').optional({ nullable: true }).trim().isLength({ max: 255 }),
+        body('notes').optional({ nullable: true }).trim().isLength({ max: 1000 }),
+        body('status').optional().isIn(['active', 'returned', 'lost', 'draft', 'forfeited'])
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const updates = { ...req.body };
+
+            delete updates.id;
+            delete updates.created_at;
+            delete updates.person_id;
+
+            const { data, error } = await supabase
+                .from('seizures')
+                .update(updates)
+                .eq('id', id)
+                .select();
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                return res.status(404).json({ success: false, message: 'Seizure not found' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Seizure updated successfully',
+                data: data[0]
+            });
+        } catch (error) {
+            console.error('Update seizure error:', error);
+            res.status(500).json({ success: false, message: 'Failed to update seizure' });
+        }
+    }
+);
+
+app.delete('/api/seizures/:id',
+    authenticate,
+    authorize('admin'),
+    [
+        param('id').isInt({ min: 1 }).withMessage('Invalid seizure ID')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { data: seizure, error: getError } = await supabase
+                .from('seizures')
+                .select('person_id')
+                .eq('id', id)
+                .single();
+
+            if (getError || !seizure) {
+                return res.status(404).json({ success: false, message: 'Seizure not found' });
+            }
+
+            const { error } = await supabase
+                .from('seizures')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            res.json({ success: true, message: 'Seizure deleted successfully' });
+        } catch (error) {
+            console.error('Delete seizure error:', error);
+            res.status(500).json({ success: false, message: 'Failed to delete seizure' });
+        }
+    }
+);
 
 // ========== ADMIN ROUTES ==========
 
@@ -1092,66 +1132,68 @@ app.get('/api/users', authenticate, authorize('admin'), async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('*')
+            .select('id, email, name, role, department, created_at, updated_at')
             .order('created_at', { ascending: false });
-        
+
         if (error) throw error;
-        
-        res.json({
-            success: true,
-            data: data
-        });
-        
+
+        res.json({ success: true, data });
     } catch (error) {
         console.error('Get users error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch users'
-        });
+        res.status(500).json({ success: false, message: 'Failed to fetch users' });
     }
 });
 
-app.put('/api/users/:id/role', authenticate, authorize('admin'), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { role } = req.body;
-        
-        if (!role || !['admin', 'security', 'student'].includes(role)) {
-            return res.status(400).json({
+app.put('/api/users/:id/role',
+    authenticate,
+    authorize('admin'),
+    [
+        param('id').isInt({ min: 1 }).withMessage('Invalid user ID'),
+        body('role').isIn(['admin', 'security']).withMessage('Role must be admin or security')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { role } = req.body;
+
+            // Prevent admin from demoting themselves to nothing
+            if (parseInt(id) === req.user.id && role !== 'admin') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'You cannot change your own admin role'
+                });
+            }
+
+            const { data, error } = await supabase
+                .from('users')
+                .update({ role, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select('id, email, name, role');
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'User role updated successfully',
+                user: data[0]
+            });
+        } catch (error) {
+            console.error('Update user role error:', error);
+            res.status(500).json({
                 success: false,
-                message: 'Invalid role'
+                message: 'Failed to update user role'
             });
         }
-        
-        const { data, error } = await supabase
-            .from('users')
-            .update({ role })
-            .eq('id', id)
-            .select('id, email, name, role');
-        
-        if (error) throw error;
-        
-        if (!data || data.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-        
-        res.json({
-            success: true,
-            message: 'User role updated successfully',
-            user: data[0]
-        });
-        
-    } catch (error) {
-        console.error('Update user role error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to update user role'
-        });
     }
-});
+);
 
 // ========== ERROR HANDLERS ==========
 
@@ -1167,6 +1209,7 @@ app.get('/', (req, res) => {
         name: 'SeizeTrack API',
         version: '2.0.0',
         status: 'running',
+        security: 'hardened',
         endpoints: {
             health: '/api/health',
             login: '/api/login',
@@ -1210,10 +1253,10 @@ async function startServer() {
         }
         
         console.log('✅ Connected to Supabase successfully!');
-        console.log('🚀 CORS configured to accept requests from:');
-        console.log('   - https://biulegacycampus.netlify.app');
-        console.log('   - https://biulegacycampus.vercel.app');
-        console.log('   - http://localhost:* (development)');
+        console.log('🔐 JWT authentication enabled');
+        console.log('🛡️  Security hardening active');
+        console.log('📝 Input validation enabled');
+        console.log('🚫 Password never exposed in responses');
         
         app.listen(config.PORT, () => {
             console.log(`🚀 Server running on port ${config.PORT}`);

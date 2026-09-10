@@ -209,7 +209,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="brand">
-                <div class="brand-badge"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-badge" id="brandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -221,11 +221,11 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item active"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
-                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">Security Officer</span></div>
-                <div class="role-scope" id="roleScope">Enforcement access</div>
+                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">--</span></div>
+                <div class="role-scope" id="roleScope">--</div>
             </div>
         </aside>
 
@@ -234,7 +234,7 @@
         <aside class="mobile-drawer" id="mobileDrawer">
             <button class="close-btn" id="closeDrawer"><i class="fas fa-times"></i></button>
             <div class="brand">
-                <div class="brand-badge"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-badge" id="mobileBrandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -245,9 +245,9 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item active"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
-            <div class="drawer-footer" id="mobileRoleFooter">Security Officer · Enforcement access</div>
+            <div class="drawer-footer" id="mobileRoleFooter">--</div>
         </aside>
 
         <!-- Main Content -->
@@ -263,9 +263,9 @@
                     </div>
                     <div class="header-right">
                         <a href="Profile.html" class="profile-btn">
-                            <span class="profile-avatar" id="profileAvatar">SO</span>
-                            <span class="profile-name" id="profileName">Security Officer</span>
-                            <span class="profile-role" id="profileRoleLabel">Security</span>
+                            <span class="profile-avatar" id="profileAvatar"></span>
+                            <span class="profile-name" id="profileName"></span>
+                            <span class="profile-role" id="profileRoleLabel"></span>
                         </a>
                         <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
@@ -367,6 +367,7 @@
         //  CONFIG & STATE
         // ============================================================
         const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+        const ALLOWED_ROLES = ['admin', 'security'];
         let allSeizures = [];
         let filteredSeizures = [];
         let currentPage = 1;
@@ -423,15 +424,45 @@
             }, 4000);
         }
 
-        function updateProfile() {
-            const u = getUser();
-            if (!u) return;
-            document.getElementById('profileName').textContent = u.name || u.email || 'User';
-            document.getElementById('profileRoleLabel').textContent = u.department || u.role || 'Security';
-            document.getElementById('profileAvatar').textContent = (u.name || 'U').charAt(0).toUpperCase();
-            document.getElementById('roleLabel').textContent = u.role || 'Security Officer';
-            document.getElementById('roleScope').textContent = 'Enforcement access';
-            document.getElementById('mobileRoleFooter').textContent = `${u.role || 'Security Officer'} · Enforcement access`;
+        function getInitials(firstName, surname) {
+            const first = firstName ? firstName.charAt(0).toUpperCase() : '';
+            const last = surname ? surname.charAt(0).toUpperCase() : '';
+            return first + last || 'U';
+        }
+
+        function getRoleDisplay(role) {
+            const r = (role || '').toLowerCase();
+            if (r === 'admin') return 'Administrator';
+            if (r === 'security') return 'Security Officer';
+            return 'Unknown Role';
+        }
+
+        // ============================================================
+        //  UPDATE USER PROFILE IN UI (ALL FROM DB)
+        // ============================================================
+        function updateUserProfile(user) {
+            if (!user) return;
+            
+            const firstName = user.first_name || '';
+            const surname = user.surname || '';
+            const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
+            const initials = getInitials(firstName, surname);
+            const roleDisplay = getRoleDisplay(user.role);
+            const department = user.department || 'General';
+            
+            // Update profile header
+            document.getElementById('profileAvatar').textContent = initials;
+            document.getElementById('profileName').textContent = fullName;
+            document.getElementById('profileRoleLabel').textContent = roleDisplay;
+            
+            // Update sidebar
+            document.getElementById('roleLabel').textContent = roleDisplay;
+            document.getElementById('roleScope').textContent = department;
+            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
+            
+            // Update brand badges with initials
+            document.getElementById('brandBadge').textContent = initials;
+            document.getElementById('mobileBrandBadge').textContent = initials;
         }
 
         function setDate() {
@@ -441,7 +472,7 @@
         }
 
         // ============================================================
-        //  AUTH CHECK
+        //  AUTH CHECK (with role restriction)
         // ============================================================
         async function checkAuth() {
             if (!isLoggedIn()) { redirectToLogin(); return null; }
@@ -453,9 +484,21 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success) {
-                        currentUser = data.user;
-                        localStorage.setItem('user', JSON.stringify(data.user));
-                        updateProfile();
+                        const user = data.user;
+                        const userRole = (user.role || '').toLowerCase();
+
+                        // 🔒 Restrict to admin and security only
+                        if (!ALLOWED_ROLES.includes(userRole)) {
+                            toast('Access denied. Only Admin or Security officers can view history.', 'error');
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            setTimeout(() => redirectToLogin(), 1500);
+                            return null;
+                        }
+
+                        currentUser = user;
+                        localStorage.setItem('user', JSON.stringify(user));
+                        updateUserProfile(user);
                         return currentUser;
                     }
                 }
@@ -768,9 +811,8 @@
             // Date filter
             document.getElementById('dateFilter').addEventListener('change', filterSeizures);
 
-            // Set today's date
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('dateFilter').value = today;
+            // ✅ Date filter left EMPTY by default so full history shows
+            // (removed the line that forced today's date)
         }
 
         // ============================================================

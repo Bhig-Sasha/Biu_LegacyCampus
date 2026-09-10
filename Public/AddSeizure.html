@@ -190,7 +190,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="brand">
-                <div class="brand-badge"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-badge" id="brandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -202,11 +202,11 @@
                 <a href="AddSeizure.html" class="nav-item active"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
-                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">Security Officer</span></div>
-                <div class="role-scope" id="roleScope">Enforcement access</div>
+                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">--</span></div>
+                <div class="role-scope" id="roleScope">--</div>
             </div>
         </aside>
 
@@ -215,7 +215,7 @@
         <aside class="mobile-drawer" id="mobileDrawer">
             <button class="close-btn" id="closeDrawer"><i class="fas fa-times"></i></button>
             <div class="brand">
-                <div class="brand-badge"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-badge" id="mobileBrandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -226,9 +226,9 @@
                 <a href="AddSeizure.html" class="nav-item active"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
-            <div class="drawer-footer" id="mobileRoleFooter">Security Officer · Enforcement access</div>
+            <div class="drawer-footer" id="mobileRoleFooter">--</div>
         </aside>
 
         <!-- Main Content -->
@@ -244,9 +244,9 @@
                     </div>
                     <div class="header-right">
                         <a href="Profile.html" class="profile-btn">
-                            <span class="profile-avatar" id="profileAvatar">SO</span>
-                            <span class="profile-name" id="profileName">Security Officer</span>
-                            <span class="profile-role" id="profileRoleLabel">Security</span>
+                            <span class="profile-avatar" id="profileAvatar"></span>
+                            <span class="profile-name" id="profileName"></span>
+                            <span class="profile-role" id="profileRoleLabel"></span>
                         </a>
                         <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
@@ -474,6 +474,7 @@
         //  CONFIG & STATE
         // ============================================================
         const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+        const ALLOWED_ROLES = ['admin', 'security'];
         let selectedPerson = null;
         let searchTimeout = null;
         let currentUser = null;
@@ -524,17 +525,49 @@
             setTimeout(() => { t.style.animation = 'slideOut 0.3s ease'; setTimeout(() => t.remove(), 300); }, 4000);
         }
 
-        function updateProfile() {
-            const u = getUser();
-            if (!u) return;
-            document.getElementById('profileName').textContent = u.name || u.email || 'User';
-            document.getElementById('profileRoleLabel').textContent = u.department || u.role || 'Security';
-            document.getElementById('profileAvatar').textContent = (u.name || 'U').charAt(0).toUpperCase();
-            document.getElementById('roleLabel').textContent = u.role || 'Security Officer';
-            document.getElementById('roleScope').textContent = 'Enforcement access';
-            document.getElementById('mobileRoleFooter').textContent = `${u.role || 'Security Officer'} · Enforcement access`;
+        function getInitials(firstName, surname) {
+            const first = firstName ? firstName.charAt(0).toUpperCase() : '';
+            const last = surname ? surname.charAt(0).toUpperCase() : '';
+            return first + last || 'U';
+        }
+
+        function getRoleDisplay(role) {
+            const r = (role || '').toLowerCase();
+            if (r === 'admin') return 'Administrator';
+            if (r === 'security') return 'Security Officer';
+            return 'Unknown Role';
+        }
+
+        // ============================================================
+        //  UPDATE USER PROFILE IN UI (ALL FROM DB)
+        // ============================================================
+        function updateUserProfile(user) {
+            if (!user) return;
+            
+            const firstName = user.first_name || '';
+            const surname = user.surname || '';
+            const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
+            const initials = getInitials(firstName, surname);
+            const roleDisplay = getRoleDisplay(user.role);
+            const department = user.department || 'General';
+            
+            // Update profile header
+            document.getElementById('profileAvatar').textContent = initials;
+            document.getElementById('profileName').textContent = fullName;
+            document.getElementById('profileRoleLabel').textContent = roleDisplay;
+            
+            // Update sidebar
+            document.getElementById('roleLabel').textContent = roleDisplay;
+            document.getElementById('roleScope').textContent = department;
+            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
+            
+            // Update brand badges with initials
+            document.getElementById('brandBadge').textContent = initials;
+            document.getElementById('mobileBrandBadge').textContent = initials;
+            
+            // Pre-fill seizedBy field with user's full name
             const seizedBy = document.getElementById('seizedBy');
-            if (seizedBy && u.name) seizedBy.value = u.name;
+            if (seizedBy && fullName) seizedBy.value = fullName;
         }
 
         function setDate() {
@@ -544,7 +577,7 @@
         }
 
         // ============================================================
-        //  AUTH CHECK
+        //  AUTH CHECK (with role restriction)
         // ============================================================
         async function checkAuth() {
             if (!isLoggedIn()) { redirectToLogin(); return null; }
@@ -556,9 +589,19 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success) {
-                        currentUser = data.user;
-                        localStorage.setItem('user', JSON.stringify(data.user));
-                        updateProfile();
+                        const user = data.user;
+                        const userRole = (user.role || '').toLowerCase();
+
+                        // 🔒 Restrict to admin and security only
+                        if (!ALLOWED_ROLES.includes(userRole)) {
+                            toast('Access denied. Only Admin or Security officers can record seizures.', 'error');
+                            setTimeout(() => redirectToLogin(), 1500);
+                            return null;
+                        }
+
+                        currentUser = user;
+                        localStorage.setItem('user', JSON.stringify(user));
+                        updateUserProfile(user);
                         return currentUser;
                     }
                 }
@@ -650,25 +693,24 @@
                     body: JSON.stringify({ name, matric_number: matric, department: dept || null, level: level || null })
                 });
                 const data = await res.json();
-                if (data.success) {
-                    document.getElementById('newPersonForm').classList.remove('active');
-                    document.getElementById('newPersonFormFields').reset();
-                    document.getElementById('matricHint').textContent = '';
-                    selectedPerson = data.data;
-                    document.getElementById('selectedName').textContent = selectedPerson.name;
-                    document.getElementById('selectedMatric').textContent = selectedPerson.matric_number || '';
-                    document.getElementById('selectedDept').textContent = selectedPerson.department || 'Not specified';
-                    document.getElementById('selectedAvatar').textContent = (selectedPerson.name||'?').charAt(0).toUpperCase();
-                    document.getElementById('selectedPersonDisplay').style.display = 'block';
-                    document.getElementById('seizureDetailsForm').style.display = 'block';
-                    document.getElementById('personSearch').value = '';
-                    document.getElementById('searchResults').style.display = 'none';
-                    toast(`Person "${name}" added successfully!`, 'success');
-                    updateNotice(`Added ${selectedPerson.name} · Ready to record seizure`);
-                    document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
+                if (!res.ok || !data.success) {
                     throw new Error(data.message || 'Failed to add person');
                 }
+                document.getElementById('newPersonForm').classList.remove('active');
+                document.getElementById('newPersonFormFields').reset();
+                document.getElementById('matricHint').textContent = '';
+                selectedPerson = data.data;
+                document.getElementById('selectedName').textContent = selectedPerson.name;
+                document.getElementById('selectedMatric').textContent = selectedPerson.matric_number || '';
+                document.getElementById('selectedDept').textContent = selectedPerson.department || 'Not specified';
+                document.getElementById('selectedAvatar').textContent = (selectedPerson.name||'?').charAt(0).toUpperCase();
+                document.getElementById('selectedPersonDisplay').style.display = 'block';
+                document.getElementById('seizureDetailsForm').style.display = 'block';
+                document.getElementById('personSearch').value = '';
+                document.getElementById('searchResults').style.display = 'none';
+                toast(`Person "${name}" added successfully!`, 'success');
+                updateNotice(`Added ${selectedPerson.name} · Ready to record seizure`);
+                document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
             } catch (e) { toast('Error: ' + e.message, 'error'); }
             finally {
                 document.getElementById('addPersonBtn').innerHTML = 'Add Person';
@@ -689,12 +731,18 @@
                 const orig = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recording...';
                 btn.disabled = true;
+                
+                // Get full name from current user
+                const firstName = currentUser?.first_name || '';
+                const surname = currentUser?.surname || '';
+                const fullName = firstName && surname ? `${firstName} ${surname}` : currentUser?.name || 'Admin';
+                
                 const payload = {
                     person_id: selectedPerson.id,
                     phone_model: phoneModel,
                     device_color: document.getElementById('deviceColor').value.trim() || null,
                     location: location,
-                    seized_by: document.getElementById('seizedBy').value.trim() || (currentUser?.name || 'Admin'),
+                    seized_by: document.getElementById('seizedBy').value.trim() || fullName,
                     seizure_reason: document.getElementById('seizureReason').value || null,
                     notes: document.getElementById('notes').value.trim() || null,
                     status: 'active'
@@ -704,14 +752,13 @@
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                if (data.success) {
-                    document.getElementById('mainCard').style.display = 'none';
-                    document.getElementById('successScreen').style.display = 'block';
-                    toast(`Seizure recorded for ${selectedPerson.name}`, 'success');
-                    updateNotice(`Seizure recorded for ${selectedPerson.name}`);
-                } else {
+                if (!res.ok || !data.success) {
                     throw new Error(data.message || 'Failed to record seizure');
                 }
+                document.getElementById('mainCard').style.display = 'none';
+                document.getElementById('successScreen').style.display = 'block';
+                toast(`Seizure recorded for ${selectedPerson.name}`, 'success');
+                updateNotice(`Seizure recorded for ${selectedPerson.name}`);
             } catch (e) { toast('Error: ' + e.message, 'error'); }
             finally {
                 document.getElementById('recordSeizureBtn').innerHTML = 'Record Seizure';
@@ -731,8 +778,13 @@
             document.getElementById('level').value = '';
             document.getElementById('location').value = '';
             document.getElementById('seizureReason').value = '';
-            const u = getUser();
-            if (u?.name) document.getElementById('seizedBy').value = u.name;
+            
+            // Re-populate seizedBy with user's full name
+            const firstName = currentUser?.first_name || '';
+            const surname = currentUser?.surname || '';
+            const fullName = firstName && surname ? `${firstName} ${surname}` : currentUser?.name || '';
+            if (fullName) document.getElementById('seizedBy').value = fullName;
+            
             document.getElementById('successScreen').style.display = 'none';
             document.getElementById('mainCard').style.display = 'block';
             document.getElementById('newPersonForm').classList.remove('active');

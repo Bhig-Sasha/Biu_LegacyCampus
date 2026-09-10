@@ -88,6 +88,7 @@
 
         .btn-gold { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border: none; border-radius: 0.5rem; background: #d6ad4b; color: #10233f; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; text-decoration: none; justify-content: center; }
         .btn-gold:hover { background: #c49a2a; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-secondary { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border: 1px solid #bfc8d5; border-radius: 0.5rem; background: #fffcf6; color: #17233c; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; text-decoration: none; }
         .btn-secondary:hover { background: #f5f1e8; }
@@ -137,7 +138,7 @@
         }
         .role-tag.admin { background: #d6ad4b; color: #10233f; }
         .role-tag.security { background: #e7edf5; color: #24466f; }
-        .role-tag.student { background: #e1f0e5; color: #2d6545; }
+        .role-tag.unknown { background: #f0ebe2; color: #68768a; }
 
         .profile-grid {
             display: grid;
@@ -272,7 +273,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="brand">
-                <div class="brand-badge"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-badge" id="brandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -287,8 +288,8 @@
                 <a href="Profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
-                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">Loading...</span></div>
-                <div class="role-scope" id="roleScope">Loading...</div>
+                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">--</span></div>
+                <div class="role-scope" id="roleScope">--</div>
             </div>
         </aside>
 
@@ -297,7 +298,7 @@
         <aside class="mobile-drawer" id="mobileDrawer">
             <button class="close-btn" id="closeDrawer"><i class="fas fa-times"></i></button>
             <div class="brand">
-                <div class="brand-badge"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-badge" id="mobileBrandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -310,7 +311,7 @@
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
                 <a href="Profile.html" class="nav-item active"><i class="fas fa-user"></i> Profile</a>
             </nav>
-            <div class="drawer-footer" id="mobileRoleFooter">Loading...</div>
+            <div class="drawer-footer" id="mobileRoleFooter">--</div>
         </aside>
 
         <!-- Main Content -->
@@ -326,9 +327,9 @@
                     </div>
                     <div class="header-right">
                         <a href="Profile.html" class="profile-btn">
-                            <span class="profile-avatar" id="profileAvatar">ST</span>
-                            <span class="profile-name" id="profileName">Loading...</span>
-                            <span class="profile-role" id="profileRoleLabel">Loading...</span>
+                            <span class="profile-avatar" id="profileAvatar"></span>
+                            <span class="profile-name" id="profileName"></span>
+                            <span class="profile-role" id="profileRoleLabel"></span>
                         </a>
                         <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
@@ -367,7 +368,7 @@
                         <div id="profileContent" style="display:none;">
                             <!-- Profile Header -->
                             <div class="profile-header">
-                                <div class="profile-avatar-large" id="largeAvatar">ST</div>
+                                <div class="profile-avatar-large" id="largeAvatar">--</div>
                                 <div class="profile-info">
                                     <h2 id="fullName">Loading...</h2>
                                     <span class="role-tag" id="userRoleTag">Loading...</span>
@@ -467,9 +468,9 @@
                         <label class="form-label" for="newPassword">New Password</label>
                         <div class="input-container">
                             <i class="fas fa-key input-icon"></i>
-                            <input type="password" id="newPassword" class="input-field" placeholder="Enter new password" required minlength="6" />
+                            <input type="password" id="newPassword" class="input-field" placeholder="Enter new password" required minlength="8" />
                         </div>
-                        <div style="font-size:0.7rem;color:#68768a;margin-top:0.25rem;">Password must be at least 6 characters</div>
+                        <div style="font-size:0.7rem;color:#68768a;margin-top:0.25rem;">Password must be at least 8 characters</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="confirmPassword">Confirm New Password</label>
@@ -493,6 +494,7 @@
         //  CONFIG & STATE
         // ============================================================
         const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
+        const ALLOWED_ROLES = ['admin', 'security'];
         let currentUser = null;
 
         // ============================================================
@@ -557,17 +559,17 @@
         }
 
         function getRoleBadgeClass(role) {
-            const r = (role || 'student').toLowerCase();
+            const r = (role || '').toLowerCase();
             if (r === 'admin') return 'admin';
             if (r === 'security') return 'security';
-            return 'student';
+            return 'unknown';
         }
 
         function getRoleDisplay(role) {
-            const r = (role || 'student').toLowerCase();
+            const r = (role || '').toLowerCase();
             if (r === 'admin') return 'Administrator';
             if (r === 'security') return 'Security Officer';
-            return 'Student';
+            return 'Unknown Role';
         }
 
         // ============================================================
@@ -619,6 +621,10 @@
             document.getElementById('roleLabel').textContent = roleDisplay;
             document.getElementById('roleScope').textContent = user.department || 'System Access';
             document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${user.department || 'System Access'}`;
+
+            // Update brand badges with initials
+            document.getElementById('brandBadge').textContent = initials;
+            document.getElementById('mobileBrandBadge').textContent = initials;
 
             // Update last updated
             const updated = user.profile_updated_at || user.updated_at || new Date().toISOString();
@@ -721,7 +727,7 @@
         }
 
         // ============================================================
-        //  AUTH CHECK
+        //  AUTH CHECK (with role restriction)
         // ============================================================
         async function checkAuth() {
             if (!isLoggedIn()) { redirectToLogin(); return false; }
@@ -733,8 +739,20 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        currentUser = data.user;
-                        localStorage.setItem('user', JSON.stringify(data.user));
+                        const user = data.user;
+                        const userRole = (user.role || '').toLowerCase();
+
+                        // 🔒 Restrict to admin and security only
+                        if (!ALLOWED_ROLES.includes(userRole)) {
+                            toast('Access denied. Only Admin or Security officers can access this page.', 'error');
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            setTimeout(() => redirectToLogin(), 1500);
+                            return false;
+                        }
+
+                        currentUser = user;
+                        localStorage.setItem('user', JSON.stringify(user));
                         return true;
                     }
                 }
@@ -886,14 +904,19 @@
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 const messageEl = document.getElementById('passwordMessage');
 
-                // Validate
-                if (newPassword.length < 6) {
-                    messageEl.innerHTML = '<span style="color:#9c3e32;">Password must be at least 6 characters.</span>';
+                // Validate — 8 characters to match backend
+                if (newPassword.length < 8) {
+                    messageEl.innerHTML = '<span style="color:#9c3e32;">Password must be at least 8 characters.</span>';
                     return;
                 }
 
                 if (newPassword !== confirmPassword) {
                     messageEl.innerHTML = '<span style="color:#9c3e32;">New passwords do not match.</span>';
+                    return;
+                }
+
+                if (newPassword === currentPassword) {
+                    messageEl.innerHTML = '<span style="color:#9c3e32;">New password must be different from current password.</span>';
                     return;
                 }
 

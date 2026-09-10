@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         /* ============================================================
-           SEIZETRACK · BEDCHECK THEME
+           SEIZETRACK
            ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f1e8; color: #17233c; min-height: 100vh; }
@@ -210,7 +210,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="brand">
-                <div class="brand-badge">SS</div>
+                <div class="brand-badge" id="brandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -222,11 +222,11 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item active"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
-                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">Security Officer</span></div>
-                <div class="role-scope" id="roleScope">Enforcement access</div>
+                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">--</span></div>
+                <div class="role-scope" id="roleScope">--</div>
             </div>
         </aside>
 
@@ -235,7 +235,7 @@
         <aside class="mobile-drawer" id="mobileDrawer">
             <button class="close-btn" id="closeDrawer"><i class="fas fa-times"></i></button>
             <div class="brand">
-                <div class="brand-badge">SS</div>
+                <div class="brand-badge" id="mobileBrandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -246,9 +246,9 @@
                 <a href="AddSeizure.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Seizure</a>
                 <a href="History.html" class="nav-item"><i class="fas fa-history"></i> History</a>
                 <a href="Person.html" class="nav-item active"><i class="fas fa-users"></i> Persons</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+                <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
-            <div class="drawer-footer" id="mobileRoleFooter">Security Officer · Enforcement access</div>
+            <div class="drawer-footer" id="mobileRoleFooter">--</div>
         </aside>
 
         <!-- Main Content -->
@@ -263,10 +263,10 @@
                         </div>
                     </div>
                     <div class="header-right">
-                        <a href="profile.html" class="profile-btn">
-                            <span class="profile-avatar" id="profileAvatar">ST</span>
-                            <span class="profile-name" id="profileName">Sasha Troger</span>
-                            <span class="profile-role" id="profileRoleLabel">Electrical Engineering</span>
+                        <a href="Profile.html" class="profile-btn">
+                            <span class="profile-avatar" id="profileAvatar"></span>
+                            <span class="profile-name" id="profileName"></span>
+                            <span class="profile-role" id="profileRoleLabel"></span>
                         </a>
                         <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
@@ -378,6 +378,7 @@
         //  CONFIG & STATE
         // ============================================================
         const API_BASE_URL = 'https://biu-legacycampus.onrender.com/api';
+        const ALLOWED_ROLES = ['admin', 'security'];
         let allPersons = [];
         let filteredPersons = [];
         let debounceTimer = null;
@@ -438,23 +439,39 @@
             return first + last || 'U';
         }
 
-        function updateProfileDisplay() {
-            const user = getUser();
+        function getRoleDisplay(role) {
+            const r = (role || '').toLowerCase();
+            if (r === 'admin') return 'Administrator';
+            if (r === 'security') return 'Security Officer';
+            return 'Unknown Role';
+        }
+
+        // ============================================================
+        //  UPDATE USER PROFILE IN UI (ALL FROM DB)
+        // ============================================================
+        function updateUserProfile(user) {
             if (!user) return;
             
             const firstName = user.first_name || '';
             const surname = user.surname || '';
             const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
             const initials = getInitials(firstName, surname);
-            const department = user.department || user.role || 'Security';
-            const roleDisplay = user.role || 'Security Officer';
+            const roleDisplay = getRoleDisplay(user.role);
+            const department = user.department || 'General';
             
+            // Update profile header
             document.getElementById('profileAvatar').textContent = initials;
             document.getElementById('profileName').textContent = fullName;
-            document.getElementById('profileRoleLabel').textContent = department;
+            document.getElementById('profileRoleLabel').textContent = roleDisplay;
+            
+            // Update sidebar
             document.getElementById('roleLabel').textContent = roleDisplay;
-            document.getElementById('roleScope').textContent = 'Enforcement access';
-            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · Enforcement access`;
+            document.getElementById('roleScope').textContent = department;
+            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
+            
+            // Update brand badges with initials
+            document.getElementById('brandBadge').textContent = initials;
+            document.getElementById('mobileBrandBadge').textContent = initials;
         }
 
         function setDate() {
@@ -464,7 +481,7 @@
         }
 
         // ============================================================
-        //  AUTH CHECK
+        //  AUTH CHECK (with role restriction)
         // ============================================================
         async function checkAuth() {
             if (!isLoggedIn()) { redirectToLogin(); return null; }
@@ -476,9 +493,21 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success) {
-                        currentUser = data.user;
-                        localStorage.setItem('user', JSON.stringify(data.user));
-                        updateProfileDisplay();
+                        const user = data.user;
+                        const userRole = (user.role || '').toLowerCase();
+
+                        // 🔒 Restrict to admin and security only
+                        if (!ALLOWED_ROLES.includes(userRole)) {
+                            toast('Access denied. Only Admin or Security officers can view the persons registry.', 'error');
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            setTimeout(() => redirectToLogin(), 1500);
+                            return null;
+                        }
+
+                        currentUser = user;
+                        localStorage.setItem('user', JSON.stringify(user));
+                        updateUserProfile(user);
                         return currentUser;
                     }
                 }
