@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#10233f" />
     <title>SeizeTrack · Command Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,7 +13,7 @@
         /* ============================================================
            SEIZETRACK
            ============================================================ */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f1e8; color: #17233c; min-height: 100vh; }
 
         /* ----- PORTAL LAYOUT ----- */
@@ -36,8 +37,8 @@
         .sidebar .role-card .role-title i { color: #e1bd65; }
         .sidebar .role-card .role-scope { margin-top: 0.25rem; font-size: 0.75rem; color: #b9c7db; line-height: 1.4; }
 
-        .mobile-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: 18rem; background-color: #10233f; color: white; padding: 1.5rem 1rem; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); z-index: 50; display: flex; flex-direction: column; overflow-y: auto; }
-        .mobile-drawer.open { transform: translateX(0); }
+        .mobile-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(18rem, 85vw); background-color: #10233f; color: white; padding: 1.5rem 1rem; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); z-index: 50; display: flex; flex-direction: column; overflow-y: auto; }
+        .mobile-drawer.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.3); }
         .mobile-drawer .close-btn { align-self: flex-end; background: transparent; border: none; color: white; padding: 0.5rem; cursor: pointer; font-size: 1.2rem; }
         .mobile-drawer .brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
         .mobile-drawer .brand-badge { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border: 1px solid rgba(225,189,101,0.7); background-color: #d6ad4b; border-radius: 0.5rem; font-family: 'Merriweather',serif; font-weight: 900; font-size: 1.25rem; color: #10233f; }
@@ -90,7 +91,6 @@
         .btn-gold { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border: none; border-radius: 0.5rem; background: #d6ad4b; color: #10233f; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; text-decoration: none; justify-content: center; }
         .btn-gold:hover { background: #c49a2a; }
 
-        /* Metric Grid */
         .metric-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
         @media (min-width: 480px) { .metric-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 768px) { .metric-grid { grid-template-columns: repeat(4, 1fr); } }
@@ -138,7 +138,6 @@
         .border-t { border-top: 1px solid #ded6c9; }
         .p-3 { padding: 0.75rem; }
 
-        /* Seizure specific */
         .seizure-list { display: flex; flex-direction: column; gap: 0.3rem; }
         .seizure-item { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.6rem; border-radius: 0.5rem; background: #fbf7ef; border: 1px solid #f0ebe2; }
         .seizure-item .seizure-device { font-weight: 600; font-size: 0.8rem; }
@@ -165,11 +164,133 @@
         .status-dot.gold { background: #d4af37; }
         .status-dot.red { background: #8a3328; }
 
-        /* Error fallback */
         .error-fallback { text-align: center; padding: 3rem 1rem; }
         .error-fallback .error-icon { font-size: 3rem; color: #9c3e32; margin-bottom: 1rem; }
         .error-fallback h2 { color: #10233f; margin-bottom: 0.5rem; }
         .error-fallback p { color: #68768a; margin-bottom: 1.5rem; }
+
+        /* ============================================================
+           MODAL STYLES — LOGOUT CONFIRMATION
+           ============================================================ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            padding: 1rem;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px) scale(0.96); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .modal-box {
+            background: #fffcf6;
+            border: 1px solid #ded6c9;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 420px;
+            padding: 1.75rem 1.5rem 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-icon-wrap {
+            display: grid;
+            place-items: center;
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            background: #f9e2de;
+            color: #9c3e32;
+            font-size: 1.75rem;
+        }
+
+        .modal-title {
+            font-family: 'Merriweather', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #10233f;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-text {
+            font-size: 0.9rem;
+            color: #68768a;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-direction: column-reverse;
+        }
+
+        @media (min-width: 480px) {
+            .modal-actions {
+                flex-direction: row;
+                justify-content: flex-end;
+            }
+        }
+
+        .modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s, transform 0.1s;
+            min-height: 44px;
+            flex: 1;
+        }
+
+        .modal-btn:active { transform: scale(0.98); }
+
+        .modal-btn.cancel {
+            background: #fffcf6;
+            border: 1px solid #ded6c9;
+            color: #17233c;
+        }
+
+        .modal-btn.cancel:hover {
+            background: #f5f1e8;
+            border-color: #c9bfa8;
+        }
+
+        .modal-btn.confirm {
+            background: #a84134;
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background: #8a3328;
+        }
+
+        .modal-btn i { font-size: 0.85rem; }
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #e8e4de; }
@@ -181,6 +302,27 @@
 
     <!-- ===== TOAST NOTIFICATION ===== -->
     <div id="toast" class="toast"></div>
+
+    <!-- ===== LOGOUT CONFIRMATION MODAL ===== -->
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal-box">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Confirm Logout</h3>
+            <p class="modal-text">
+                Are you sure you want to log out of SeizeTrack? You'll need to sign in again to access the system.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn cancel" id="cancelLogout">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="modal-btn confirm" id="confirmLogout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- ===== PORTAL ===== -->
     <div id="portalApp" class="app-wrapper">
@@ -296,19 +438,45 @@
         function isLoggedIn() { return !!getToken(); }
         function redirectToLogin() { window.location.href = '/login.html'; }
 
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/login.html';
-            }
-        }
-
         function getAuthHeaders() {
             return {
                 'Authorization': `Bearer ${getToken()}`,
                 'Content-Type': 'application/json'
             };
+        }
+
+        // =============================================
+        // LOGOUT CONFIRMATION MODAL
+        // =============================================
+        function openLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function performLogout() {
+            // Show a small toast and delay navigation slightly
+            showToast('Logging out...', 'info');
+
+            // Clear auth data
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('supabase_user_id');
+
+            // Redirect after a short delay so the toast is visible
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 500);
         }
 
         // =============================================
@@ -414,7 +582,6 @@
             const roleDisplay = getRoleDisplay(user.role);
             const department = user.department || 'General';
 
-            // Header profile
             const avatarEl = document.getElementById('profileAvatar');
             const nameEl = document.getElementById('profileName');
             const roleEl = document.getElementById('profileRoleLabel');
@@ -422,7 +589,6 @@
             if (nameEl) nameEl.textContent = fullName;
             if (roleEl) roleEl.textContent = roleDisplay;
 
-            // Sidebar role card
             const roleLabelEl = document.getElementById('roleLabel');
             const roleScopeEl = document.getElementById('roleScope');
             const mobileFooterEl = document.getElementById('mobileRoleFooter');
@@ -430,7 +596,6 @@
             if (roleScopeEl) roleScopeEl.textContent = department;
             if (mobileFooterEl) mobileFooterEl.textContent = `${roleDisplay} · ${department}`;
 
-            // Brand badges
             const brandBadgeEl = document.getElementById('brandBadge');
             const mobileBrandBadgeEl = document.getElementById('mobileBrandBadge');
             if (brandBadgeEl) brandBadgeEl.textContent = initials;
@@ -489,7 +654,6 @@
 
                 const user = data.user;
 
-                // 🔒 Restrict to admin and security only
                 const userRole = (user.role || '').toLowerCase();
                 if (!ALLOWED_ROLES.includes(userRole)) {
                     showToast('Access denied. Admin or Security role required.', 'error');
@@ -499,12 +663,8 @@
                     return false;
                 }
 
-                // Persist latest user data
                 localStorage.setItem('user', JSON.stringify(user));
-
-                // Update UI from database
                 updateUserProfile(user);
-
                 return true;
             } catch (error) {
                 console.error('Auth check failed:', error);
@@ -529,13 +689,17 @@
         // MOBILE DRAWER
         // =============================================
         function openMobileDrawer() {
-            document.getElementById('mobileDrawer').classList.add('open');
-            document.getElementById('drawerOverlay').classList.add('show');
+            const drawer = document.getElementById('mobileDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            if (drawer) drawer.classList.add('open');
+            if (overlay) overlay.classList.add('show');
         }
 
         function closeMobileDrawer() {
-            document.getElementById('mobileDrawer').classList.remove('open');
-            document.getElementById('drawerOverlay').classList.remove('show');
+            const drawer = document.getElementById('mobileDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            if (drawer) drawer.classList.remove('open');
+            if (overlay) overlay.classList.remove('show');
         }
 
         // =============================================
@@ -573,7 +737,6 @@
             }
 
             container.innerHTML = `
-                <!-- Page Heading -->
                 <div class="page-heading">
                     <div>
                         <p class="eyebrow">Enforcement Operations</p>
@@ -585,7 +748,6 @@
                     </div>
                 </div>
 
-                <!-- Metric Grid -->
                 <div class="metric-grid">
                     <div class="metric-card">
                         <div class="metric-icon navy"><i class="fas fa-mobile-alt"></i></div>
@@ -613,9 +775,7 @@
                     </div>
                 </div>
 
-                <!-- Main Layout -->
                 <div class="grid-2 mt-4">
-                    <!-- Left Column - Recent Seizures -->
                     <div>
                         <div class="card">
                             <div class="flex-between">
@@ -639,7 +799,6 @@
                             </div>
                         </div>
 
-                        <!-- Quick Actions -->
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
                             <a href="AddSeizure.html" style="text-decoration:none;">
                                 <div style="padding:0.75rem;border:1px solid #ded6c9;border-radius:0.75rem;background:#fffcf6;display:flex;align-items:center;justify-content:space-between;">
@@ -662,7 +821,6 @@
                         </div>
                     </div>
 
-                    <!-- Right Column - Repeat Offenders -->
                     <div>
                         <div class="card">
                             <div class="card-title"><i class="fas fa-exclamation-triangle" style="color:#9c3e32;font-size:0.9rem;"></i> Repeat Offenders</div>
@@ -689,7 +847,6 @@
                     </div>
                 </div>
 
-                <!-- Footer -->
                 <div class="mt-4 pt-3 border-t">
                     <p class="text-xs text-muted">
                         SeizeTrack · © Benson Idahosa University · Security Operations
@@ -735,11 +892,38 @@
             if (menuBtn) menuBtn.addEventListener('click', openMobileDrawer);
             if (closeBtn) closeBtn.addEventListener('click', closeMobileDrawer);
             if (overlay) overlay.addEventListener('click', closeMobileDrawer);
-            if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
-            // ESC closes drawer
+            // 🔓 Wire the logout button to open the modal
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', openLogoutModal);
+            }
+
+            // Modal buttons
+            const cancelLogoutBtn = document.getElementById('cancelLogout');
+            const confirmLogoutBtn = document.getElementById('confirmLogout');
+
+            if (cancelLogoutBtn) {
+                cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+            }
+
+            if (confirmLogoutBtn) {
+                confirmLogoutBtn.addEventListener('click', performLogout);
+            }
+
+            // Close modal when clicking the overlay (outside the box)
+            const logoutModal = document.getElementById('logoutModal');
+            if (logoutModal) {
+                logoutModal.addEventListener('click', (e) => {
+                    if (e.target === logoutModal) closeLogoutModal();
+                });
+            }
+
+            // ESC key closes drawer AND logout modal
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeMobileDrawer();
+                if (e.key === 'Escape') {
+                    closeMobileDrawer();
+                    closeLogoutModal();
+                }
             });
 
             // Load data
