@@ -469,7 +469,10 @@
         </main>
     </div>
 
-    <script>
+<script>
+    (function() {
+        'use strict';
+
         // ============================================================
         //  CONFIG & STATE
         // ============================================================
@@ -522,7 +525,10 @@
             t.className = `toast ${type}`;
             t.textContent = msg;
             document.body.appendChild(t);
-            setTimeout(() => { t.style.animation = 'slideOut 0.3s ease'; setTimeout(() => t.remove(), 300); }, 4000);
+            setTimeout(() => {
+                t.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => t.remove(), 300);
+            }, 4000);
         }
 
         function getInitials(firstName, surname) {
@@ -538,33 +544,46 @@
             return 'Unknown Role';
         }
 
+        function getFullName(user) {
+            if (!user) return 'User';
+            const firstName = user.first_name || '';
+            const surname = user.surname || '';
+            if (firstName && surname) return `${firstName} ${surname}`;
+            return user.name || user.email || 'User';
+        }
+
         // ============================================================
         //  UPDATE USER PROFILE IN UI (ALL FROM DB)
         // ============================================================
         function updateUserProfile(user) {
             if (!user) return;
-            
+
             const firstName = user.first_name || '';
             const surname = user.surname || '';
-            const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
+            const fullName = getFullName(user);
             const initials = getInitials(firstName, surname);
             const roleDisplay = getRoleDisplay(user.role);
             const department = user.department || 'General';
-            
+
             // Update profile header
-            document.getElementById('profileAvatar').textContent = initials;
-            document.getElementById('profileName').textContent = fullName;
-            document.getElementById('profileRoleLabel').textContent = roleDisplay;
-            
-            // Update sidebar
-            document.getElementById('roleLabel').textContent = roleDisplay;
-            document.getElementById('roleScope').textContent = department;
-            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
-            
-            // Update brand badges with initials
-            document.getElementById('brandBadge').textContent = initials;
-            document.getElementById('mobileBrandBadge').textContent = initials;
-            
+            const avatarEl = document.getElementById('profileAvatar');
+            const nameEl = document.getElementById('profileName');
+            const roleEl = document.getElementById('profileRoleLabel');
+            const roleLabelEl = document.getElementById('roleLabel');
+            const roleScopeEl = document.getElementById('roleScope');
+            const mobileFooterEl = document.getElementById('mobileRoleFooter');
+            const brandBadgeEl = document.getElementById('brandBadge');
+            const mobileBrandBadgeEl = document.getElementById('mobileBrandBadge');
+
+            if (avatarEl) avatarEl.textContent = initials;
+            if (nameEl) nameEl.textContent = fullName;
+            if (roleEl) roleEl.textContent = roleDisplay;
+            if (roleLabelEl) roleLabelEl.textContent = roleDisplay;
+            if (roleScopeEl) roleScopeEl.textContent = department;
+            if (mobileFooterEl) mobileFooterEl.textContent = `${roleDisplay} · ${department}`;
+            if (brandBadgeEl) brandBadgeEl.textContent = initials;
+            if (mobileBrandBadgeEl) mobileBrandBadgeEl.textContent = initials;
+
             // Pre-fill seizedBy field with user's full name
             const seizedBy = document.getElementById('seizedBy');
             if (seizedBy && fullName) seizedBy.value = fullName;
@@ -573,7 +592,8 @@
         function setDate() {
             const now = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+            const el = document.getElementById('currentDate');
+            if (el) el.textContent = now.toLocaleDateString('en-US', options);
         }
 
         // ============================================================
@@ -595,6 +615,8 @@
                         // 🔒 Restrict to admin and security only
                         if (!ALLOWED_ROLES.includes(userRole)) {
                             toast('Access denied. Only Admin or Security officers can record seizures.', 'error');
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
                             setTimeout(() => redirectToLogin(), 1500);
                             return null;
                         }
@@ -615,12 +637,16 @@
         // ============================================================
         async function handlePersonSearch(query) {
             const results = document.getElementById('searchResults');
+            if (!results) return;
             if (!query.trim()) { results.style.display = 'none'; return; }
+
             try {
                 results.style.display = 'block';
                 results.innerHTML = `<div style="padding:1rem;color:#68768a;"><i class="fas fa-spinner fa-spin"></i> Searching...</div>`;
+
                 const res = await authFetch(`/persons?search=${encodeURIComponent(query)}`);
                 const data = await res.json();
+
                 if (data.success && data.data && data.data.length > 0) {
                     results.innerHTML = `
                         <div style="font-size:0.8rem;color:#68768a;margin-bottom:0.5rem;">${data.data.length} found</div>
@@ -656,22 +682,39 @@
             try {
                 const res = await authFetch(`/persons/${id}`);
                 const data = await res.json();
-                if (data.success) {
-                    selectedPerson = data.data;
-                    document.getElementById('selectedName').textContent = selectedPerson.name;
-                    document.getElementById('selectedMatric').textContent = selectedPerson.matric_number || '';
-                    document.getElementById('selectedDept').textContent = selectedPerson.department || 'Not specified';
-                    document.getElementById('selectedAvatar').textContent = (selectedPerson.name||'?').charAt(0).toUpperCase();
-                    document.getElementById('selectedPersonDisplay').style.display = 'block';
-                    document.getElementById('seizureDetailsForm').style.display = 'block';
-                    document.getElementById('searchResults').style.display = 'none';
-                    document.getElementById('personSearch').value = '';
-                    document.getElementById('newPersonForm').classList.remove('active');
-                    document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    toast(`Selected: ${selectedPerson.name}`, 'success');
-                    updateNotice(`Selected ${selectedPerson.name} · Ready to record seizure`);
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Failed to load person');
                 }
-            } catch (e) { toast('Error loading person: ' + e.message, 'error'); }
+
+                selectedPerson = data.data;
+
+                const nameEl = document.getElementById('selectedName');
+                const matricEl = document.getElementById('selectedMatric');
+                const deptEl = document.getElementById('selectedDept');
+                const avatarEl = document.getElementById('selectedAvatar');
+                const displayEl = document.getElementById('selectedPersonDisplay');
+                const detailsFormEl = document.getElementById('seizureDetailsForm');
+                const resultsEl = document.getElementById('searchResults');
+                const searchEl = document.getElementById('personSearch');
+                const newPersonFormEl = document.getElementById('newPersonForm');
+
+                if (nameEl) nameEl.textContent = selectedPerson.name;
+                if (matricEl) matricEl.textContent = selectedPerson.matric_number || '';
+                if (deptEl) deptEl.textContent = selectedPerson.department || 'Not specified';
+                if (avatarEl) avatarEl.textContent = (selectedPerson.name||'?').charAt(0).toUpperCase();
+                if (displayEl) displayEl.style.display = 'block';
+                if (detailsFormEl) detailsFormEl.style.display = 'block';
+                if (resultsEl) resultsEl.style.display = 'none';
+                if (searchEl) searchEl.value = '';
+                if (newPersonFormEl) newPersonFormEl.classList.remove('active');
+
+                if (detailsFormEl) detailsFormEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                toast(`Selected: ${selectedPerson.name}`, 'success');
+                updateNotice(`Selected ${selectedPerson.name} · Ready to record seizure`);
+            } catch (e) {
+                toast('Error loading person: ' + e.message, 'error');
+            }
         }
 
         // ============================================================
@@ -682,23 +725,36 @@
             const matric = document.getElementById('newMatricNumber').value.trim();
             const dept = document.getElementById('department').value;
             const level = document.getElementById('level').value;
-            if (!name || !matric) { toast('Please fill in all required fields.', 'error'); return; }
+
+            if (!name || !matric) {
+                toast('Please fill in all required fields.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('addPersonBtn');
             try {
-                const btn = document.getElementById('addPersonBtn');
-                const orig = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
                 btn.disabled = true;
+
                 const res = await authFetch('/persons', {
                     method: 'POST',
-                    body: JSON.stringify({ name, matric_number: matric, department: dept || null, level: level || null })
+                    body: JSON.stringify({
+                        name,
+                        matric_number: matric,
+                        department: dept || null,
+                        level: level || null
+                    })
                 });
                 const data = await res.json();
+
                 if (!res.ok || !data.success) {
                     throw new Error(data.message || 'Failed to add person');
                 }
+
                 document.getElementById('newPersonForm').classList.remove('active');
                 document.getElementById('newPersonFormFields').reset();
                 document.getElementById('matricHint').textContent = '';
+
                 selectedPerson = data.data;
                 document.getElementById('selectedName').textContent = selectedPerson.name;
                 document.getElementById('selectedMatric').textContent = selectedPerson.matric_number || '';
@@ -708,13 +764,15 @@
                 document.getElementById('seizureDetailsForm').style.display = 'block';
                 document.getElementById('personSearch').value = '';
                 document.getElementById('searchResults').style.display = 'none';
+
                 toast(`Person "${name}" added successfully!`, 'success');
                 updateNotice(`Added ${selectedPerson.name} · Ready to record seizure`);
                 document.getElementById('seizureDetailsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } catch (e) { toast('Error: ' + e.message, 'error'); }
-            finally {
-                document.getElementById('addPersonBtn').innerHTML = 'Add Person';
-                document.getElementById('addPersonBtn').disabled = false;
+            } catch (e) {
+                toast('Error: ' + e.message, 'error');
+            } finally {
+                btn.innerHTML = 'Add Person';
+                btn.disabled = false;
             }
         }
 
@@ -722,21 +780,27 @@
         //  RECORD SEIZURE
         // ============================================================
         async function handleSeizureSubmit() {
-            if (!selectedPerson) { toast('Please select a person first.', 'error'); return; }
+            if (!selectedPerson) {
+                toast('Please select a person first.', 'error');
+                return;
+            }
+
             const phoneModel = document.getElementById('phoneModel').value.trim();
             const location = document.getElementById('location').value;
-            if (!phoneModel || !location) { toast('Please fill in Device Model and Location.', 'error'); return; }
+
+            if (!phoneModel || !location) {
+                toast('Please fill in Device Model and Location.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('recordSeizureBtn');
             try {
-                const btn = document.getElementById('recordSeizureBtn');
-                const orig = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recording...';
                 btn.disabled = true;
-                
+
                 // Get full name from current user
-                const firstName = currentUser?.first_name || '';
-                const surname = currentUser?.surname || '';
-                const fullName = firstName && surname ? `${firstName} ${surname}` : currentUser?.name || 'Admin';
-                
+                const fullName = getFullName(currentUser);
+
                 const payload = {
                     person_id: selectedPerson.id,
                     phone_model: phoneModel,
@@ -747,22 +811,26 @@
                     notes: document.getElementById('notes').value.trim() || null,
                     status: 'active'
                 };
+
                 const res = await authFetch('/seizures', {
                     method: 'POST',
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
+
                 if (!res.ok || !data.success) {
                     throw new Error(data.message || 'Failed to record seizure');
                 }
+
                 document.getElementById('mainCard').style.display = 'none';
                 document.getElementById('successScreen').style.display = 'block';
                 toast(`Seizure recorded for ${selectedPerson.name}`, 'success');
                 updateNotice(`Seizure recorded for ${selectedPerson.name}`);
-            } catch (e) { toast('Error: ' + e.message, 'error'); }
-            finally {
-                document.getElementById('recordSeizureBtn').innerHTML = 'Record Seizure';
-                document.getElementById('recordSeizureBtn').disabled = false;
+            } catch (e) {
+                toast('Error: ' + e.message, 'error');
+            } finally {
+                btn.innerHTML = 'Record Seizure';
+                btn.disabled = false;
             }
         }
 
@@ -778,13 +846,13 @@
             document.getElementById('level').value = '';
             document.getElementById('location').value = '';
             document.getElementById('seizureReason').value = '';
-            
+
             // Re-populate seizedBy with user's full name
-            const firstName = currentUser?.first_name || '';
-            const surname = currentUser?.surname || '';
-            const fullName = firstName && surname ? `${firstName} ${surname}` : currentUser?.name || '';
-            if (fullName) document.getElementById('seizedBy').value = fullName;
-            
+            const fullName = getFullName(currentUser);
+            if (fullName && document.getElementById('seizedBy')) {
+                document.getElementById('seizedBy').value = fullName;
+            }
+
             document.getElementById('successScreen').style.display = 'none';
             document.getElementById('mainCard').style.display = 'block';
             document.getElementById('newPersonForm').classList.remove('active');
@@ -804,21 +872,36 @@
             updateNotice('Ready · Search for a person to begin');
 
             // Mobile menu
-            document.getElementById('menuToggle').addEventListener('click', () => {
+            const menuBtn = document.getElementById('menuToggle');
+            const closeDrawerBtn = document.getElementById('closeDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (menuBtn) menuBtn.addEventListener('click', () => {
                 document.getElementById('mobileDrawer').classList.add('open');
-                document.getElementById('drawerOverlay').classList.add('show');
+                overlay.classList.add('show');
             });
-            document.getElementById('closeDrawer').addEventListener('click', () => {
+            if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', () => {
                 document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
+                overlay.classList.remove('show');
             });
-            document.getElementById('drawerOverlay').addEventListener('click', () => {
+            if (overlay) overlay.addEventListener('click', () => {
                 document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
+                overlay.classList.remove('show');
+            });
+
+            // ESC closes drawer
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const drawer = document.getElementById('mobileDrawer');
+                    const ov = document.getElementById('drawerOverlay');
+                    if (drawer) drawer.classList.remove('open');
+                    if (ov) ov.classList.remove('show');
+                }
             });
 
             // Logout
-            document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (logoutBtn) logoutBtn.addEventListener('click', () => {
                 if (confirm('Are you sure you want to logout?')) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
@@ -828,13 +911,16 @@
 
             // Search debounce
             const searchInput = document.getElementById('personSearch');
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => handlePersonSearch(this.value), 300);
-            });
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => handlePersonSearch(this.value), 300);
+                });
+            }
 
             // Show new person form
-            document.getElementById('showNewPersonForm').addEventListener('click', function() {
+            const showNewPersonFormBtn = document.getElementById('showNewPersonForm');
+            if (showNewPersonFormBtn) showNewPersonFormBtn.addEventListener('click', function() {
                 document.getElementById('newPersonForm').classList.add('active');
                 document.getElementById('personSearch').value = '';
                 document.getElementById('searchResults').style.display = 'none';
@@ -842,7 +928,8 @@
             });
 
             // Cancel new person
-            document.getElementById('cancelNewPerson').addEventListener('click', function() {
+            const cancelNewPersonBtn = document.getElementById('cancelNewPerson');
+            if (cancelNewPersonBtn) cancelNewPersonBtn.addEventListener('click', function() {
                 document.getElementById('newPersonForm').classList.remove('active');
                 document.getElementById('newPersonFormFields').reset();
                 document.getElementById('matricHint').textContent = '';
@@ -850,13 +937,15 @@
             });
 
             // New person submit
-            document.getElementById('newPersonFormFields').addEventListener('submit', function(e) {
+            const newPersonForm = document.getElementById('newPersonFormFields');
+            if (newPersonForm) newPersonForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 handleNewPersonSubmit();
             });
 
             // Change person
-            document.getElementById('changePerson').addEventListener('click', function() {
+            const changePersonBtn = document.getElementById('changePerson');
+            if (changePersonBtn) changePersonBtn.addEventListener('click', function() {
                 document.getElementById('selectedPersonDisplay').style.display = 'none';
                 document.getElementById('seizureDetailsForm').style.display = 'none';
                 document.getElementById('personSearch').value = '';
@@ -867,31 +956,37 @@
             });
 
             // Seizure submit
-            document.getElementById('seizureForm').addEventListener('submit', function(e) {
+            const seizureForm = document.getElementById('seizureForm');
+            if (seizureForm) seizureForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 handleSeizureSubmit();
             });
 
             // Back to person selection
-            document.getElementById('backToPersonSelection').addEventListener('click', function() {
+            const backBtn = document.getElementById('backToPersonSelection');
+            if (backBtn) backBtn.addEventListener('click', function() {
                 document.getElementById('seizureDetailsForm').style.display = 'none';
                 document.getElementById('personSearch').focus();
             });
 
             // Record another
-            document.getElementById('recordAnother').addEventListener('click', resetForm);
+            const recordAnotherBtn = document.getElementById('recordAnother');
+            if (recordAnotherBtn) recordAnotherBtn.addEventListener('click', resetForm);
 
             // Matric validation hint
-            document.getElementById('newMatricNumber').addEventListener('input', function() {
-                const hint = document.getElementById('matricHint');
-                if (this.value.trim()) {
-                    hint.textContent = '✓ Valid';
-                    hint.className = 'form-hint success';
-                } else {
-                    hint.textContent = '';
-                    hint.className = 'form-hint';
-                }
-            });
+            const matricInput = document.getElementById('newMatricNumber');
+            if (matricInput) {
+                matricInput.addEventListener('input', function() {
+                    const hint = document.getElementById('matricHint');
+                    if (this.value.trim()) {
+                        hint.textContent = '✓ Valid';
+                        hint.className = 'form-hint success';
+                    } else {
+                        hint.textContent = '';
+                        hint.className = 'form-hint';
+                    }
+                });
+            }
         }
 
         // ============================================================
@@ -901,8 +996,12 @@
             const user = await checkAuth();
             if (!user) return;
             init();
-            document.getElementById('personSearch').focus();
+            const searchInput = document.getElementById('personSearch');
+            if (searchInput) searchInput.focus();
         });
-    </script>
+
+    })();
+</script>
+
 </body>
 </html>

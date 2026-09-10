@@ -261,469 +261,527 @@
         </main>
     </div>
 
-    <script>
-        (function() {
-            'use strict';
+<script>
+    (function() {
+        'use strict';
 
-            // =============================================
-            // CONFIGURATION
-            // =============================================
-            const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
-            const ALLOWED_ROLES = ['admin', 'security'];
+        // =============================================
+        // CONFIGURATION
+        // =============================================
+        const API_BASE_URL = 'https://biu-legacycampus.onrender.com';
+        const ALLOWED_ROLES = ['admin', 'security'];
 
-            // =============================================
-            // TOAST NOTIFICATION
-            // =============================================
-            function showToast(message, type = 'success') {
-                const toast = document.getElementById('toast');
-                toast.textContent = message;
-                toast.className = `toast ${type}`;
-                setTimeout(() => toast.classList.add('show'), 10);
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 4000);
+        // =============================================
+        // TOAST NOTIFICATION
+        // =============================================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // =============================================
+        // AUTH HELPERS
+        // =============================================
+        function getToken() { return localStorage.getItem('token'); }
+        function getUser() {
+            const u = localStorage.getItem('user');
+            try { return u ? JSON.parse(u) : null; } catch { return null; }
+        }
+        function isLoggedIn() { return !!getToken(); }
+        function redirectToLogin() { window.location.href = '/login.html'; }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            }
+        }
+
+        function getAuthHeaders() {
+            return {
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // =============================================
+        // AUTHENTICATED API HELPER
+        // =============================================
+        async function apiCall(endpoint, options = {}) {
+            const token = getToken();
+            if (!token) {
+                showToast('No authentication token found. Please login again.', 'error');
+                setTimeout(() => redirectToLogin(), 1500);
+                throw new Error('No authentication token');
             }
 
-            // =============================================
-            // AUTH
-            // =============================================
-            function getToken() { return localStorage.getItem('token'); }
-            function isLoggedIn() { return !!getToken(); }
-            function redirectToLogin() { window.location.href = '/login.html'; }
-            
-            function logout() {
-                if (confirm('Are you sure you want to logout?')) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        ...(options.headers || {})
+                    }
+                });
+
+                if (response.status === 401) {
+                    showToast('Session expired. Please login again.', 'error');
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
-                    window.location.href = '/login.html';
+                    setTimeout(() => redirectToLogin(), 1500);
+                    throw new Error('Authentication required');
                 }
-            }
 
-            function getAuthHeaders() {
-                return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' };
-            }
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (e) {
+                        // response wasn't JSON
+                    }
+                    throw new Error(errorMessage);
+                }
 
-            // =============================================
-            // AUTHENTICATED API HELPER
-            // =============================================
-            async function apiCall(endpoint, options = {}) {
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.message || 'API error');
+                }
+                return data;
+            } catch (error) {
+                if (!error.message.includes('Authentication required')) {
+                    showToast('Error: ' + error.message, 'error');
+                }
+                throw error;
+            }
+        }
+
+        // =============================================
+        // HELPERS
+        // =============================================
+        function getInitials(firstName, surname) {
+            const first = firstName ? firstName.charAt(0).toUpperCase() : '';
+            const last = surname ? surname.charAt(0).toUpperCase() : '';
+            return first + last || 'U';
+        }
+
+        function getTimeAgo(dateStr) {
+            if (!dateStr) return 'Just now';
+            const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function getRoleDisplay(role) {
+            const r = (role || '').toLowerCase();
+            if (r === 'admin') return 'Administrator';
+            if (r === 'security') return 'Security Officer';
+            return 'Unknown Role';
+        }
+
+        function getStatusClass(status) {
+            const s = (status || 'active').toLowerCase();
+            if (s === 'active') return 'badge-live';
+            if (s === 'returned') return 'badge-success';
+            if (s === 'lost') return 'badge-danger';
+            if (s === 'forfeited') return 'badge-warning';
+            if (s === 'draft') return 'badge-info';
+            return 'badge-info';
+        }
+
+        // =============================================
+        // UPDATE USER PROFILE IN UI (ALL FROM DB)
+        // =============================================
+        function updateUserProfile(user) {
+            if (!user) return;
+
+            const firstName = user.first_name || '';
+            const surname = user.surname || '';
+            const fullName = firstName && surname
+                ? `${firstName} ${surname}`
+                : user.name || user.email || 'User';
+            const initials = getInitials(firstName, surname);
+            const roleDisplay = getRoleDisplay(user.role);
+            const department = user.department || 'General';
+
+            // Header profile
+            const avatarEl = document.getElementById('profileAvatar');
+            const nameEl = document.getElementById('profileName');
+            const roleEl = document.getElementById('profileRoleLabel');
+            if (avatarEl) avatarEl.textContent = initials;
+            if (nameEl) nameEl.textContent = fullName;
+            if (roleEl) roleEl.textContent = roleDisplay;
+
+            // Sidebar role card
+            const roleLabelEl = document.getElementById('roleLabel');
+            const roleScopeEl = document.getElementById('roleScope');
+            const mobileFooterEl = document.getElementById('mobileRoleFooter');
+            if (roleLabelEl) roleLabelEl.textContent = roleDisplay;
+            if (roleScopeEl) roleScopeEl.textContent = department;
+            if (mobileFooterEl) mobileFooterEl.textContent = `${roleDisplay} · ${department}`;
+
+            // Brand badges
+            const brandBadgeEl = document.getElementById('brandBadge');
+            const mobileBrandBadgeEl = document.getElementById('mobileBrandBadge');
+            if (brandBadgeEl) brandBadgeEl.textContent = initials;
+            if (mobileBrandBadgeEl) mobileBrandBadgeEl.textContent = initials;
+        }
+
+        // =============================================
+        // DATA LOADING
+        // =============================================
+        async function loadDashboardData() {
+            try {
+                const data = await apiCall('/api/stats/dashboard');
+                return data.data || {
+                    stats: { totalSeizures: 0, todaySeizures: 0, totalPersons: 0, repeatOffenders: 0 },
+                    recentSeizures: []
+                };
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                return {
+                    stats: { totalSeizures: 0, todaySeizures: 0, totalPersons: 0, repeatOffenders: 0 },
+                    recentSeizures: []
+                };
+            }
+        }
+
+        async function loadPersons() {
+            try {
+                const data = await apiCall('/api/persons');
+                return data.data || [];
+            } catch (error) {
+                console.error('Failed to load persons:', error);
+                return [];
+            }
+        }
+
+        // =============================================
+        // AUTHENTICATION CHECK (with role restriction)
+        // =============================================
+        async function checkAuth() {
+            try {
                 const token = getToken();
                 if (!token) {
-                    showToast('No authentication token found. Please login again.', 'error');
-                    setTimeout(() => redirectToLogin(), 1500);
-                    throw new Error('No authentication token');
-                }
-
-                try {
-                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                        ...options,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`,
-                            ...(options.headers || {})
-                        }
-                    });
-                    
-                    if (response.status === 401) {
-                        showToast('Session expired. Please login again.', 'error');
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-                        setTimeout(() => redirectToLogin(), 1500);
-                        throw new Error('Authentication required');
-                    }
-                    
-                    if (!response.ok) {
-                        let errorMessage = `HTTP ${response.status}`;
-                        try {
-                            const errorData = await response.json();
-                            errorMessage = errorData.message || errorMessage;
-                        } catch (e) {
-                            // response wasn't JSON
-                        }
-                        throw new Error(errorMessage);
-                    }
-                    
-                    const data = await response.json();
-                    if (!data.success) {
-                        throw new Error(data.message || 'API error');
-                    }
-                    return data;
-                } catch (error) {
-                    if (!error.message.includes('Authentication required')) {
-                        showToast('Error: ' + error.message, 'error');
-                    }
-                    throw error;
-                }
-            }
-
-            // =============================================
-            // HELPERS
-            // =============================================
-            function getInitials(firstName, surname) {
-                const first = firstName ? firstName.charAt(0).toUpperCase() : '';
-                const last = surname ? surname.charAt(0).toUpperCase() : '';
-                return first + last || 'U';
-            }
-
-            function getTimeAgo(dateStr) {
-                if (!dateStr) return 'Just now';
-                const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
-                if (diff < 60) return 'Just now';
-                if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-                if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-                return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            }
-
-            function getRoleDisplay(role) {
-                const r = (role || '').toLowerCase();
-                if (r === 'admin') return 'Administrator';
-                if (r === 'security') return 'Security Officer';
-                return 'Unknown Role';
-            }
-
-            // =============================================
-            // UPDATE USER PROFILE IN UI (ALL FROM DB)
-            // =============================================
-            function updateUserProfile(user) {
-                if (!user) return;
-                
-                const firstName = user.first_name || '';
-                const surname = user.surname || '';
-                const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
-                const initials = getInitials(firstName, surname);
-                const roleDisplay = getRoleDisplay(user.role);
-                const department = user.department || 'General';
-                
-                // Update profile elements in header
-                document.getElementById('profileAvatar').textContent = initials;
-                document.getElementById('profileName').textContent = fullName;
-                document.getElementById('profileRoleLabel').textContent = roleDisplay;
-                
-                // Update sidebar role card
-                document.getElementById('roleLabel').textContent = roleDisplay;
-                document.getElementById('roleScope').textContent = department;
-                document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
-                
-                // Update brand badges with initials
-                document.getElementById('brandBadge').textContent = initials;
-                document.getElementById('mobileBrandBadge').textContent = initials;
-            }
-
-            // =============================================
-            // DATA LOADING WITH FALLBACKS
-            // =============================================
-            async function loadDashboardData() {
-                try {
-                    const data = await apiCall('/api/stats/dashboard');
-                    return data.data || { stats: { totalSeizures: 0, todaySeizures: 0, totalPersons: 0, repeatOffenders: 0 }, recentSeizures: [] };
-                } catch (error) {
-                    console.error('Failed to load dashboard data:', error);
-                    return { stats: { totalSeizures: 0, todaySeizures: 0, totalPersons: 0, repeatOffenders: 0 }, recentSeizures: [] };
-                }
-            }
-
-            async function loadPersons() {
-                try {
-                    const data = await apiCall('/api/persons');
-                    return data.data || [];
-                } catch (error) {
-                    console.error('Failed to load persons:', error);
-                    return [];
-                }
-            }
-
-            // =============================================
-            // AUTHENTICATION CHECK (with role restriction)
-            // =============================================
-            async function checkAuth() {
-                try {
-                    const token = getToken();
-                    if (!token) {
-                        redirectToLogin();
-                        return false;
-                    }
-
-                    const response = await fetch(`${API_BASE_URL}/api/check`, {
-                        method: 'POST',
-                        headers: getAuthHeaders()
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Auth failed');
-                    }
-
-                    const data = await response.json();
-                    if (!data.success) {
-                        throw new Error('Auth invalid');
-                    }
-
-                    const user = data.user;
-
-                    // 🔒 Restrict to admin and security only
-                    const userRole = (user.role || '').toLowerCase();
-                    if (!ALLOWED_ROLES.includes(userRole)) {
-                        showToast('Access denied. Admin or Security role required.', 'error');
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-                        setTimeout(() => redirectToLogin(), 1500);
-                        return false;
-                    }
-
-                    // Update user info in UI from database
-                    updateUserProfile(user);
-
-                    return true;
-                } catch (error) {
-                    console.error('Auth check failed:', error);
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
                     redirectToLogin();
                     return false;
                 }
-            }
 
-            // =============================================
-            // SET DATE
-            // =============================================
-            function setDate() {
-                const now = new Date();
-                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
-            }
+                const response = await fetch(`${API_BASE_URL}/api/check`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
 
-            // =============================================
-            // MOBILE DRAWER
-            // =============================================
-            function openMobileDrawer() {
-                document.getElementById('mobileDrawer').classList.add('open');
-                document.getElementById('drawerOverlay').classList.add('show');
-            }
+                if (!response.ok) throw new Error('Auth failed');
 
-            function closeMobileDrawer() {
-                document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
-            }
+                const data = await response.json();
+                if (!data.success) throw new Error('Auth invalid');
 
-            // =============================================
-            // RENDER DASHBOARD WITH FALLBACKS
-            // =============================================
-            function renderDashboard(statsData, persons) {
-                const container = document.getElementById('screenContent');
+                const user = data.user;
 
-                const stats = statsData?.stats || {};
-                const recentSeizures = statsData?.recentSeizures || [];
-
-                const totalSeizures = stats.totalSeizures || 0;
-                const todaySeizures = stats.todaySeizures || 0;
-                const totalPersons = stats.totalPersons || 0;
-                const repeatOffenders = stats.repeatOffenders || 0;
-
-                const offenders = (persons || [])
-                    .filter(p => p.total_seizures >= 2)
-                    .sort((a, b) => b.total_seizures - a.total_seizures)
-                    .slice(0, 5);
-
-                const hasData = totalSeizures > 0 || todaySeizures > 0 || totalPersons > 0 || recentSeizures.length > 0;
-
-                if (!hasData) {
-                    container.innerHTML = `
-                        <div class="error-fallback">
-                            <div class="error-icon"><i class="fas fa-database"></i></div>
-                            <h2>No Data Available</h2>
-                            <p>Start by recording your first seizure. The dashboard will display statistics and recent activity here.</p>
-                            <a href="AddSeizure.html" class="btn-gold"><i class="fas fa-plus"></i> Record First Seizure</a>
-                        </div>
-                    `;
-                    return;
+                // 🔒 Restrict to admin and security only
+                const userRole = (user.role || '').toLowerCase();
+                if (!ALLOWED_ROLES.includes(userRole)) {
+                    showToast('Access denied. Admin or Security role required.', 'error');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setTimeout(() => redirectToLogin(), 1500);
+                    return false;
                 }
 
+                // Persist latest user data
+                localStorage.setItem('user', JSON.stringify(user));
+
+                // Update UI from database
+                updateUserProfile(user);
+
+                return true;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                redirectToLogin();
+                return false;
+            }
+        }
+
+        // =============================================
+        // SET DATE
+        // =============================================
+        function setDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const el = document.getElementById('currentDate');
+            if (el) el.textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // =============================================
+        // MOBILE DRAWER
+        // =============================================
+        function openMobileDrawer() {
+            document.getElementById('mobileDrawer').classList.add('open');
+            document.getElementById('drawerOverlay').classList.add('show');
+        }
+
+        function closeMobileDrawer() {
+            document.getElementById('mobileDrawer').classList.remove('open');
+            document.getElementById('drawerOverlay').classList.remove('show');
+        }
+
+        // =============================================
+        // RENDER DASHBOARD
+        // =============================================
+        function renderDashboard(statsData, persons) {
+            const container = document.getElementById('screenContent');
+            if (!container) return;
+
+            const stats = statsData?.stats || {};
+            const recentSeizures = statsData?.recentSeizures || [];
+
+            const totalSeizures = stats.totalSeizures || 0;
+            const todaySeizures = stats.todaySeizures || 0;
+            const totalPersons = stats.totalPersons || 0;
+            const repeatOffenders = stats.repeatOffenders || 0;
+
+            const offenders = (persons || [])
+                .filter(p => p.total_seizures >= 2)
+                .sort((a, b) => b.total_seizures - a.total_seizures)
+                .slice(0, 5);
+
+            const hasData = totalSeizures > 0 || todaySeizures > 0 || totalPersons > 0 || recentSeizures.length > 0;
+
+            if (!hasData) {
                 container.innerHTML = `
-                    <!-- Page Heading -->
-                    <div class="page-heading">
-                        <div>
-                            <p class="eyebrow">Enforcement Operations</p>
-                            <h1>Command Center</h1>
-                            <p class="desc">Live monitoring of device seizures, offender activity, and enforcement statistics.</p>
-                        </div>
-                        <div class="action-group">
-                            <a href="AddSeizure.html" class="btn-gold"><i class="fas fa-plus"></i> Record Seizure</a>
-                        </div>
-                    </div>
-
-                    <!-- Metric Grid -->
-                    <div class="metric-grid">
-                        <div class="metric-card">
-                            <div class="metric-icon navy"><i class="fas fa-mobile-alt"></i></div>
-                            <div class="metric-value">${totalSeizures.toLocaleString()}</div>
-                            <div class="metric-title">Total Seizures</div>
-                            <div class="metric-detail">All time records</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon gold"><i class="fas fa-calendar-day"></i></div>
-                            <div class="metric-value">${todaySeizures.toLocaleString()}</div>
-                            <div class="metric-title">Today's Seizures</div>
-                            <div class="metric-detail">Recorded today</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon purple"><i class="fas fa-users"></i></div>
-                            <div class="metric-value">${totalPersons.toLocaleString()}</div>
-                            <div class="metric-title">Total Persons</div>
-                            <div class="metric-detail">Unique offenders</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-                            <div class="metric-value">${repeatOffenders.toLocaleString()}</div>
-                            <div class="metric-title">Repeat Offenders</div>
-                            <div class="metric-detail">2+ seizures recorded</div>
-                        </div>
-                    </div>
-
-                    <!-- Main Layout -->
-                    <div class="grid-2 mt-4">
-                        <!-- Left Column - Recent Seizures -->
-                        <div>
-                            <div class="card">
-                                <div class="flex-between">
-                                    <div class="card-title"><i class="fas fa-history" style="color:#a77915;font-size:0.9rem;"></i> Recent Seizures</div>
-                                    <a href="History.html" style="color:#a77915;font-size:0.85rem;text-decoration:none;">View all <i class="fas fa-arrow-right"></i></a>
-                                </div>
-                                <div class="seizure-list mt-2">
-                                    ${recentSeizures.length === 0 ? '<p class="text-xs text-muted">No recent seizures recorded</p>' : recentSeizures.map(s => `
-                                        <div class="seizure-item">
-                                            <div>
-                                                <div class="seizure-device">${s.phoneModel || 'Unknown Device'}</div>
-                                                <div class="seizure-person">${s.person?.name || 'Unknown Person'} · ${s.person?.matricNumber || ''}</div>
-                                                <div class="seizure-location">${s.location || 'Unknown Location'}</div>
-                                            </div>
-                                            <div style="text-align:right;">
-                                                <div class="seizure-time">${getTimeAgo(s.createdAt)}</div>
-                                                <span class="badge ${s.status === 'active' ? 'badge-live' : 'badge-info'}">${s.status || 'Active'}</span>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-
-                            <!-- Quick Actions -->
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
-                                <a href="AddSeizure.html" style="text-decoration:none;">
-                                    <div style="padding:0.75rem;border:1px solid #ded6c9;border-radius:0.75rem;background:#fffcf6;display:flex;align-items:center;justify-content:space-between;">
-                                        <div>
-                                            <div style="font-weight:600;font-size:0.85rem;color:#10233f;">Record Seizure</div>
-                                            <div style="font-size:0.6rem;color:#68768a;">Log new event</div>
-                                        </div>
-                                        <div style="width:2rem;height:2rem;border-radius:9999px;background:#d6ad4b;display:flex;align-items:center;justify-content:center;color:white;"><i class="fas fa-plus"></i></div>
-                                    </div>
-                                </a>
-                                <a href="Person.html" style="text-decoration:none;">
-                                    <div style="padding:0.75rem;border:1px solid #ded6c9;border-radius:0.75rem;background:#fffcf6;display:flex;align-items:center;justify-content:space-between;">
-                                        <div>
-                                            <div style="font-weight:600;font-size:0.85rem;color:#10233f;">Search Persons</div>
-                                            <div style="font-size:0.6rem;color:#68768a;">Find by name/matric</div>
-                                        </div>
-                                        <div style="width:2rem;height:2rem;border-radius:9999px;background:#e7edf5;display:flex;align-items:center;justify-content:center;color:#10233f;"><i class="fas fa-search"></i></div>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Right Column - Repeat Offenders -->
-                        <div>
-                            <div class="card">
-                                <div class="card-title"><i class="fas fa-exclamation-triangle" style="color:#9c3e32;font-size:0.9rem;"></i> Repeat Offenders</div>
-                                <div style="margin-top:0.5rem;">
-                                    ${offenders.length === 0 ? '<p class="text-xs text-muted">No repeat offenders found</p>' : offenders.map(o => `
-                                        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #f0ebe2;">
-                                            <div style="display:flex;align-items:center;gap:0.75rem;">
-                                                <div style="width:2rem;height:2rem;border-radius:9999px;background:#f9e2de;color:#9c3e32;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;">${o.total_seizures || 0}</div>
-                                                <div>
-                                                    <div style="font-weight:500;font-size:0.85rem;color:#17233c;">${o.name || 'Unknown'}</div>
-                                                    <div style="font-size:0.65rem;color:#6b778b;">${o.matric_number || ''} · ${o.department || ''}</div>
-                                                </div>
-                                            </div>
-                                            <span class="badge ${(o.total_seizures || 0) >= 3 ? 'badge-danger' : 'badge-warning'}">${(o.total_seizures || 0) >= 3 ? 'Frequent' : 'Repeat'}</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                                <div style="padding-top:0.75rem;border-top:1px solid #ded6c9;margin-top:0.5rem;">
-                                    <a href="Person.html" style="display:block;width:100%;">
-                                        <button style="width:100%;padding:0.35rem 0.7rem;border:1px solid #ded6c9;border-radius:0.5rem;background:transparent;color:#10233f;font-size:0.75rem;cursor:pointer;">View All Persons</button>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="mt-4 pt-3 border-t">
-                        <p class="text-xs text-muted">
-                            SeizeTrack · © Benson Idahosa University · Security Operations
-                        </p>
+                    <div class="error-fallback">
+                        <div class="error-icon"><i class="fas fa-database"></i></div>
+                        <h2>No Data Available</h2>
+                        <p>Start by recording your first seizure. The dashboard will display statistics and recent activity here.</p>
+                        <a href="AddSeizure.html" class="btn-gold"><i class="fas fa-plus"></i> Record First Seizure</a>
                     </div>
                 `;
+                return;
             }
 
-            // =============================================
-            // INIT
-            // =============================================
-            async function init() {
-                // Check authentication + role
-                const authenticated = await checkAuth();
-                if (!authenticated) return;
+            container.innerHTML = `
+                <!-- Page Heading -->
+                <div class="page-heading">
+                    <div>
+                        <p class="eyebrow">Enforcement Operations</p>
+                        <h1>Command Center</h1>
+                        <p class="desc">Live monitoring of device seizures, offender activity, and enforcement statistics.</p>
+                    </div>
+                    <div class="action-group">
+                        <a href="AddSeizure.html" class="btn-gold"><i class="fas fa-plus"></i> Record Seizure</a>
+                    </div>
+                </div>
 
-                setDate();
+                <!-- Metric Grid -->
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon navy"><i class="fas fa-mobile-alt"></i></div>
+                        <div class="metric-value">${totalSeizures.toLocaleString()}</div>
+                        <div class="metric-title">Total Seizures</div>
+                        <div class="metric-detail">All time records</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon gold"><i class="fas fa-calendar-day"></i></div>
+                        <div class="metric-value">${todaySeizures.toLocaleString()}</div>
+                        <div class="metric-title">Today's Seizures</div>
+                        <div class="metric-detail">Recorded today</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon purple"><i class="fas fa-users"></i></div>
+                        <div class="metric-value">${totalPersons.toLocaleString()}</div>
+                        <div class="metric-title">Total Persons</div>
+                        <div class="metric-detail">Unique offenders</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="metric-value">${repeatOffenders.toLocaleString()}</div>
+                        <div class="metric-title">Repeat Offenders</div>
+                        <div class="metric-detail">2+ seizures recorded</div>
+                    </div>
+                </div>
 
-                // Setup mobile drawer
-                document.getElementById('menuToggle').addEventListener('click', openMobileDrawer);
-                document.getElementById('closeDrawer').addEventListener('click', closeMobileDrawer);
-                document.getElementById('drawerOverlay').addEventListener('click', closeMobileDrawer);
-                document.getElementById('logoutBtn').addEventListener('click', logout);
-
-                // Load data
-                try {
-                    document.getElementById('noticeText').textContent = 'Loading dashboard...';
-                    
-                    const [statsData, persons] = await Promise.all([
-                        loadDashboardData(),
-                        loadPersons()
-                    ]);
-
-                    const seizureCount = statsData?.recentSeizures?.length || 0;
-                    const personCount = persons?.length || 0;
-                    
-                    if (statsData && (statsData.stats?.totalSeizures > 0 || seizureCount > 0)) {
-                        document.getElementById('noticeText').textContent = `Ready · ${seizureCount} recent seizures, ${personCount} persons`;
-                    } else {
-                        document.getElementById('noticeText').textContent = 'No data yet. Record your first seizure!';
-                    }
-
-                    renderDashboard(statsData, persons);
-                } catch (error) {
-                    console.error('Error loading dashboard:', error);
-                    document.getElementById('noticeText').textContent = 'Error loading data. Please refresh.';
-                    showToast('Error loading data: ' + error.message, 'error');
-                    
-                    const container = document.getElementById('screenContent');
-                    container.innerHTML = `
-                        <div class="error-fallback">
-                            <div class="error-icon"><i class="fas fa-exclamation-circle"></i></div>
-                            <h2>Unable to Load Dashboard</h2>
-                            <p>There was an error loading the dashboard data. Please try refreshing the page.</p>
-                            <button class="btn-gold" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh Page</button>
+                <!-- Main Layout -->
+                <div class="grid-2 mt-4">
+                    <!-- Left Column - Recent Seizures -->
+                    <div>
+                        <div class="card">
+                            <div class="flex-between">
+                                <div class="card-title"><i class="fas fa-history" style="color:#a77915;font-size:0.9rem;"></i> Recent Seizures</div>
+                                <a href="History.html" style="color:#a77915;font-size:0.85rem;text-decoration:none;">View all <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                            <div class="seizure-list mt-2">
+                                ${recentSeizures.length === 0 ? '<p class="text-xs text-muted">No recent seizures recorded</p>' : recentSeizures.map(s => `
+                                    <div class="seizure-item">
+                                        <div>
+                                            <div class="seizure-device">${s.phoneModel || 'Unknown Device'}</div>
+                                            <div class="seizure-person">${s.person?.name || 'Unknown Person'} · ${s.person?.matricNumber || ''}</div>
+                                            <div class="seizure-location">${s.location || 'Unknown Location'}</div>
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <div class="seizure-time">${getTimeAgo(s.createdAt)}</div>
+                                            <span class="badge ${getStatusClass(s.status)}">${s.status || 'Active'}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
-                    `;
+
+                        <!-- Quick Actions -->
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+                            <a href="AddSeizure.html" style="text-decoration:none;">
+                                <div style="padding:0.75rem;border:1px solid #ded6c9;border-radius:0.75rem;background:#fffcf6;display:flex;align-items:center;justify-content:space-between;">
+                                    <div>
+                                        <div style="font-weight:600;font-size:0.85rem;color:#10233f;">Record Seizure</div>
+                                        <div style="font-size:0.6rem;color:#68768a;">Log new event</div>
+                                    </div>
+                                    <div style="width:2rem;height:2rem;border-radius:9999px;background:#d6ad4b;display:flex;align-items:center;justify-content:center;color:white;"><i class="fas fa-plus"></i></div>
+                                </div>
+                            </a>
+                            <a href="Person.html" style="text-decoration:none;">
+                                <div style="padding:0.75rem;border:1px solid #ded6c9;border-radius:0.75rem;background:#fffcf6;display:flex;align-items:center;justify-content:space-between;">
+                                    <div>
+                                        <div style="font-weight:600;font-size:0.85rem;color:#10233f;">Search Persons</div>
+                                        <div style="font-size:0.6rem;color:#68768a;">Find by name/matric</div>
+                                    </div>
+                                    <div style="width:2rem;height:2rem;border-radius:9999px;background:#e7edf5;display:flex;align-items:center;justify-content:center;color:#10233f;"><i class="fas fa-search"></i></div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Repeat Offenders -->
+                    <div>
+                        <div class="card">
+                            <div class="card-title"><i class="fas fa-exclamation-triangle" style="color:#9c3e32;font-size:0.9rem;"></i> Repeat Offenders</div>
+                            <div style="margin-top:0.5rem;">
+                                ${offenders.length === 0 ? '<p class="text-xs text-muted">No repeat offenders found</p>' : offenders.map(o => `
+                                    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #f0ebe2;">
+                                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                                            <div style="width:2rem;height:2rem;border-radius:9999px;background:#f9e2de;color:#9c3e32;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;">${o.total_seizures || 0}</div>
+                                            <div>
+                                                <div style="font-weight:500;font-size:0.85rem;color:#17233c;">${o.name || 'Unknown'}</div>
+                                                <div style="font-size:0.65rem;color:#6b778b;">${o.matric_number || ''} · ${o.department || ''}</div>
+                                            </div>
+                                        </div>
+                                        <span class="badge ${(o.total_seizures || 0) >= 3 ? 'badge-danger' : 'badge-warning'}">${(o.total_seizures || 0) >= 3 ? 'Frequent' : 'Repeat'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div style="padding-top:0.75rem;border-top:1px solid #ded6c9;margin-top:0.5rem;">
+                                <a href="Person.html" style="display:block;width:100%;">
+                                    <button style="width:100%;padding:0.35rem 0.7rem;border:1px solid #ded6c9;border-radius:0.5rem;background:transparent;color:#10233f;font-size:0.75rem;cursor:pointer;">View All Persons</button>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="mt-4 pt-3 border-t">
+                    <p class="text-xs text-muted">
+                        SeizeTrack · © Benson Idahosa University · Security Operations
+                    </p>
+                </div>
+            `;
+        }
+
+        // =============================================
+        // ERROR FALLBACK
+        // =============================================
+        function renderErrorFallback(message) {
+            const container = document.getElementById('screenContent');
+            if (!container) return;
+            container.innerHTML = `
+                <div class="error-fallback">
+                    <div class="error-icon"><i class="fas fa-exclamation-circle"></i></div>
+                    <h2>Unable to Load Dashboard</h2>
+                    <p>${message || 'There was an error loading the dashboard data. Please try refreshing the page.'}</p>
+                    <button class="btn-gold" onclick="location.reload()">
+                        <i class="fas fa-sync-alt"></i> Refresh Page
+                    </button>
+                </div>
+            `;
+        }
+
+        // =============================================
+        // INIT
+        // =============================================
+        async function init() {
+            // Check authentication + role
+            const authenticated = await checkAuth();
+            if (!authenticated) return;
+
+            setDate();
+
+            // Setup mobile drawer
+            const menuBtn = document.getElementById('menuToggle');
+            const closeBtn = document.getElementById('closeDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (menuBtn) menuBtn.addEventListener('click', openMobileDrawer);
+            if (closeBtn) closeBtn.addEventListener('click', closeMobileDrawer);
+            if (overlay) overlay.addEventListener('click', closeMobileDrawer);
+            if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+            // ESC closes drawer
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeMobileDrawer();
+            });
+
+            // Load data
+            try {
+                const noticeEl = document.getElementById('noticeText');
+                if (noticeEl) noticeEl.textContent = 'Loading dashboard...';
+
+                const [statsData, persons] = await Promise.all([
+                    loadDashboardData(),
+                    loadPersons()
+                ]);
+
+                const seizureCount = statsData?.recentSeizures?.length || 0;
+                const personCount = persons?.length || 0;
+
+                if (noticeEl) {
+                    if (statsData && (statsData.stats?.totalSeizures > 0 || seizureCount > 0)) {
+                        noticeEl.textContent = `Ready · ${seizureCount} recent seizures, ${personCount} persons`;
+                    } else {
+                        noticeEl.textContent = 'No data yet. Record your first seizure!';
+                    }
                 }
-            }
 
-            // Start the app
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
+                renderDashboard(statsData, persons);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                const noticeEl = document.getElementById('noticeText');
+                if (noticeEl) noticeEl.textContent = 'Error loading data. Please refresh.';
+                showToast('Error loading data: ' + error.message, 'error');
+                renderErrorFallback(error.message);
             }
+        }
 
-        })();
-    </script>
+        // Start the app
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+    })();
+</script>
 
 </body>
 </html>

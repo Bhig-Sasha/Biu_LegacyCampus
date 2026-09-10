@@ -362,7 +362,10 @@
         </main>
     </div>
 
-    <script>
+<script>
+    (function() {
+        'use strict';
+
         // ============================================================
         //  CONFIG & STATE
         // ============================================================
@@ -437,38 +440,71 @@
             return 'Unknown Role';
         }
 
+        function getStatusClass(status) {
+            const st = (status || 'active').toLowerCase();
+            if (st.includes('return')) return 'status-returned';
+            if (st.includes('lost')) return 'status-lost';
+            if (st.includes('draft')) return 'status-draft';
+            if (st.includes('forfeit')) return 'status-lost';
+            return 'status-active';
+        }
+
+        function getStatusText(status) {
+            const st = (status || 'active').toLowerCase();
+            if (st.includes('return')) return 'Returned';
+            if (st.includes('lost')) return 'Lost';
+            if (st.includes('draft')) return 'Draft';
+            if (st.includes('forfeit')) return 'Forfeited';
+            return 'Active';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // ============================================================
         //  UPDATE USER PROFILE IN UI (ALL FROM DB)
         // ============================================================
         function updateUserProfile(user) {
             if (!user) return;
-            
+
             const firstName = user.first_name || '';
             const surname = user.surname || '';
             const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
             const initials = getInitials(firstName, surname);
             const roleDisplay = getRoleDisplay(user.role);
             const department = user.department || 'General';
-            
-            // Update profile header
-            document.getElementById('profileAvatar').textContent = initials;
-            document.getElementById('profileName').textContent = fullName;
-            document.getElementById('profileRoleLabel').textContent = roleDisplay;
-            
-            // Update sidebar
-            document.getElementById('roleLabel').textContent = roleDisplay;
-            document.getElementById('roleScope').textContent = department;
-            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
-            
-            // Update brand badges with initials
-            document.getElementById('brandBadge').textContent = initials;
-            document.getElementById('mobileBrandBadge').textContent = initials;
+
+            const avatarEl = document.getElementById('profileAvatar');
+            const nameEl = document.getElementById('profileName');
+            const roleEl = document.getElementById('profileRoleLabel');
+            const roleLabelEl = document.getElementById('roleLabel');
+            const roleScopeEl = document.getElementById('roleScope');
+            const mobileFooterEl = document.getElementById('mobileRoleFooter');
+            const brandBadgeEl = document.getElementById('brandBadge');
+            const mobileBrandBadgeEl = document.getElementById('mobileBrandBadge');
+
+            if (avatarEl) avatarEl.textContent = initials;
+            if (nameEl) nameEl.textContent = fullName;
+            if (roleEl) roleEl.textContent = roleDisplay;
+            if (roleLabelEl) roleLabelEl.textContent = roleDisplay;
+            if (roleScopeEl) roleScopeEl.textContent = department;
+            if (mobileFooterEl) mobileFooterEl.textContent = `${roleDisplay} · ${department}`;
+            if (brandBadgeEl) brandBadgeEl.textContent = initials;
+            if (mobileBrandBadgeEl) mobileBrandBadgeEl.textContent = initials;
         }
 
         function setDate() {
             const now = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+            const el = document.getElementById('currentDate');
+            if (el) el.textContent = now.toLocaleDateString('en-US', options);
         }
 
         // ============================================================
@@ -487,7 +523,6 @@
                         const user = data.user;
                         const userRole = (user.role || '').toLowerCase();
 
-                        // 🔒 Restrict to admin and security only
                         if (!ALLOWED_ROLES.includes(userRole)) {
                             toast('Access denied. Only Admin or Security officers can view history.', 'error');
                             localStorage.removeItem('token');
@@ -552,6 +587,7 @@
                             showEmpty();
                             updateNotice('No seizure records found. Start by adding one.');
                         } else {
+                            currentPage = 1;
                             renderTable();
                             setupPagination();
                             updateNotice(`${allSeizures.length} seizure records loaded`);
@@ -572,8 +608,9 @@
         //  FILTER
         // ============================================================
         function filterSeizures() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const date = document.getElementById('dateFilter').value;
+            const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const date = document.getElementById('dateFilter')?.value || '';
+
             filteredSeizures = allSeizures.filter(s => {
                 if (search) {
                     const match = (s.personName || '').toLowerCase().includes(search) ||
@@ -592,10 +629,12 @@
                 }
                 return true;
             });
+
             currentPage = 1;
             if (filteredSeizures.length === 0) {
                 showEmpty();
-                document.getElementById('paginationContainer').style.display = 'none';
+                const pag = document.getElementById('paginationContainer');
+                if (pag) pag.style.display = 'none';
             } else {
                 hideEmpty();
                 renderTable();
@@ -657,26 +696,23 @@
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#68768a;">No seizures found matching your filters.</td></tr>`;
                 return;
             }
+
             items.forEach(s => {
                 const d = new Date(s.createdAt);
                 const dateStr = d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
                 const timeStr = d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
-                let statusClass = 'status-active', statusText = 'Active';
-                if (s.status) {
-                    const st = s.status.toLowerCase();
-                    if (st.includes('return')) { statusClass = 'status-returned'; statusText = 'Returned'; }
-                    else if (st.includes('lost')) { statusClass = 'status-lost'; statusText = 'Lost'; }
-                    else if (st.includes('draft')) { statusClass = 'status-draft'; statusText = 'Draft'; }
-                }
+                const statusClass = getStatusClass(s.status);
+                const statusText = getStatusText(s.status);
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><div class="date-main">${dateStr}</div><div class="date-time">${timeStr}</div></td>
-                    <td><div class="person-name">${s.personName}</div><div class="matric-number">${s.personMatric}</div></td>
-                    <td class="device-info">${s.phoneModel}${s.deviceColor ? `<br><small>${s.deviceColor}</small>` : ''}</td>
-                    <td class="location">${s.location || 'N/A'}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td class="notes" title="${s.notes || ''}">${s.notes || '-'}</td>
-                    <td>${s.seizedBy || 'N/A'}</td>
+                    <td data-label="Date"><div class="date-main">${dateStr}</div><div class="date-time">${timeStr}</div></td>
+                    <td data-label="Person"><div class="person-name">${escapeHtml(s.personName)}</div><div class="matric-number">${escapeHtml(s.personMatric)}</div></td>
+                    <td data-label="Device" class="device-info">${escapeHtml(s.phoneModel)}${s.deviceColor ? `<br><small>${escapeHtml(s.deviceColor)}</small>` : ''}</td>
+                    <td data-label="Location" class="location">${escapeHtml(s.location || 'N/A')}</td>
+                    <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td data-label="Notes" class="notes" title="${escapeHtml(s.notes || '')}">${escapeHtml(s.notes || '-')}</td>
+                    <td data-label="Seized By">${escapeHtml(s.seizedBy || 'N/A')}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -697,11 +733,18 @@
             prev.className = 'pagination-btn';
             prev.innerHTML = '<i class="fas fa-chevron-left"></i>';
             prev.disabled = currentPage === 1;
-            prev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); setupPagination(); window.scrollTo({top:0,behavior:'smooth'}); } });
+            prev.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                    setupPagination();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
             container.appendChild(prev);
 
             const maxVisible = 5;
-            let startPage = Math.max(1, currentPage - Math.floor(maxVisible/2));
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
             let endPage = Math.min(total, startPage + maxVisible - 1);
             if (endPage - startPage + 1 < maxVisible) startPage = Math.max(1, endPage - maxVisible + 1);
 
@@ -709,7 +752,12 @@
                 const btn = document.createElement('button');
                 btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
                 btn.textContent = i;
-                btn.addEventListener('click', () => { currentPage = i; renderTable(); setupPagination(); window.scrollTo({top:0,behavior:'smooth'}); });
+                btn.addEventListener('click', () => {
+                    currentPage = i;
+                    renderTable();
+                    setupPagination();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
                 container.appendChild(btn);
             }
 
@@ -717,7 +765,14 @@
             next.className = 'pagination-btn';
             next.innerHTML = '<i class="fas fa-chevron-right"></i>';
             next.disabled = currentPage === total;
-            next.addEventListener('click', () => { if (currentPage < total) { currentPage++; renderTable(); setupPagination(); window.scrollTo({top:0,behavior:'smooth'}); } });
+            next.addEventListener('click', () => {
+                if (currentPage < total) {
+                    currentPage++;
+                    renderTable();
+                    setupPagination();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
             container.appendChild(next);
 
             const info = document.createElement('span');
@@ -730,32 +785,48 @@
         //  UI STATE
         // ============================================================
         function showLoading() {
-            document.getElementById('loadingState').style.display = 'block';
-            document.getElementById('seizureTable').style.display = 'none';
-            document.getElementById('emptyState').style.display = 'none';
-            document.getElementById('errorState').style.display = 'none';
+            const loadingEl = document.getElementById('loadingState');
+            const tableEl = document.getElementById('seizureTable');
+            const emptyEl = document.getElementById('emptyState');
+            const errorEl = document.getElementById('errorState');
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (tableEl) tableEl.style.display = 'none';
+            if (emptyEl) emptyEl.style.display = 'none';
+            if (errorEl) errorEl.style.display = 'none';
         }
         function hideLoading() {
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('seizureTable').style.display = 'table-row-group';
+            const loadingEl = document.getElementById('loadingState');
+            const tableEl = document.getElementById('seizureTable');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (tableEl) tableEl.style.display = 'table-row-group';
         }
         function showEmpty() {
-            document.getElementById('emptyState').style.display = 'block';
-            document.getElementById('seizureTable').style.display = 'none';
-            document.getElementById('paginationContainer').style.display = 'none';
+            const emptyEl = document.getElementById('emptyState');
+            const tableEl = document.getElementById('seizureTable');
+            const pagEl = document.getElementById('paginationContainer');
+            if (emptyEl) emptyEl.style.display = 'block';
+            if (tableEl) tableEl.style.display = 'none';
+            if (pagEl) pagEl.style.display = 'none';
         }
         function hideEmpty() {
-            document.getElementById('emptyState').style.display = 'none';
+            const emptyEl = document.getElementById('emptyState');
+            if (emptyEl) emptyEl.style.display = 'none';
         }
         function showError(msg) {
-            document.getElementById('errorMessage').textContent = msg;
-            document.getElementById('errorState').style.display = 'block';
-            document.getElementById('seizureTable').style.display = 'none';
-            document.getElementById('paginationContainer').style.display = 'none';
-            document.getElementById('loadingState').style.display = 'none';
+            const errMsgEl = document.getElementById('errorMessage');
+            const errorEl = document.getElementById('errorState');
+            const tableEl = document.getElementById('seizureTable');
+            const pagEl = document.getElementById('paginationContainer');
+            const loadingEl = document.getElementById('loadingState');
+            if (errMsgEl) errMsgEl.textContent = msg;
+            if (errorEl) errorEl.style.display = 'block';
+            if (tableEl) tableEl.style.display = 'none';
+            if (pagEl) pagEl.style.display = 'none';
+            if (loadingEl) loadingEl.style.display = 'none';
         }
         function hideError() {
-            document.getElementById('errorState').style.display = 'none';
+            const errorEl = document.getElementById('errorState');
+            if (errorEl) errorEl.style.display = 'none';
         }
 
         // ============================================================
@@ -766,21 +837,40 @@
             updateNotice('Loading seizure history...');
 
             // Mobile menu
-            document.getElementById('menuToggle').addEventListener('click', () => {
+            const menuBtn = document.getElementById('menuToggle');
+            const closeBtn = document.getElementById('closeDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const retryBtn = document.getElementById('retryBtn');
+            const searchInput = document.getElementById('searchInput');
+            const dateFilter = document.getElementById('dateFilter');
+
+            if (menuBtn) menuBtn.addEventListener('click', () => {
                 document.getElementById('mobileDrawer').classList.add('open');
-                document.getElementById('drawerOverlay').classList.add('show');
+                overlay.classList.add('show');
             });
-            document.getElementById('closeDrawer').addEventListener('click', () => {
+            if (closeBtn) closeBtn.addEventListener('click', () => {
                 document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
+                overlay.classList.remove('show');
             });
-            document.getElementById('drawerOverlay').addEventListener('click', () => {
+            if (overlay) overlay.addEventListener('click', () => {
                 document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
+                overlay.classList.remove('show');
+            });
+
+            // ESC closes drawer
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const drawer = document.getElementById('mobileDrawer');
+                    const ov = document.getElementById('drawerOverlay');
+                    if (drawer) drawer.classList.remove('open');
+                    if (ov) ov.classList.remove('show');
+                }
             });
 
             // Logout
-            document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (logoutBtn) logoutBtn.addEventListener('click', () => {
                 if (confirm('Are you sure you want to logout?')) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
@@ -789,7 +879,7 @@
             });
 
             // Refresh
-            document.getElementById('refreshBtn').addEventListener('click', async () => {
+            if (refreshBtn) refreshBtn.addEventListener('click', async () => {
                 updateNotice('Refreshing data...');
                 await loadDashboardStats();
                 await loadSeizureHistory();
@@ -797,22 +887,26 @@
             });
 
             // Retry
-            document.getElementById('retryBtn').addEventListener('click', async () => {
+            if (retryBtn) retryBtn.addEventListener('click', async () => {
                 await loadDashboardStats();
                 await loadSeizureHistory();
             });
 
             // Search with debounce
-            document.getElementById('searchInput').addEventListener('input', function() {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(filterSeizures, 300);
-            });
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(filterSeizures, 300);
+                });
+            }
 
             // Date filter
-            document.getElementById('dateFilter').addEventListener('change', filterSeizures);
+            if (dateFilter) {
+                dateFilter.addEventListener('change', filterSeizures);
+            }
 
             // ✅ Date filter left EMPTY by default so full history shows
-            // (removed the line that forced today's date)
+            // (no forced "today" value)
         }
 
         // ============================================================
@@ -825,6 +919,9 @@
             await loadDashboardStats();
             await loadSeizureHistory();
         });
-    </script>
+
+    })();
+</script>
+
 </body>
 </html>

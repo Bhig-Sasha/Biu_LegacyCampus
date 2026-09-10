@@ -469,7 +469,10 @@
         </div>
     </div>
 
-    <script>
+<script>
+    (function() {
+        'use strict';
+
         // ============================================================
         //  CONFIG & STATE
         // ============================================================
@@ -542,33 +545,73 @@
             return 'Unknown Role';
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function getStatusBadgeClass(status) {
+            const st = (status || 'active').toLowerCase();
+            if (st.includes('return')) return 'badge success';
+            if (st.includes('lost')) return 'badge danger';
+            if (st.includes('forfeit')) return 'badge warning';
+            if (st.includes('draft')) return 'badge info';
+            return 'badge info';
+        }
+
+        function getStatusText(status) {
+            const st = (status || 'active').toLowerCase();
+            if (st.includes('return')) return 'Returned';
+            if (st.includes('lost')) return 'Lost';
+            if (st.includes('forfeit')) return 'Forfeited';
+            if (st.includes('draft')) return 'Draft';
+            return 'Active';
+        }
+
         // ============================================================
         //  UPDATE USER PROFILE IN UI (ALL FROM DB)
         // ============================================================
         function updateUserProfile(user) {
             if (!user) return;
-            
+
             const firstName = user.first_name || '';
             const surname = user.surname || '';
-            const fullName = firstName && surname ? `${firstName} ${surname}` : user.name || user.email || 'User';
+            const fullName = firstName && surname
+                ? `${firstName} ${surname}`
+                : user.name || user.email || 'User';
             const initials = getInitials(firstName, surname);
             const roleDisplay = getRoleDisplay(user.role);
             const department = user.department || 'General';
-            
-            document.getElementById('profileAvatar').textContent = initials;
-            document.getElementById('profileName').textContent = fullName;
-            document.getElementById('profileRoleLabel').textContent = roleDisplay;
-            document.getElementById('roleLabel').textContent = roleDisplay;
-            document.getElementById('roleScope').textContent = department;
-            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
-            document.getElementById('brandBadge').textContent = initials;
-            document.getElementById('mobileBrandBadge').textContent = initials;
+
+            const avatarEl = document.getElementById('profileAvatar');
+            const nameEl = document.getElementById('profileName');
+            const roleEl = document.getElementById('profileRoleLabel');
+            const roleLabelEl = document.getElementById('roleLabel');
+            const roleScopeEl = document.getElementById('roleScope');
+            const mobileFooterEl = document.getElementById('mobileRoleFooter');
+            const brandBadgeEl = document.getElementById('brandBadge');
+            const mobileBrandBadgeEl = document.getElementById('mobileBrandBadge');
+
+            if (avatarEl) avatarEl.textContent = initials;
+            if (nameEl) nameEl.textContent = fullName;
+            if (roleEl) roleEl.textContent = roleDisplay;
+            if (roleLabelEl) roleLabelEl.textContent = roleDisplay;
+            if (roleScopeEl) roleScopeEl.textContent = department;
+            if (mobileFooterEl) mobileFooterEl.textContent = `${roleDisplay} · ${department}`;
+            if (brandBadgeEl) brandBadgeEl.textContent = initials;
+            if (mobileBrandBadgeEl) mobileBrandBadgeEl.textContent = initials;
         }
 
         function setDate() {
             const now = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+            const el = document.getElementById('currentDate');
+            if (el) el.textContent = now.toLocaleDateString('en-US', options);
         }
 
         // ============================================================
@@ -586,6 +629,7 @@
                     if (data.success) {
                         const user = data.user;
                         const userRole = (user.role || '').toLowerCase();
+
                         if (!ALLOWED_ROLES.includes(userRole)) {
                             toast('Access denied. Only Admin or Security officers can view the persons registry.', 'error');
                             localStorage.removeItem('token');
@@ -593,6 +637,7 @@
                             setTimeout(() => redirectToLogin(), 1500);
                             return null;
                         }
+
                         currentUser = user;
                         localStorage.setItem('user', JSON.stringify(user));
                         updateUserProfile(user);
@@ -663,7 +708,7 @@
         //  FILTER
         // ============================================================
         function filterPersons() {
-            const q = document.getElementById('searchInput').value.toLowerCase();
+            const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
             filteredPersons = allPersons.filter(p =>
                 (p.name || '').toLowerCase().includes(q) ||
                 (p.matric_number || '').toLowerCase().includes(q) ||
@@ -671,7 +716,8 @@
             );
             if (filteredPersons.length === 0) {
                 showEmpty();
-                document.getElementById('personsTable').innerHTML = '';
+                const tbody = document.getElementById('personsTable');
+                if (tbody) tbody.innerHTML = '';
             } else {
                 hideEmpty();
                 renderTable();
@@ -715,7 +761,10 @@
             }
             sorted.forEach(p => {
                 const total = p.total_seizures || 0;
-                const last = p.last_seized ? new Date(p.last_seized).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : 'No seizures';
+                const last = p.last_seized
+                    ? new Date(p.last_seized).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                    : 'No seizures';
+
                 let badge = '';
                 if (total >= 3) badge = `<span class="badge danger"><i class="fas fa-exclamation-triangle"></i> Frequent</span>`;
                 else if (total === 2) badge = `<span class="badge warning"><i class="fas fa-exclamation-circle"></i> Repeat</span>`;
@@ -727,15 +776,15 @@
                 tr.innerHTML = `
                     <td data-label="Student">
                         <div class="student-info">
-                            <div class="student-avatar">${(p.name||'?').charAt(0).toUpperCase()}</div>
+                            <div class="student-avatar">${escapeHtml((p.name || '?').charAt(0).toUpperCase())}</div>
                             <div>
-                                <div class="student-name">${p.name || 'Unknown'}</div>
-                                <div class="student-matric">${p.matric_number || 'No matric'}</div>
+                                <div class="student-name">${escapeHtml(p.name || 'Unknown')}</div>
+                                <div class="student-matric">${escapeHtml(p.matric_number || 'No matric')}</div>
                             </div>
                         </div>
                     </td>
-                    <td data-label="Department" class="department">${p.department || 'Not specified'}</td>
-                    <td data-label="Level" class="level">${p.level || 'Not specified'}</td>
+                    <td data-label="Department" class="department">${escapeHtml(p.department || 'Not specified')}</td>
+                    <td data-label="Level" class="level">${escapeHtml(p.level || 'Not specified')}</td>
                     <td data-label="Seizures"><span class="seizure-count">${total}</span></td>
                     <td data-label="Last Incident" class="last-incident">${last}</td>
                     <td data-label="Status">${badge}</td>
@@ -752,13 +801,19 @@
                 const res = await authFetch(`/persons/${id}`);
                 if (!res.ok) {
                     let errMsg = 'Failed to load person details';
-                    try { const e = await res.json(); errMsg = e.message || errMsg; } catch(_) {}
+                    try {
+                        const e = await res.json();
+                        errMsg = e.message || errMsg;
+                    } catch (_) {}
                     throw new Error(errMsg);
                 }
+
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'Failed');
 
                 const person = data.data;
+
+                // Also load the person's seizure history
                 const seizuresRes = await authFetch(`/seizures?person_id=${id}`);
                 let seizures = [];
                 if (seizuresRes.ok) {
@@ -770,14 +825,24 @@
                 const sTable = document.getElementById('personSeizuresTable');
                 if (!details || !sTable) return;
 
-                const lastSeized = person.last_seized ? new Date(person.last_seized).toLocaleString('en-US', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Never';
-                const created = person.created_at ? new Date(person.created_at).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) : 'Unknown';
+                const lastSeized = person.last_seized
+                    ? new Date(person.last_seized).toLocaleString('en-US', {
+                        year: 'numeric', month: 'long', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    })
+                    : 'Never';
+
+                const created = person.created_at
+                    ? new Date(person.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    })
+                    : 'Unknown';
 
                 details.innerHTML = `
-                    <div class="detail-item"><h4>Full Name</h4><p>${person.name || 'Not specified'}</p></div>
-                    <div class="detail-item"><h4>Matric Number</h4><p>${person.matric_number || 'Not specified'}</p></div>
-                    <div class="detail-item"><h4>Department</h4><p>${person.department || 'Not specified'}</p></div>
-                    <div class="detail-item"><h4>Level</h4><p>${person.level || 'Not specified'}</p></div>
+                    <div class="detail-item"><h4>Full Name</h4><p>${escapeHtml(person.name || 'Not specified')}</p></div>
+                    <div class="detail-item"><h4>Matric Number</h4><p>${escapeHtml(person.matric_number || 'Not specified')}</p></div>
+                    <div class="detail-item"><h4>Department</h4><p>${escapeHtml(person.department || 'Not specified')}</p></div>
+                    <div class="detail-item"><h4>Level</h4><p>${escapeHtml(person.level || 'Not specified')}</p></div>
                     <div class="detail-item"><h4>Total Seizures</h4><p><strong>${person.total_seizures || 0}</strong></p></div>
                     <div class="detail-item"><h4>Last Seized</h4><p>${lastSeized}</p></div>
                     <div class="detail-item"><h4>Registered Since</h4><p>${created}</p></div>
@@ -788,57 +853,87 @@
                     sTable.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:#68768a;">No seizure records found.</td></tr>`;
                 } else {
                     seizures.forEach(s => {
-                        const d = new Date(s.created_at).toLocaleString('en-US', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-                        let statusClass = 'badge info', statusText = 'Active';
-                        if (s.status) {
-                            const st = s.status.toLowerCase();
-                            if (st.includes('return')) { statusClass = 'badge success'; statusText = 'Returned'; }
-                            else if (st.includes('lost')) { statusClass = 'badge danger'; statusText = 'Lost'; }
-                        }
+                        const d = new Date(s.created_at).toLocaleString('en-US', {
+                            year: 'numeric', month: 'short', day: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                        });
+                        const statusClass = getStatusBadgeClass(s.status);
+                        const statusText = getStatusText(s.status);
+
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td data-label="Date">${d}</td><td data-label="Device">${s.phone_model || 'N/A'}</td><td data-label="Location">${s.location || 'N/A'}</td><td data-label="Reason">${s.seizure_reason || 'N/A'}</td><td data-label="Status"><span class="${statusClass}">${statusText}</span></td>`;
+                        tr.innerHTML = `
+                            <td data-label="Date">${d}</td>
+                            <td data-label="Device">${escapeHtml(s.phone_model || 'N/A')}</td>
+                            <td data-label="Location">${escapeHtml(s.location || 'N/A')}</td>
+                            <td data-label="Reason">${escapeHtml(s.seizure_reason || 'N/A')}</td>
+                            <td data-label="Status"><span class="${statusClass}">${statusText}</span></td>
+                        `;
                         sTable.appendChild(tr);
                     });
                 }
 
-                document.getElementById('personModal').classList.add('active');
+                const modal = document.getElementById('personModal');
+                if (modal) modal.classList.add('active');
                 document.body.style.overflow = 'hidden';
             } catch (err) {
                 toast('Error: ' + err.message, 'error');
             }
         }
 
+        function closeModal() {
+            const modal = document.getElementById('personModal');
+            if (modal) modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
         // ============================================================
         //  UI STATE
         // ============================================================
         function showLoading() {
-            document.getElementById('loadingState').style.display = 'block';
-            document.getElementById('personsTable').style.display = 'none';
-            document.getElementById('emptyState').style.display = 'none';
-            document.getElementById('errorState').style.display = 'none';
-            document.getElementById('statsContainer').style.display = 'none';
+            const loadingEl = document.getElementById('loadingState');
+            const tableEl = document.getElementById('personsTable');
+            const emptyEl = document.getElementById('emptyState');
+            const errorEl = document.getElementById('errorState');
+            const statsEl = document.getElementById('statsContainer');
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (tableEl) tableEl.style.display = 'none';
+            if (emptyEl) emptyEl.style.display = 'none';
+            if (errorEl) errorEl.style.display = 'none';
+            if (statsEl) statsEl.style.display = 'none';
         }
         function hideLoading() {
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('personsTable').style.display = 'table-row-group';
-            document.getElementById('statsContainer').style.display = 'grid';
+            const loadingEl = document.getElementById('loadingState');
+            const tableEl = document.getElementById('personsTable');
+            const statsEl = document.getElementById('statsContainer');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (tableEl) tableEl.style.display = 'table-row-group';
+            if (statsEl) statsEl.style.display = 'grid';
         }
         function showEmpty() {
-            document.getElementById('emptyState').style.display = 'block';
-            document.getElementById('personsTable').style.display = 'none';
+            const emptyEl = document.getElementById('emptyState');
+            const tableEl = document.getElementById('personsTable');
+            if (emptyEl) emptyEl.style.display = 'block';
+            if (tableEl) tableEl.style.display = 'none';
         }
         function hideEmpty() {
-            document.getElementById('emptyState').style.display = 'none';
+            const emptyEl = document.getElementById('emptyState');
+            if (emptyEl) emptyEl.style.display = 'none';
         }
         function showError(msg) {
-            document.getElementById('errorMessage').textContent = msg;
-            document.getElementById('errorState').style.display = 'block';
-            document.getElementById('personsTable').style.display = 'none';
-            document.getElementById('statsContainer').style.display = 'none';
-            document.getElementById('loadingState').style.display = 'none';
+            const errMsgEl = document.getElementById('errorMessage');
+            const errorEl = document.getElementById('errorState');
+            const tableEl = document.getElementById('personsTable');
+            const statsEl = document.getElementById('statsContainer');
+            const loadingEl = document.getElementById('loadingState');
+            if (errMsgEl) errMsgEl.textContent = msg;
+            if (errorEl) errorEl.style.display = 'block';
+            if (tableEl) tableEl.style.display = 'none';
+            if (statsEl) statsEl.style.display = 'none';
+            if (loadingEl) loadingEl.style.display = 'none';
         }
         function hideError() {
-            document.getElementById('errorState').style.display = 'none';
+            const errorEl = document.getElementById('errorState');
+            if (errorEl) errorEl.style.display = 'none';
         }
 
         // ============================================================
@@ -849,21 +944,34 @@
             updateNotice('Loading persons registry...');
 
             // Mobile menu
-            document.getElementById('menuToggle').addEventListener('click', () => {
-                document.getElementById('mobileDrawer').classList.add('open');
-                document.getElementById('drawerOverlay').classList.add('show');
+            const menuBtn = document.getElementById('menuToggle');
+            const closeDrawerBtn = document.getElementById('closeDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const retryBtn = document.getElementById('retryBtn');
+            const searchInput = document.getElementById('searchInput');
+            const modalClose = document.getElementById('modalClose');
+            const modal = document.getElementById('personModal');
+
+            if (menuBtn) menuBtn.addEventListener('click', () => {
+                const drawer = document.getElementById('mobileDrawer');
+                if (drawer) drawer.classList.add('open');
+                if (overlay) overlay.classList.add('show');
             });
-            document.getElementById('closeDrawer').addEventListener('click', () => {
-                document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
+            if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', () => {
+                const drawer = document.getElementById('mobileDrawer');
+                if (drawer) drawer.classList.remove('open');
+                if (overlay) overlay.classList.remove('show');
             });
-            document.getElementById('drawerOverlay').addEventListener('click', () => {
-                document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
+            if (overlay) overlay.addEventListener('click', () => {
+                const drawer = document.getElementById('mobileDrawer');
+                if (drawer) drawer.classList.remove('open');
+                overlay.classList.remove('show');
             });
 
             // Logout
-            document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (logoutBtn) logoutBtn.addEventListener('click', () => {
                 if (confirm('Are you sure you want to logout?')) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
@@ -872,39 +980,36 @@
             });
 
             // Refresh
-            document.getElementById('refreshBtn').addEventListener('click', async () => {
+            if (refreshBtn) refreshBtn.addEventListener('click', async () => {
                 updateNotice('Refreshing data...');
                 await loadPersons();
                 toast('Persons data refreshed', 'success');
             });
 
             // Retry
-            document.getElementById('retryBtn').addEventListener('click', loadPersons);
+            if (retryBtn) retryBtn.addEventListener('click', loadPersons);
 
             // Search debounce
-            document.getElementById('searchInput').addEventListener('input', function() {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(filterPersons, 300);
-            });
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(filterPersons, 300);
+                });
+            }
 
             // Modal close
-            document.getElementById('modalClose').addEventListener('click', () => {
-                document.getElementById('personModal').classList.remove('active');
-                document.body.style.overflow = '';
-            });
-            document.getElementById('personModal').addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) {
-                    document.getElementById('personModal').classList.remove('active');
-                    document.body.style.overflow = '';
-                }
+            if (modalClose) modalClose.addEventListener('click', closeModal);
+            if (modal) modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
             });
 
             // ESC closes modal & drawer
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    document.getElementById('personModal').classList.remove('active');
-                    document.getElementById('mobileDrawer').classList.remove('open');
-                    document.getElementById('drawerOverlay').classList.remove('show');
+                    closeModal();
+                    const drawer = document.getElementById('mobileDrawer');
+                    if (drawer) drawer.classList.remove('open');
+                    if (overlay) overlay.classList.remove('show');
                     document.body.style.overflow = '';
                 }
             });
@@ -919,6 +1024,9 @@
             init();
             await loadPersons();
         });
-    </script>
+
+    })();
+</script>
+
 </body>
 </html>

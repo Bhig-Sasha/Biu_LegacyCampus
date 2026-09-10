@@ -489,7 +489,10 @@
         </div>
     </div>
 
-    <script>
+<script>
+    (function() {
+        'use strict';
+
         // ============================================================
         //  CONFIG & STATE
         // ============================================================
@@ -572,11 +575,30 @@
             return 'Unknown Role';
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function getFullName(user) {
+            if (!user) return 'User';
+            const parts = [user.first_name, user.middle_name, user.surname].filter(Boolean);
+            if (parts.length > 0) return parts.join(' ');
+            return user.name || user.email || 'User';
+        }
+
         // ============================================================
         //  PROFILE RENDER
         // ============================================================
         function renderProfile(user) {
             const profileGrid = document.getElementById('profileGrid');
+            if (!profileGrid) return;
+
             const fields = [
                 { label: 'Surname', value: user.surname, key: 'surname' },
                 { label: 'First Name', value: user.first_name, key: 'first_name' },
@@ -595,45 +617,62 @@
 
             profileGrid.innerHTML = fields.map(f => `
                 <div class="profile-field" ${f.fullWidth ? 'style="grid-column:1/-1;"' : ''}>
-                    <div class="label">${f.label}</div>
-                    <div class="value ${!f.value ? 'empty' : ''}">${formatValue(f.value)}</div>
+                    <div class="label">${escapeHtml(f.label)}</div>
+                    <div class="value ${!f.value ? 'empty' : ''}">${escapeHtml(formatValue(f.value))}</div>
                 </div>
             `).join('');
 
             // Update header
-            const fullName = [user.first_name, user.middle_name, user.surname].filter(Boolean).join(' ') || user.name || 'User';
+            const fullName = getFullName(user);
             const initials = getInitials(user.first_name, user.surname);
             const roleDisplay = getRoleDisplay(user.role);
             const roleClass = getRoleBadgeClass(user.role);
 
-            document.getElementById('fullName').textContent = fullName;
-            document.getElementById('largeAvatar').textContent = initials;
-            document.getElementById('profileAvatar').textContent = initials;
-            document.getElementById('profileName').textContent = fullName;
-            document.getElementById('profileRoleLabel').textContent = roleDisplay;
-            
+            const fullNameEl = document.getElementById('fullName');
+            const largeAvatarEl = document.getElementById('largeAvatar');
+            const avatarEl = document.getElementById('profileAvatar');
+            const nameEl = document.getElementById('profileName');
+            const roleEl = document.getElementById('profileRoleLabel');
+
+            if (fullNameEl) fullNameEl.textContent = fullName;
+            if (largeAvatarEl) largeAvatarEl.textContent = initials;
+            if (avatarEl) avatarEl.textContent = initials;
+            if (nameEl) nameEl.textContent = fullName;
+            if (roleEl) roleEl.textContent = roleDisplay;
+
             // Role tag
             const roleTag = document.getElementById('userRoleTag');
-            roleTag.textContent = roleDisplay;
-            roleTag.className = `role-tag ${roleClass}`;
-            
-            document.getElementById('userEmail').textContent = user.email || '';
-            document.getElementById('roleLabel').textContent = roleDisplay;
-            document.getElementById('roleScope').textContent = user.department || 'System Access';
-            document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${user.department || 'System Access'}`;
+            if (roleTag) {
+                roleTag.textContent = roleDisplay;
+                roleTag.className = `role-tag ${roleClass}`;
+            }
 
-            // Update brand badges with initials
-            document.getElementById('brandBadge').textContent = initials;
-            document.getElementById('mobileBrandBadge').textContent = initials;
+            const emailEl = document.getElementById('userEmail');
+            const roleLabelEl = document.getElementById('roleLabel');
+            const roleScopeEl = document.getElementById('roleScope');
+            const mobileFooterEl = document.getElementById('mobileRoleFooter');
+            const brandBadgeEl = document.getElementById('brandBadge');
+            const mobileBrandBadgeEl = document.getElementById('mobileBrandBadge');
+
+            if (emailEl) emailEl.textContent = user.email || '';
+            if (roleLabelEl) roleLabelEl.textContent = roleDisplay;
+            if (roleScopeEl) roleScopeEl.textContent = user.department || 'System Access';
+            if (mobileFooterEl) mobileFooterEl.textContent = `${roleDisplay} · ${user.department || 'System Access'}`;
+            if (brandBadgeEl) brandBadgeEl.textContent = initials;
+            if (mobileBrandBadgeEl) mobileBrandBadgeEl.textContent = initials;
 
             // Update last updated
             const updated = user.profile_updated_at || user.updated_at || new Date().toISOString();
-            document.getElementById('lastUpdated').textContent = `Last updated: ${new Date(updated).toLocaleString()}`;
+            const lastUpdatedEl = document.getElementById('lastUpdated');
+            if (lastUpdatedEl) lastUpdatedEl.textContent = `Last updated: ${new Date(updated).toLocaleString()}`;
 
             // Show content
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('profileContent').style.display = 'block';
-            document.getElementById('profileFooter').style.display = 'block';
+            const loadingEl = document.getElementById('loadingState');
+            const profileContentEl = document.getElementById('profileContent');
+            const footerEl = document.getElementById('profileFooter');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (profileContentEl) profileContentEl.style.display = 'block';
+            if (footerEl) footerEl.style.display = 'block';
         }
 
         // ============================================================
@@ -659,15 +698,20 @@
             } catch (error) {
                 console.error('Error loading profile:', error);
                 toast('Error loading profile: ' + error.message, 'error');
-                document.getElementById('loadingState').innerHTML = `
-                    <div style="text-align:center;color:#9c3e32;">
-                        <i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>
-                        <p>Failed to load profile data</p>
-                        <button class="btn-gold" onclick="loadProfile()" style="margin-top:1rem;font-size:0.8rem;padding:0.4rem 1rem;">
-                            <i class="fas fa-redo"></i> Retry
-                        </button>
-                    </div>
-                `;
+                const loadingEl = document.getElementById('loadingState');
+                if (loadingEl) {
+                    loadingEl.innerHTML = `
+                        <div style="text-align:center;color:#9c3e32;">
+                            <i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>
+                            <p>Failed to load profile data</p>
+                            <button class="btn-gold" id="retryProfileBtn" style="margin-top:1rem;font-size:0.8rem;padding:0.4rem 1rem;">
+                                <i class="fas fa-redo"></i> Retry
+                            </button>
+                        </div>
+                    `;
+                    const retryBtn = document.getElementById('retryProfileBtn');
+                    if (retryBtn) retryBtn.addEventListener('click', loadProfile);
+                }
             }
         }
 
@@ -683,12 +727,16 @@
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.message || 'Failed to update profile');
                 }
 
                 const data = await response.json();
-                return { success: true, user: data.user, message: data.message || 'Profile updated successfully' };
+                return {
+                    success: true,
+                    user: data.user,
+                    message: data.message || 'Profile updated successfully'
+                };
             } catch (error) {
                 return { success: false, message: error.message };
             }
@@ -706,12 +754,15 @@
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.message || 'Failed to change password');
                 }
 
                 const data = await response.json();
-                return { success: true, message: data.message || 'Password changed successfully' };
+                return {
+                    success: true,
+                    message: data.message || 'Password changed successfully'
+                };
             } catch (error) {
                 return { success: false, message: error.message };
             }
@@ -723,7 +774,8 @@
         function setDate() {
             const now = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+            const el = document.getElementById('currentDate');
+            if (el) el.textContent = now.toLocaleDateString('en-US', options);
         }
 
         // ============================================================
@@ -742,7 +794,6 @@
                         const user = data.user;
                         const userRole = (user.role || '').toLowerCase();
 
-                        // 🔒 Restrict to admin and security only
                         if (!ALLOWED_ROLES.includes(userRole)) {
                             toast('Access denied. Only Admin or Security officers can access this page.', 'error');
                             localStorage.removeItem('token');
@@ -762,190 +813,257 @@
         }
 
         // ============================================================
+        //  MODAL HELPERS
+        // ============================================================
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+            document.body.style.overflow = '';
+        }
+
+        // ============================================================
         //  EVENT LISTENERS
         // ============================================================
         function init() {
             setDate();
 
             // Mobile menu
-            document.getElementById('menuToggle').addEventListener('click', () => {
-                document.getElementById('mobileDrawer').classList.add('open');
-                document.getElementById('drawerOverlay').classList.add('show');
+            const menuBtn = document.getElementById('menuToggle');
+            const closeDrawerBtn = document.getElementById('closeDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const refreshBtn = document.getElementById('refreshProfile');
+
+            if (menuBtn) menuBtn.addEventListener('click', () => {
+                const drawer = document.getElementById('mobileDrawer');
+                if (drawer) drawer.classList.add('open');
+                if (overlay) overlay.classList.add('show');
             });
-            document.getElementById('closeDrawer').addEventListener('click', () => {
-                document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
+            if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', () => {
+                const drawer = document.getElementById('mobileDrawer');
+                if (drawer) drawer.classList.remove('open');
+                if (overlay) overlay.classList.remove('show');
             });
-            document.getElementById('drawerOverlay').addEventListener('click', () => {
-                document.getElementById('mobileDrawer').classList.remove('open');
-                document.getElementById('drawerOverlay').classList.remove('show');
+            if (overlay) overlay.addEventListener('click', () => {
+                const drawer = document.getElementById('mobileDrawer');
+                if (drawer) drawer.classList.remove('open');
+                overlay.classList.remove('show');
             });
 
             // Logout
-            document.getElementById('logoutBtn').addEventListener('click', logout);
+            if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
             // Refresh
-            document.getElementById('refreshProfile').addEventListener('click', () => {
-                loadProfile();
-            });
+            if (refreshBtn) refreshBtn.addEventListener('click', loadProfile);
 
             // ============================================================
             //  EDIT PROFILE MODAL
             // ============================================================
             const editModal = document.getElementById('editProfileModal');
-            document.getElementById('editProfileBtn').addEventListener('click', () => {
-                // Populate form with current data
-                document.getElementById('editSurname').value = currentUser?.surname || '';
-                document.getElementById('editFirstName').value = currentUser?.first_name || '';
-                document.getElementById('editMiddleName').value = currentUser?.middle_name || '';
-                document.getElementById('editPhone').value = currentUser?.phone || '';
-                document.getElementById('editAddress').value = currentUser?.address || '';
-                document.getElementById('editProfileMessage').textContent = '';
-                editModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
+            const editBtn = document.getElementById('editProfileBtn');
+
+            if (editBtn) editBtn.addEventListener('click', () => {
+                const setVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val || '';
+                };
+                setVal('editSurname', currentUser?.surname);
+                setVal('editFirstName', currentUser?.first_name);
+                setVal('editMiddleName', currentUser?.middle_name);
+                setVal('editPhone', currentUser?.phone);
+                setVal('editAddress', currentUser?.address);
+
+                const msgEl = document.getElementById('editProfileMessage');
+                if (msgEl) msgEl.textContent = '';
+
+                openModal('editProfileModal');
             });
 
-            document.getElementById('closeEditModal').addEventListener('click', () => {
-                editModal.classList.remove('active');
-                document.body.style.overflow = '';
-            });
+            const closeEditModalBtn = document.getElementById('closeEditModal');
+            const cancelEditBtn = document.getElementById('cancelEdit');
+            if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', () => closeModal('editProfileModal'));
+            if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => closeModal('editProfileModal'));
 
-            document.getElementById('cancelEdit').addEventListener('click', () => {
-                editModal.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-
-            editModal.addEventListener('click', (e) => {
-                if (e.target === editModal) {
-                    editModal.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
+            if (editModal) {
+                editModal.addEventListener('click', (e) => {
+                    if (e.target === editModal) closeModal('editProfileModal');
+                });
+            }
 
             // Edit Profile Form Submit
-            document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const profileData = {
-                    surname: document.getElementById('editSurname').value.trim(),
-                    first_name: document.getElementById('editFirstName').value.trim(),
-                    middle_name: document.getElementById('editMiddleName').value.trim(),
-                    phone: document.getElementById('editPhone').value.trim(),
-                    address: document.getElementById('editAddress').value.trim()
-                };
+            const editForm = document.getElementById('editProfileForm');
+            if (editForm) {
+                editForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
 
-                const messageEl = document.getElementById('editProfileMessage');
-                messageEl.innerHTML = '<span style="color:#68768a;"><i class="fas fa-spinner fa-spin"></i> Saving changes...</span>';
-                
-                const btn = document.getElementById('saveProfileBtn');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    const getVal = (id) => {
+                        const el = document.getElementById(id);
+                        return el ? el.value.trim() : '';
+                    };
 
-                try {
-                    const result = await updateProfile(profileData);
-                    
-                    if (result.success) {
-                        messageEl.innerHTML = `<span style="color:#2d6545;">✅ ${result.message}</span>`;
-                        // Update local storage and profile
-                        localStorage.setItem('user', JSON.stringify(result.user));
-                        currentUser = result.user;
-                        renderProfile(result.user);
-                        toast('Profile updated successfully!', 'success');
-                        setTimeout(() => {
-                            editModal.classList.remove('active');
-                            document.body.style.overflow = '';
-                            messageEl.textContent = '';
-                        }, 1500);
-                    } else {
-                        messageEl.innerHTML = `<span style="color:#9c3e32;">❌ ${result.message}</span>`;
+                    const profileData = {
+                        surname: getVal('editSurname'),
+                        first_name: getVal('editFirstName'),
+                        middle_name: getVal('editMiddleName'),
+                        phone: getVal('editPhone'),
+                        address: getVal('editAddress')
+                    };
+
+                    const messageEl = document.getElementById('editProfileMessage');
+                    if (messageEl) {
+                        messageEl.innerHTML = '<span style="color:#68768a;"><i class="fas fa-spinner fa-spin"></i> Saving changes...</span>';
                     }
-                } catch (error) {
-                    messageEl.innerHTML = `<span style="color:#9c3e32;">❌ Error: ${error.message}</span>`;
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = 'Save Changes';
-                }
-            });
+
+                    const btn = document.getElementById('saveProfileBtn');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    }
+
+                    try {
+                        const result = await updateProfile(profileData);
+
+                        if (result.success) {
+                            if (messageEl) {
+                                messageEl.innerHTML = `<span style="color:#2d6545;">✅ ${escapeHtml(result.message)}</span>`;
+                            }
+                            localStorage.setItem('user', JSON.stringify(result.user));
+                            currentUser = result.user;
+                            renderProfile(result.user);
+                            toast('Profile updated successfully!', 'success');
+                            setTimeout(() => {
+                                closeModal('editProfileModal');
+                                if (messageEl) messageEl.textContent = '';
+                            }, 1500);
+                        } else {
+                            if (messageEl) {
+                                messageEl.innerHTML = `<span style="color:#9c3e32;">❌ ${escapeHtml(result.message)}</span>`;
+                            }
+                        }
+                    } catch (error) {
+                        if (messageEl) {
+                            messageEl.innerHTML = `<span style="color:#9c3e32;">❌ Error: ${escapeHtml(error.message)}</span>`;
+                        }
+                    } finally {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = 'Save Changes';
+                        }
+                    }
+                });
+            }
 
             // ============================================================
             //  CHANGE PASSWORD MODAL
             // ============================================================
             const passwordModal = document.getElementById('passwordModal');
-            document.getElementById('changePasswordBtn').addEventListener('click', () => {
-                passwordModal.classList.add('active');
-                document.getElementById('passwordForm').reset();
-                document.getElementById('passwordMessage').textContent = '';
-                document.body.style.overflow = 'hidden';
+            const changePwdBtn = document.getElementById('changePasswordBtn');
+
+            if (changePwdBtn) changePwdBtn.addEventListener('click', () => {
+                const form = document.getElementById('passwordForm');
+                if (form) form.reset();
+                const msgEl = document.getElementById('passwordMessage');
+                if (msgEl) msgEl.textContent = '';
+                openModal('passwordModal');
             });
 
-            document.getElementById('closePasswordModal').addEventListener('click', () => {
-                passwordModal.classList.remove('active');
-                document.body.style.overflow = '';
-            });
+            const closePwdModalBtn = document.getElementById('closePasswordModal');
+            const cancelPwdBtn = document.getElementById('cancelPassword');
+            if (closePwdModalBtn) closePwdModalBtn.addEventListener('click', () => closeModal('passwordModal'));
+            if (cancelPwdBtn) cancelPwdBtn.addEventListener('click', () => closeModal('passwordModal'));
 
-            document.getElementById('cancelPassword').addEventListener('click', () => {
-                passwordModal.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-
-            passwordModal.addEventListener('click', (e) => {
-                if (e.target === passwordModal) {
-                    passwordModal.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
+            if (passwordModal) {
+                passwordModal.addEventListener('click', (e) => {
+                    if (e.target === passwordModal) closeModal('passwordModal');
+                });
+            }
 
             // Password Form Submit
-            document.getElementById('passwordForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const currentPassword = document.getElementById('currentPassword').value;
-                const newPassword = document.getElementById('newPassword').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
-                const messageEl = document.getElementById('passwordMessage');
+            const passwordForm = document.getElementById('passwordForm');
+            if (passwordForm) {
+                passwordForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
 
-                // Validate — 8 characters to match backend
-                if (newPassword.length < 8) {
-                    messageEl.innerHTML = '<span style="color:#9c3e32;">Password must be at least 8 characters.</span>';
-                    return;
-                }
+                    const currentPassword = document.getElementById('currentPassword').value;
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    const messageEl = document.getElementById('passwordMessage');
 
-                if (newPassword !== confirmPassword) {
-                    messageEl.innerHTML = '<span style="color:#9c3e32;">New passwords do not match.</span>';
-                    return;
-                }
-
-                if (newPassword === currentPassword) {
-                    messageEl.innerHTML = '<span style="color:#9c3e32;">New password must be different from current password.</span>';
-                    return;
-                }
-
-                messageEl.innerHTML = '<span style="color:#68768a;"><i class="fas fa-spinner fa-spin"></i> Changing password...</span>';
-                
-                const btn = document.getElementById('savePasswordBtn');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-
-                try {
-                    const result = await changePassword(currentPassword, newPassword);
-                    
-                    if (result.success) {
-                        messageEl.innerHTML = `<span style="color:#2d6545;">✅ ${result.message}</span>`;
-                        toast('Password changed successfully!', 'success');
-                        setTimeout(() => {
-                            passwordModal.classList.remove('active');
-                            document.body.style.overflow = '';
-                            document.getElementById('passwordForm').reset();
-                            messageEl.textContent = '';
-                        }, 1500);
-                    } else {
-                        messageEl.innerHTML = `<span style="color:#9c3e32;">❌ ${result.message}</span>`;
+                    // Validation — 8 characters to match backend
+                    if (newPassword.length < 8) {
+                        if (messageEl) messageEl.innerHTML = '<span style="color:#9c3e32;">Password must be at least 8 characters.</span>';
+                        return;
                     }
-                } catch (error) {
-                    messageEl.innerHTML = `<span style="color:#9c3e32;">❌ Error: ${error.message}</span>`;
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = 'Update Password';
+
+                    if (newPassword !== confirmPassword) {
+                        if (messageEl) messageEl.innerHTML = '<span style="color:#9c3e32;">New passwords do not match.</span>';
+                        return;
+                    }
+
+                    if (newPassword === currentPassword) {
+                        if (messageEl) messageEl.innerHTML = '<span style="color:#9c3e32;">New password must be different from current password.</span>';
+                        return;
+                    }
+
+                    if (messageEl) {
+                        messageEl.innerHTML = '<span style="color:#68768a;"><i class="fas fa-spinner fa-spin"></i> Changing password...</span>';
+                    }
+
+                    const btn = document.getElementById('savePasswordBtn');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                    }
+
+                    try {
+                        const result = await changePassword(currentPassword, newPassword);
+
+                        if (result.success) {
+                            if (messageEl) {
+                                messageEl.innerHTML = `<span style="color:#2d6545;">✅ ${escapeHtml(result.message)}</span>`;
+                            }
+                            toast('Password changed successfully!', 'success');
+                            setTimeout(() => {
+                                closeModal('passwordModal');
+                                if (passwordForm) passwordForm.reset();
+                                if (messageEl) messageEl.textContent = '';
+                            }, 1500);
+                        } else {
+                            if (messageEl) {
+                                messageEl.innerHTML = `<span style="color:#9c3e32;">❌ ${escapeHtml(result.message)}</span>`;
+                            }
+                        }
+                    } catch (error) {
+                        if (messageEl) {
+                            messageEl.innerHTML = `<span style="color:#9c3e32;">❌ Error: ${escapeHtml(error.message)}</span>`;
+                        }
+                    } finally {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = 'Update Password';
+                        }
+                    }
+                });
+            }
+
+            // ESC closes all modals & drawer
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeAllModals();
+                    const drawer = document.getElementById('mobileDrawer');
+                    if (drawer) drawer.classList.remove('open');
+                    if (overlay) overlay.classList.remove('show');
                 }
             });
         }
@@ -959,6 +1077,9 @@
             init();
             await loadProfile();
         });
-    </script>
+
+    })();
+</script>
+
 </body>
 </html>
