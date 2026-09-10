@@ -187,7 +187,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="brand">
-                <div class="brand-badge">ST</div>
+                <div class="brand-badge" id="brandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -202,8 +202,8 @@
                 <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
             <div class="role-card">
-                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">Security Officer</span></div>
-                <div class="role-scope" id="roleScope">Enforcement access</div>
+                <div class="role-title"><i class="fas fa-shield-alt"></i> <span id="roleLabel">--</span></div>
+                <div class="role-scope" id="roleScope">--</div>
             </div>
         </aside>
 
@@ -212,7 +212,7 @@
         <aside class="mobile-drawer" id="mobileDrawer">
             <button class="close-btn" id="closeDrawer"><i class="fas fa-times"></i></button>
             <div class="brand">
-                <div class="brand-badge">ST</div>
+                <div class="brand-badge" id="mobileBrandBadge">--</div>
                 <div>
                     <div class="brand-text">SeizeTrack</div>
                     <div class="brand-sub">Security Operations</div>
@@ -225,7 +225,7 @@
                 <a href="Person.html" class="nav-item"><i class="fas fa-users"></i> Persons</a>
                 <a href="Profile.html" class="nav-item"><i class="fas fa-user"></i> Profile</a>
             </nav>
-            <div class="drawer-footer" id="mobileRoleFooter">Security Officer · Enforcement access</div>
+            <div class="drawer-footer" id="mobileRoleFooter">--</div>
         </aside>
 
         <!-- Main Content -->
@@ -241,9 +241,9 @@
                     </div>
                     <div class="header-right">
                         <a href="Profile.html" class="profile-btn">
-                            <span class="profile-avatar" id="profileAvatar">ST</span>
-                            <span class="profile-name" id="profileName">Sasha Troger</span>
-                            <span class="profile-role" id="profileRoleLabel">Electrical Engineering</span>
+                            <span class="profile-avatar" id="profileAvatar"></span>
+                            <span class="profile-name" id="profileName"></span>
+                            <span class="profile-role" id="profileRoleLabel"></span>
                         </a>
                         <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
@@ -367,8 +367,15 @@
                 return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             }
 
+            function getRoleDisplay(role) {
+                const r = (role || 'student').toLowerCase();
+                if (r === 'admin') return 'Administrator';
+                if (r === 'security') return 'Security Officer';
+                return 'Student';
+            }
+
             // =============================================
-            // UPDATE USER PROFILE IN UI
+            // UPDATE USER PROFILE IN UI (ALL FROM DB)
             // =============================================
             function updateUserProfile(user) {
                 if (!user) return;
@@ -383,17 +390,23 @@
                 // Generate initials from first name and surname
                 const initials = getInitials(firstName, surname);
                 
-                // Get department or role
-                const department = user.department || user.role || 'Security';
-                const roleDisplay = user.role || 'Security Officer';
+                // Get role from database
+                const roleDisplay = getRoleDisplay(user.role);
+                const department = user.department || 'General';
                 
-                // Update profile elements
+                // Update profile elements in header
                 document.getElementById('profileAvatar').textContent = initials;
                 document.getElementById('profileName').textContent = fullName;
-                document.getElementById('profileRoleLabel').textContent = department;
+                document.getElementById('profileRoleLabel').textContent = roleDisplay;
+                
+                // Update sidebar role card
                 document.getElementById('roleLabel').textContent = roleDisplay;
-                document.getElementById('roleScope').textContent = 'Enforcement access';
-                document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · Enforcement access`;
+                document.getElementById('roleScope').textContent = department;
+                document.getElementById('mobileRoleFooter').textContent = `${roleDisplay} · ${department}`;
+                
+                // Update brand badges with initials
+                document.getElementById('brandBadge').textContent = initials;
+                document.getElementById('mobileBrandBadge').textContent = initials;
             }
 
             // =============================================
@@ -444,7 +457,7 @@
                         throw new Error('Auth invalid');
                     }
 
-                    // Update user info in UI
+                    // Update user info in UI from database
                     const user = data.user;
                     updateUserProfile(user);
 
