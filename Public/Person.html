@@ -123,7 +123,18 @@
         .input-field:focus { outline: none; border-color: #d6ad4b; box-shadow: 0 0 0 3px rgba(214,173,75,0.15); background: #fffcf6; }
         .input-field::placeholder { color: #9aa5b8; }
 
-        .table-container { overflow-x: auto; border-radius: 0.5rem; border: 1px solid #ded6c9; background: #fbf7ef; -webkit-overflow-scrolling: touch; }
+        /* ============================================================
+           TABLE — base (desktop + mobile: always a real table)
+           ============================================================ */
+        .table-container {
+            position: relative;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 0.5rem;
+            border: 1px solid #ded6c9;
+            background: #fbf7ef;
+        }
+
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 640px; }
         thead { background: #f0ebe2; border-bottom: 2px solid #ded6c9; }
         th { padding: 0.7rem 1rem; text-align: left; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #68768a; white-space: nowrap; }
@@ -144,6 +155,28 @@
         .badge.info { background: #e7edf5; color: #24466f; border: 1px solid rgba(36,70,111,0.2); }
         .badge.neutral { background: #f0ebe2; color: #68768a; border: 1px solid #ded6c9; }
         .badge.success { background: #e1f0e5; color: #2d6545; border: 1px solid rgba(45,101,69,0.2); }
+
+        /* Scroll hint pill */
+        .table-scroll-hint {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            padding: 5px 11px;
+            border-radius: 999px;
+            background: #d6ad4b;
+            color: #10233f;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            box-shadow: 0 4px 12px rgba(16,35,63,0.18);
+            z-index: 5;
+            pointer-events: none;
+            animation: pulse-hint 2s ease-in-out infinite;
+        }
+        @keyframes pulse-hint {
+            0%, 100% { opacity: 0.85; transform: translateX(0); }
+            50%      { opacity: 1;    transform: translateX(-4px); }
+        }
 
         .loading, .empty-state, .error-state { padding: 2.5rem 1rem; text-align: center; color: #68768a; }
         .loading-spinner { display: inline-block; width: 2rem; height: 2rem; border: 3px solid #ded6c9; border-radius: 50%; border-top-color: #d6ad4b; animation: spin 1s linear infinite; margin-bottom: 0.75rem; }
@@ -190,7 +223,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #c49a2a; }
 
         /* ============================================================
-           MODAL STYLES — LOGOUT CONFIRMATION
+           LOGOUT CONFIRMATION MODAL
            ============================================================ */
         .modal-overlay {
             display: none;
@@ -281,45 +314,34 @@
             .stat-card { padding: 0.6rem 0.75rem; }
             .stat-card .stat-value { font-size: 1.15rem; }
             .stat-card .stat-title { font-size: 0.65rem; }
+
+            /* Keep table as a table — just tighter and scrollable */
+            table { min-width: 780px; }
+            th, td { padding: 0.65rem 0.75rem; font-size: 0.78rem; }
+            .student-avatar { width: 1.75rem; height: 1.75rem; font-size: 0.65rem; }
+            .student-name { font-size: 0.8rem; }
+            .student-matric { font-size: 0.6rem; }
+            .department, .level, .last-incident { font-size: 0.75rem; }
+            .seizure-count { font-size: 0.85rem; }
+
+            /* Soft edge fade on the scrollable container */
+            .table-container {
+                background:
+                    linear-gradient(to right, #fbf7ef 30%, rgba(251,247,239,0)) left center,
+                    linear-gradient(to right, rgba(251,247,239,0), #fbf7ef 70%) right center,
+                    radial-gradient(farthest-side at 0 50%, rgba(16,35,63,0.14), transparent),
+                    radial-gradient(farthest-side at 100% 50%, rgba(16,35,63,0.14), transparent) right center;
+                background-repeat: no-repeat;
+                background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+                background-attachment: local, local, scroll, scroll;
+            }
         }
 
         @media (max-width: 640px) {
-            table, thead, tbody, th, td, tr { display: block; }
-            thead { display: none; }
-            tbody tr {
-                border: 1px solid #ded6c9;
-                border-radius: 0.5rem;
-                margin-bottom: 0.5rem;
-                padding: 0.75rem;
-                background: #fffcf6;
-                display: grid;
-                gap: 0.4rem;
-            }
-            tbody tr:hover td { background: transparent; }
-            tbody tr td {
-                padding: 0;
-                border: none;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 0.5rem;
-            }
-            tbody tr td::before {
-                content: attr(data-label);
-                font-size: 0.65rem;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: #68768a;
-                flex-shrink: 0;
-            }
-            tbody tr td:first-child {
-                display: block;
-                padding-bottom: 0.5rem;
-                border-bottom: 1px solid #f0ebe2;
-                margin-bottom: 0.25rem;
-            }
-            tbody tr td:first-child::before { display: none; }
+            /* Tighter still for phones — but keep it a table */
+            table { min-width: 720px; }
+            th, td { padding: 0.55rem 0.65rem; font-size: 0.75rem; }
+            th { font-size: 0.62rem; }
         }
 
         @media (max-width: 480px) {
@@ -333,12 +355,14 @@
             .notice-banner { font-size: 0.7rem; padding: 0.4rem 0.6rem; }
             .profile-name { display: none; }
             .header-title { font-size: 0.95rem; }
+            table { min-width: 680px; }
         }
 
         @media (max-width: 360px) {
             .stats-grid { grid-template-columns: 1fr; }
             .content-container { padding: 0.75rem 0.5rem; }
             .main-header { padding: 0.5rem; }
+            table { min-width: 640px; }
         }
 
         @media (max-height: 500px) and (orientation: landscape) {
@@ -477,7 +501,7 @@
                             </div>
                         </div>
 
-                        <div class="table-container">
+                        <div class="table-container" id="personsTableWrap">
                             <table>
                                 <thead>
                                     <tr>
@@ -625,7 +649,7 @@
             document.querySelectorAll('.toast').forEach(t => t.remove());
             const t = document.createElement('div');
             t.className = `toast ${type}`;
-            t.innerHTML = msg;
+            t.textContent = msg;
             document.body.appendChild(t);
             setTimeout(() => {
                 t.style.animation = 'slideOut 0.3s ease';
@@ -1036,6 +1060,40 @@
         }
 
         // ============================================================
+        //  TABLE SCROLL HINT (mobile only)
+        // ============================================================
+        function initTableScrollHint() {
+            const wrap = document.getElementById('personsTableWrap');
+            if (!wrap) return;
+
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            if (!isMobile) return;
+
+            if (sessionStorage.getItem('persons-scroll-hint-seen')) return;
+
+            // Only show if there are rows to scroll
+            const tbody = document.getElementById('personsTable');
+            if (!tbody || !tbody.querySelector('tr')) return;
+
+            const hint = document.createElement('div');
+            hint.className = 'table-scroll-hint';
+            hint.textContent = 'Swipe to see more →';
+            wrap.appendChild(hint);
+
+            const removeHint = () => {
+                if (!hint.parentElement) return;
+                hint.style.transition = 'opacity .3s ease';
+                hint.style.opacity = '0';
+                setTimeout(() => hint.remove(), 350);
+                sessionStorage.setItem('persons-scroll-hint-seen', '1');
+                wrap.removeEventListener('scroll', removeHint);
+            };
+
+            wrap.addEventListener('scroll', removeHint, { passive: true });
+            setTimeout(removeHint, 6000);
+        }
+
+        // ============================================================
         //  EVENT LISTENERS
         // ============================================================
         function init() {
@@ -1124,6 +1182,8 @@
             if (!user) return;
             init();
             await loadPersons();
+            // Show swipe hint on mobile after data loads
+            initTableScrollHint();
         });
 
     })();
