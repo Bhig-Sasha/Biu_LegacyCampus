@@ -975,15 +975,15 @@
         ========================================================= */
 
         .table-wrap {
+            position: relative;
             width: 100%;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
             width: 100%;
-
             border-collapse: collapse;
-
             min-width: 950px;
         }
 
@@ -1005,6 +1005,8 @@
             text-transform: uppercase;
 
             border-bottom: 1px solid var(--border);
+
+            white-space: nowrap;
         }
 
         td {
@@ -1040,6 +1042,7 @@
         .date-main {
             font-weight: 700;
             color: var(--navy);
+            white-space: nowrap;
         }
 
         .date-time {
@@ -1048,6 +1051,7 @@
             color: var(--muted);
 
             font-size: 10px;
+            white-space: nowrap;
         }
 
         .person-name {
@@ -1133,7 +1137,6 @@
             font-size: 11px;
         }
 
-        /* Show only the icon on tablet */
         @media (max-width: 1100px) {
             .row-action span {
                 display: none;
@@ -1553,9 +1556,6 @@
             transform: translateX(0);
         }
 
-
-        /* ---------- Drawer header ---------- */
-
         .details-header {
             padding: 20px 22px;
 
@@ -1627,9 +1627,6 @@
         .details-close:hover {
             background: rgba(255,255,255,.14);
         }
-
-
-        /* ---------- Drawer body ---------- */
 
         .details-body {
             flex: 1;
@@ -1736,9 +1733,6 @@
             font-weight: 400;
         }
 
-
-        /* ---------- Drawer footer ---------- */
-
         .details-footer {
             padding: 15px 22px;
 
@@ -1780,155 +1774,140 @@
             background: var(--surface-2);
         }
 
-        .details-footer .primary {
-            border: 0;
-
-            background: var(--gold);
-            color: var(--navy);
-        }
-
-        .details-footer .primary:hover {
-            background: var(--gold-dark);
-        }
-
 
         /* =========================================================
-           MOBILE RECORD CARDS
+           MOBILE — TABLE STAYS A TABLE (horizontal scroll)
         ========================================================= */
 
         @media (max-width: 767px) {
 
+            /*
+             * Keep the table structure intact.
+             * .table-wrap already has overflow-x: auto; we
+             * simply reduce the minimum width and tighten padding
+             * so more of the table is visible at once.
+             */
+
             .table-wrap {
-                overflow: visible;
+                /* Soft edge fade to signal horizontal scroll */
+                background:
+                    linear-gradient(to right, var(--surface) 30%, rgba(255,253,248,0)),
+                    linear-gradient(to right, rgba(255,253,248,0), var(--surface) 70%) 100% 0,
+                    radial-gradient(farthest-side at 0 50%, rgba(16,35,63,.14), transparent),
+                    radial-gradient(farthest-side at 100% 50%, rgba(16,35,63,.14), transparent) 100% 0;
+                background-repeat: no-repeat;
+                background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+                background-attachment: local, local, scroll, scroll;
             }
 
-            table,
-            tbody {
-                display: block;
-                width: 100%;
+            table {
+                /* Narrower minimum so the table doesn't scroll
+                   more than necessary on small screens */
+                min-width: 780px;
             }
 
-            thead {
-                display: none;
+            th,
+            td {
+                padding: 10px 12px;
+                font-size: 11.5px;
             }
 
-            tbody tr {
-                display: block;
-
-                margin: 0 12px 10px;
-
-                padding: 14px;
-
-                border: 1px solid var(--border);
-                border-radius: 12px;
-
-                background: var(--surface);
-
-                box-shadow: var(--shadow-sm);
-            }
-
-            tbody tr:hover {
-                background: var(--surface);
-            }
-
-            tbody td {
-                display: flex;
-
-                align-items: flex-start;
-                justify-content: space-between;
-
-                gap: 15px;
-
-                padding: 9px 0;
-
-                border-bottom: 1px solid var(--border-light);
-
-                text-align: right;
-
-                font-size: 12px;
-            }
-
-            tbody td:last-child {
-                border-bottom: 0;
-                padding-bottom: 0;
-            }
-
-            tbody td:first-child {
-                display: block;
-
-                padding: 0 0 11px;
-
-                margin-bottom: 3px;
-
-                text-align: left;
-
-                border-bottom: 1px solid var(--border);
-            }
-
-            tbody td::before {
-                content: attr(data-label);
-
-                flex-shrink: 0;
-
-                color: var(--muted);
-
+            th {
                 font-size: 9px;
-                font-weight: 800;
-
-                letter-spacing: .06em;
-                text-transform: uppercase;
-
-                text-align: left;
             }
 
-            tbody td:first-child::before {
-                display: none;
-            }
-
-            .date-main {
-                font-size: 13px;
-            }
-
-            .date-time {
-                font-size: 10px;
-            }
-
-            .notes {
-                max-width: 55%;
-                white-space: normal;
-                overflow: visible;
-                text-overflow: unset;
-            }
-
-            /* Action cell */
-            tbody td.action-cell {
-                padding-top: 11px;
-                margin-top: 3px;
-
-                border-top: 1px solid var(--border-light);
-
-                align-items: center;
-            }
-
-            tbody td.action-cell::before {
-                display: none;
-            }
-
-            tbody td.action-cell .row-action {
-                width: 100%;
-                height: 40px;
-
+            /* View column: icon-only on mobile so the table
+               isn't unnecessarily wide */
+            .row-action {
+                width: 34px;
+                padding: 0;
                 justify-content: center;
             }
 
-            tbody td.action-cell .row-action span {
-                display: inline;
+            .row-action span {
+                display: none;
+            }
+
+            /* Notes: shorter ellipsis on mobile */
+            .notes {
+                max-width: 140px;
+            }
+
+            /* Row tap feedback on iOS */
+            tbody tr {
+                -webkit-tap-highlight-color: rgba(214,173,75,.18);
             }
         }
 
 
         /* =========================================================
-           SMALL PHONES
+           VERY SMALL PHONES — tighter table, still scrollable
+        ========================================================= */
+
+        @media (max-width: 420px) {
+
+            table {
+                min-width: 720px;
+            }
+
+            th,
+            td {
+                padding: 9px 10px;
+                font-size: 11px;
+            }
+
+            .notes {
+                max-width: 110px;
+            }
+        }
+
+
+        /* =========================================================
+           SCROLL HINT BADGE
+        ========================================================= */
+
+        .table-scroll-hint {
+            position: absolute;
+
+            top: 8px;
+            right: 12px;
+
+            padding: 5px 11px;
+
+            border-radius: 999px;
+
+            background: var(--gold);
+            color: var(--navy);
+
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: .04em;
+
+            box-shadow: 0 4px 12px rgba(16,35,63,.18);
+
+            z-index: 5;
+
+            pointer-events: none;
+
+            animation: pulse-hint 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-hint {
+            0%, 100% {
+                opacity: .85;
+                transform: translateX(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translateX(-4px);
+            }
+        }
+
+
+        /* =========================================================
+           SMALL PHONES — topbar & panel tweaks
         ========================================================= */
 
         @media (max-width: 420px) {
@@ -1975,11 +1954,6 @@
 
             .record-count {
                 align-self: flex-start;
-            }
-
-            tbody tr {
-                margin-left: 8px;
-                margin-right: 8px;
             }
 
             .pagination {
@@ -2381,7 +2355,7 @@
 
                 <!-- TABLE -->
 
-                <div class="table-wrap">
+                <div class="table-wrap" id="tableWrap">
 
                     <table>
 
@@ -3456,7 +3430,6 @@
             row.setAttribute("aria-label", "View seizure details");
             row.dataset.seizureId = seizure.id;
 
-            /* Open on click / Enter / Space */
             row.addEventListener("click", () => openDetails(seizure));
             row.addEventListener("keydown", (event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -3468,7 +3441,6 @@
             /* DATE */
 
             const dateCell = document.createElement("td");
-            dateCell.dataset.label = "Date & Time";
             dateCell.innerHTML = `
                 <div class="date-main">
                     ${escapeHtml(dateString)}
@@ -3481,7 +3453,6 @@
             /* PERSON */
 
             const personCell = document.createElement("td");
-            personCell.dataset.label = "Person";
             personCell.innerHTML = `
                 <div class="person-name">
                     ${escapeHtml(seizure.personName)}
@@ -3494,7 +3465,6 @@
             /* DEVICE */
 
             const deviceCell = document.createElement("td");
-            deviceCell.dataset.label = "Device";
             deviceCell.innerHTML = `
                 <div class="device-name">
                     ${escapeHtml(seizure.phoneModel)}
@@ -3511,7 +3481,6 @@
             /* LOCATION */
 
             const locationCell = document.createElement("td");
-            locationCell.dataset.label = "Location";
             locationCell.innerHTML = `
                 <span class="location">
                     ${escapeHtml(seizure.location)}
@@ -3521,7 +3490,6 @@
             /* STATUS */
 
             const statusCell = document.createElement("td");
-            statusCell.dataset.label = "Status";
 
             const status = document.createElement("span");
             status.className =
@@ -3533,7 +3501,6 @@
             /* NOTES */
 
             const notesCell = document.createElement("td");
-            notesCell.dataset.label = "Notes";
             notesCell.className = "notes";
             notesCell.textContent = seizure.notes || "-";
             notesCell.title = seizure.notes || "";
@@ -3541,14 +3508,11 @@
             /* SEIZED BY */
 
             const seizedByCell = document.createElement("td");
-            seizedByCell.dataset.label = "Seized By";
             seizedByCell.textContent = seizure.seizedBy || "N/A";
 
             /* ACTION */
 
             const actionCell = document.createElement("td");
-            actionCell.dataset.label = "View";
-            actionCell.className = "action-cell";
             actionCell.style.textAlign = "right";
 
             const actionBtn = document.createElement("button");
@@ -3773,7 +3737,7 @@
        DETAILS DRAWER
     ========================================================= */
 
-    function setDetailText(elementId, value, emptyText) {
+    function setDetailText(elementId, value) {
 
         const el = document.getElementById(elementId);
 
@@ -3817,7 +3781,6 @@
                 }
               );
 
-        /* Header */
         document.getElementById("detailsTitle").textContent =
             seizure.phoneModel || "Seizure Record";
 
@@ -3828,22 +3791,18 @@
         document.getElementById("detailsRecordId").textContent =
             seizure.id ? `· #${String(seizure.id).slice(0, 8)}` : "";
 
-        /* Person */
         setDetailText("detailPersonName", seizure.personName);
         setDetailText("detailPersonMatric", seizure.personMatric);
         setDetailText("detailPersonDept", seizure.personDepartment);
 
-        /* Device */
         setDetailText("detailDeviceModel", seizure.phoneModel);
         setDetailText("detailDeviceColor", seizure.deviceColor);
 
-        /* Seizure details */
         setDetailText("detailReason", seizure.seizureReason);
         setDetailText("detailLocation", seizure.location);
         setDetailText("detailSeizedBy", seizure.seizedBy);
         setDetailText("detailDateTime", fullDateTime);
 
-        /* Notes */
         const notesEl = document.getElementById("detailNotes");
 
         if (seizure.notes) {
@@ -3855,12 +3814,10 @@
             notesEl.textContent = "";
         }
 
-        /* Open */
         document.getElementById("detailsDrawer").classList.add("open");
         document.getElementById("detailsOverlay").classList.add("show");
         document.body.style.overflow = "hidden";
 
-        /* Focus the close button for accessibility */
         setTimeout(() => {
             document.getElementById("detailsClose")?.focus();
         }, 200);
@@ -3874,6 +3831,42 @@
         document.body.style.overflow = "";
 
         activeSeizure = null;
+    }
+
+
+    /* =========================================================
+       TABLE SCROLL HINT (mobile only)
+    ========================================================= */
+
+    function initTableScrollHint() {
+
+        const wrap = document.getElementById("tableWrap");
+        if (!wrap) return;
+
+        const isMobile = window.matchMedia("(max-width: 767px)").matches;
+        if (!isMobile) return;
+
+        /* Only show once per session */
+        if (sessionStorage.getItem("history-scroll-hint-seen")) return;
+
+        const hint = document.createElement("div");
+        hint.className = "table-scroll-hint";
+        hint.textContent = "Swipe to see more →";
+
+        wrap.appendChild(hint);
+
+        const removeHint = () => {
+            if (!hint.parentElement) return;
+            hint.style.transition = "opacity .3s ease";
+            hint.style.opacity = "0";
+            setTimeout(() => hint.remove(), 350);
+            sessionStorage.setItem("history-scroll-hint-seen", "1");
+            wrap.removeEventListener("scroll", removeHint);
+        };
+
+        wrap.addEventListener("scroll", removeHint, { passive: true });
+
+        setTimeout(removeHint, 6000);
     }
 
 
@@ -3984,7 +3977,6 @@
 
             if (event.key === "Escape") {
 
-                /* Close details first if open */
                 if (
                     document
                         .getElementById("detailsDrawer")
@@ -4015,6 +4007,9 @@
 
         await loadDashboardStats();
         await loadSeizureHistory();
+
+        /* Show swipe hint on mobile after data loads */
+        initTableScrollHint();
     });
 
 })();
