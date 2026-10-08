@@ -57,9 +57,6 @@
             overflow-x: hidden;
         }
 
-        /* ============================================================
-           LAYOUT — split-screen on desktop, stacked on mobile
-           ============================================================ */
         .login-shell {
             display: grid;
             grid-template-columns: 1fr;
@@ -68,9 +65,7 @@
         }
 
         @media (min-width: 992px) {
-            .login-shell {
-                grid-template-columns: 1.1fr 1fr;
-            }
+            .login-shell { grid-template-columns: 1.1fr 1fr; }
         }
 
         /* ============================================================
@@ -93,7 +88,6 @@
         @media (min-width: 768px) { .brand-panel { padding: 2.25rem 2.5rem 3rem; } }
         @media (min-width: 992px) { .brand-panel { padding: 2.5rem 3rem 3rem; } }
 
-        /* Grid overlay */
         .brand-panel::before {
             content: "";
             position: absolute;
@@ -108,7 +102,6 @@
             z-index: 0;
         }
 
-        /* Soft glow blob */
         .brand-panel::after {
             content: "";
             position: absolute;
@@ -122,7 +115,6 @@
 
         .brand-panel > * { position: relative; z-index: 1; }
 
-        /* Top bar inside brand panel */
         .brand-topbar {
             display: flex;
             align-items: center;
@@ -182,6 +174,7 @@
             letter-spacing: 0.14em;
             text-transform: uppercase;
             color: #e1bd65;
+            white-space: nowrap;
         }
 
         .system-status .pulse {
@@ -198,7 +191,6 @@
             100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
         }
 
-        /* Main hero copy */
         .brand-hero {
             margin-top: auto;
             margin-bottom: auto;
@@ -234,10 +226,7 @@
             letter-spacing: -0.01em;
         }
 
-        .brand-headline .gold {
-            color: var(--gold);
-            display: block;
-        }
+        .brand-headline .gold { color: var(--gold); display: block; }
 
         .brand-lede {
             margin-top: 1.1rem;
@@ -247,7 +236,6 @@
             max-width: 30rem;
         }
 
-        /* Feature list */
         .feature-list {
             margin-top: 2rem;
             display: grid;
@@ -278,7 +266,6 @@
             text-align: center;
         }
 
-        /* Bottom meta strip */
         .brand-meta {
             margin-top: 2.5rem;
             padding-top: 1.25rem;
@@ -336,7 +323,6 @@
             to   { transform: translateY(0);    opacity: 1; }
         }
 
-        /* Admin access badge */
         .access-badge {
             display: inline-flex;
             align-items: center;
@@ -370,7 +356,6 @@
             line-height: 1.5;
         }
 
-        /* Form */
         .signin-form {
             margin-top: 1.6rem;
             display: flex;
@@ -420,7 +405,6 @@
         }
 
         .field-input::placeholder { color: #a4aebc; }
-
         .field-input:hover { border-color: #c9bfa8; }
 
         .field-input:focus {
@@ -429,9 +413,7 @@
             background: #fffefa;
         }
 
-        .field-wrap:focus-within .field-icon {
-            color: var(--gold-2);
-        }
+        .field-wrap:focus-within .field-icon { color: var(--gold-2); }
 
         .field-input[type="password"] {
             padding-right: 3rem;
@@ -458,12 +440,8 @@
         }
 
         .toggle-password:hover { color: var(--navy); background: rgba(16, 35, 63, 0.06); }
-        .toggle-password:focus-visible {
-            outline: 2px solid var(--gold);
-            outline-offset: 2px;
-        }
+        .toggle-password:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-        /* Row: remember me */
         .form-row {
             display: flex;
             align-items: center;
@@ -515,7 +493,6 @@
             box-shadow: 0 0 0 3px rgba(214, 173, 75, 0.28);
         }
 
-        /* Submit button */
         .submit-btn {
             position: relative;
             display: inline-flex;
@@ -543,13 +520,8 @@
         }
 
         .submit-btn:hover { filter: brightness(1.03); }
-
         .submit-btn:active { transform: translateY(1px); }
-
-        .submit-btn:focus-visible {
-            outline: 2px solid var(--navy);
-            outline-offset: 3px;
-        }
+        .submit-btn:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
 
         .submit-btn[disabled] {
             cursor: not-allowed;
@@ -573,12 +545,10 @@
         .submit-btn.loading .btn-spinner { display: inline-block; }
 
         .btn-arrow { transition: transform 0.15s; }
-
         .submit-btn:hover .btn-arrow { transform: translateX(3px); }
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Feedback message */
         .form-feedback {
             display: none;
             align-items: flex-start;
@@ -613,9 +583,6 @@
 
         .form-feedback i { margin-top: 0.15rem; font-size: 0.85rem; flex-shrink: 0; }
 
-        /* ============================================================
-           TOAST
-           ============================================================ */
         .toast {
             position: fixed;
             bottom: 1.5rem;
@@ -641,9 +608,6 @@
         .toast.error   { background: var(--red); }
         .toast.info    { background: var(--navy-3); }
 
-        /* ============================================================
-           RESPONSIVE — hide left panel visuals on small mobile
-           ============================================================ */
         @media (max-width: 991px) {
             .brand-panel {
                 padding: 1.5rem 1.25rem 1.75rem;
@@ -662,7 +626,6 @@
             .brand-meta { gap: 0.5rem 1rem; font-size: 0.65rem; }
         }
 
-        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.001ms !important;
@@ -739,16 +702,16 @@
 
                 <form class="signin-form" id="signinForm" novalidate autocomplete="on">
 
-                    <!-- Email / Username -->
+                    <!-- Email -->
                     <div class="field">
-                        <label class="field-label" for="identifier">Email or Username</label>
+                        <label class="field-label" for="email">Email Address</label>
                         <div class="field-wrap">
-                            <i class="fas fa-user field-icon" aria-hidden="true"></i>
+                            <i class="fas fa-envelope field-icon" aria-hidden="true"></i>
                             <input
                                 class="field-input"
-                                type="text"
-                                id="identifier"
-                                name="identifier"
+                                type="email"
+                                id="email"
+                                name="email"
                                 placeholder="admin@biu.edu.ng"
                                 autocomplete="username"
                                 autocapitalize="off"
@@ -791,8 +754,8 @@
 
                     <!-- Remember me -->
                     <div class="form-row">
-                        <label class="check-wrap" for="remember">
-                            <input type="checkbox" id="remember" name="remember" />
+                        <label class="check-wrap" for="keepSignedIn">
+                            <input type="checkbox" id="keepSignedIn" name="keepSignedIn" />
                             <span class="check-box" aria-hidden="true">
                                 <i class="fas fa-check"></i>
                             </span>
@@ -822,20 +785,21 @@
     'use strict';
 
     // ============================================================
-    // CONFIG
+    // CONFIG — matches your existing backend contract
     // ============================================================
     const API_BASE_URL   = 'https://biu-legacycampus.onrender.com';
     const LOGIN_ENDPOINT = '/api/login';
-    const DASHBOARD_PATH = './dashboard.html';
-    const ALLOWED_ROLE   = 'admin';
+    const CHECK_ENDPOINT = '/api/check';
+    const DASHBOARD_PATH = './index.html';
+    const ALLOWED_ROLES  = ['admin', 'security'];
 
     // ============================================================
     // DOM
     // ============================================================
     const form           = document.getElementById('signinForm');
-    const identifierEl   = document.getElementById('identifier');
+    const emailEl        = document.getElementById('email');
     const passwordEl     = document.getElementById('password');
-    const rememberEl     = document.getElementById('remember');
+    const keepSignedInEl = document.getElementById('keepSignedIn');
     const submitBtn      = document.getElementById('submitBtn');
     const togglePassword = document.getElementById('togglePassword');
     const feedback       = document.getElementById('formFeedback');
@@ -855,7 +819,7 @@
         showToast._t = setTimeout(() => toastEl.classList.remove('show'), 3500);
     }
 
-    function setFeedback(message, type /* 'error' | 'success' | 'info' | null */) {
+    function setFeedback(message, type) {
         if (!feedback || !feedbackText) return;
         if (!type || !message) {
             feedback.className = 'form-feedback';
@@ -863,8 +827,7 @@
             return;
         }
         feedback.className = `form-feedback show ${type}`;
-        // [SEC] textContent, not innerHTML
-        feedbackText.textContent = message;
+        feedbackText.textContent = message; // [SEC] textContent, not innerHTML
 
         const icon = feedback.querySelector('i');
         if (icon) {
@@ -891,6 +854,10 @@
         } catch (_) { /* storage may be blocked */ }
     }
 
+    function validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
     // ============================================================
     // PASSWORD VISIBILITY
     // ============================================================
@@ -911,11 +878,14 @@
     // VALIDATION
     // ============================================================
     function validate() {
-        const identifier = identifierEl.value.trim();
-        const password   = passwordEl.value;
+        const email    = emailEl.value.trim();
+        const password = passwordEl.value;
 
-        if (!identifier) {
-            return { ok: false, field: identifierEl, message: 'Please enter your email or username.' };
+        if (!email) {
+            return { ok: false, field: emailEl, message: 'Please enter your email address.' };
+        }
+        if (!validateEmail(email)) {
+            return { ok: false, field: emailEl, message: 'Please enter a valid email address.' };
         }
         if (!password) {
             return { ok: false, field: passwordEl, message: 'Please enter your password.' };
@@ -932,7 +902,7 @@
     }
 
     // ============================================================
-    // SUBMIT
+    // SUBMIT — sends { email, password } to match your backend
     // ============================================================
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -947,84 +917,82 @@
         setFeedback(null);
         setLoading(true);
 
-        const identifier = identifierEl.value.trim();
-        const password   = passwordEl.value;
-        const remember   = !!rememberEl.checked;
+        const email    = emailEl.value.trim();
+        const password = passwordEl.value;
+        const keep     = !!keepSignedInEl.checked;
 
         try {
+            // [FIX] Send exactly what your /api/login expects:
+            //       { email, password } — no "identifier", no "remember"
             const response = await fetch(`${API_BASE_URL}${LOGIN_ENDPOINT}`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier, password, remember })
+                body: JSON.stringify({ email, password })
             });
 
             let data = null;
-            try { data = await response.json(); } catch (_) { /* non-JSON error */ }
+            try { data = await response.json(); } catch (_) { /* non-JSON */ }
 
-            // ------------- Error paths -------------
+            // ---------- Error paths ----------
             if (response.status === 429) {
                 setFeedback('Too many attempts. Please wait a moment and try again.', 'error');
                 return;
             }
 
             if (!response.ok || !data || data.success === false) {
-                // [SEC] Generic message; don't leak which field was wrong.
                 const msg = (data && typeof data.message === 'string' && data.message.length < 140)
                     ? data.message
-                    : 'Invalid credentials. Please check your email/username and password.';
+                    : 'Invalid credentials. Please check your email and password.';
                 setFeedback(msg, 'error');
                 passwordEl.value = '';
                 focusField(passwordEl);
                 return;
             }
 
-            // ------------- Success path -------------
+            // ---------- Success ----------
             const user  = data.user || {};
             const token = data.token || (data.data && data.data.token) || null;
             const role  = String(user.role || '').toLowerCase();
 
             // [SEC] Client-side role gate is UX only; backend MUST enforce this too.
-            if (role !== ALLOWED_ROLE) {
+            if (!ALLOWED_ROLES.includes(role)) {
                 clearSession();
                 setFeedback('This account does not have administrator access.', 'error');
                 showToast('Administrator access required.', 'error');
                 return;
             }
 
-            // Persist token (and only non-sensitive user fields) for the session.
+            // Persist token + non-sensitive user fields
             try {
-                if (token) {
-                    localStorage.setItem('token', token);
-                }
+                if (token) localStorage.setItem('token', token);
                 if (user && typeof user === 'object') {
-                    localStorage.setItem('user', JSON.stringify({
-                        first_name: user.first_name || '',
-                        surname:    user.surname    || '',
-                        role:       user.role       || ALLOWED_ROLE,
-                        department: user.department || 'Administration',
-                        email:      user.email      || ''
-                    }));
+                    localStorage.setItem('user', JSON.stringify(user));
                 }
                 if (user && user.id) {
                     localStorage.setItem('supabase_user_id', String(user.id));
                 }
-                if (remember) {
-                    localStorage.setItem('remember_session', '1');
+                // Remember email only (matches your old page's behavior)
+                if (keep) {
+                    localStorage.setItem('rememberedEmail', email);
                 } else {
-                    localStorage.removeItem('remember_session');
+                    localStorage.removeItem('rememberedEmail');
                 }
-            } catch (_) { /* storage may be blocked in private mode */ }
+            } catch (_) { /* storage may be blocked */ }
 
-            setFeedback('Signed in successfully. Redirecting…', 'success');
-            showToast('Welcome back, administrator.', 'success');
+            // Build display name for the toast
+            const displayName = user.first_name && user.surname
+                ? `${user.first_name} ${user.surname}`
+                : user.name || user.email || 'administrator';
+
+            setFeedback(`Signed in successfully. Welcome back, ${displayName}.`, 'success');
+            showToast(`Welcome back, ${displayName}.`, 'success');
 
             setTimeout(() => {
                 window.location.replace(DASHBOARD_PATH);
-            }, 550);
+            }, 700);
 
         } catch (err) {
-            // [SEC] Never surface raw error objects; log to console only.
             console.error('Sign-in failed:', err);
             setFeedback('Unable to reach the server. Please check your connection and try again.', 'error');
         } finally {
@@ -1035,7 +1003,7 @@
     // ============================================================
     // UX niceties
     // ============================================================
-    [identifierEl, passwordEl].forEach((el) => {
+    [emailEl, passwordEl].forEach((el) => {
         if (!el) return;
         el.addEventListener('input', () => {
             if (feedback && feedback.classList.contains('error')) {
@@ -1044,23 +1012,50 @@
         });
     });
 
-    // If already authenticated as admin, skip straight to dashboard
-    (function alreadySignedIn() {
+    // Pre-fill remembered email
+    (function restoreRemembered() {
         try {
-            const token = localStorage.getItem('token');
-            const raw   = localStorage.getItem('user');
-            if (!token || !raw) return;
-            const u = JSON.parse(raw);
-            if (u && String(u.role || '').toLowerCase() === ALLOWED_ROLE) {
-                window.location.replace(DASHBOARD_PATH);
+            const remembered = localStorage.getItem('rememberedEmail');
+            if (remembered && emailEl) {
+                emailEl.value = remembered;
+                if (keepSignedInEl) keepSignedInEl.checked = true;
+                passwordEl.focus();
+            } else if (emailEl) {
+                emailEl.focus();
             }
         } catch (_) { /* ignore */ }
     })();
 
-    // Focus the first empty field on load
-    window.addEventListener('load', () => {
-        if (identifierEl && !identifierEl.value) identifierEl.focus();
-    });
+    // If already authenticated, verify with the backend before redirecting
+    (async function alreadySignedIn() {
+        let token;
+        try { token = localStorage.getItem('token'); } catch (_) { token = null; }
+        if (!token) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}${CHECK_ENDPOINT}`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (!res.ok) {
+                clearSession();
+                return;
+            }
+            const data = await res.json();
+            const role = String(data?.user?.role || '').toLowerCase();
+            if (data?.success && ALLOWED_ROLES.includes(role)) {
+                window.location.replace(DASHBOARD_PATH);
+            } else {
+                clearSession();
+            }
+        } catch (_) {
+            clearSession();
+        }
+    })();
 })();
 </script>
 
